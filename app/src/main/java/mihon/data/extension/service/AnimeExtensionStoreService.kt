@@ -7,11 +7,12 @@ import eu.kanade.tachiyomi.extension.anime.model.AnimeExtension
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.awaitSuccess
-import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority
+import mihon.data.extension.model.AnimeExtensionStoreDecoder
+import mihon.data.extension.model.NetworkAnimeExtensionStore
 import mihon.data.extension.model.NetworkExtensionStore
 import mihon.data.extension.model.NetworkLegacyExtension
 import mihon.data.extension.model.NetworkLegacyExtensionRepo
@@ -58,10 +59,10 @@ class AnimeExtensionStoreService(
                     0x7B.toByte() -> try {
                         json.decodeFromBufferedSource<NetworkLegacyExtensionRepo>(source.peek())
                     } catch (_: Exception) {
-                        json.decodeFromBufferedSource<NetworkExtensionStore>(source)
+                        json.decodeFromBufferedSource<NetworkAnimeExtensionStore>(source)
                     }
 
-                    else -> protoBuf.decodeFromByteArray<NetworkExtensionStore>(source.readByteArray())
+                    else -> AnimeExtensionStoreDecoder.decodeStore(protoBuf, source.readByteArray())
                 }
 
                 if (networkStore is NetworkLegacyExtensionRepo) {
@@ -92,11 +93,11 @@ class AnimeExtensionStoreService(
                     source.stripBom()
                     when (source.peek().readByte()) {
                         // "{..."
-                        0x7B.toByte() -> json.decodeFromBufferedSource<NetworkExtensionStore.ExtensionList>(source)
-
-                        else -> protoBuf.decodeFromByteArray<NetworkExtensionStore.ExtensionList>(
-                            source.readByteArray(),
+                        0x7B.toByte() -> json.decodeFromBufferedSource<NetworkAnimeExtensionStore.ExtensionList>(
+                            source,
                         )
+
+                        else -> AnimeExtensionStoreDecoder.decodeExtensionList(protoBuf, source.readByteArray())
                     }
                         .let { toAvailableExtensions(it, store) }
                 }
@@ -106,9 +107,9 @@ class AnimeExtensionStoreService(
                     source.stripBom()
                     val netStore = when (source.peek().readByte()) {
                         // "{..."
-                        0x7B.toByte() -> json.decodeFromBufferedSource<NetworkExtensionStore>(source)
+                        0x7B.toByte() -> json.decodeFromBufferedSource<NetworkAnimeExtensionStore>(source)
 
-                        else -> protoBuf.decodeFromByteArray<NetworkExtensionStore>(source.readByteArray())
+                        else -> AnimeExtensionStoreDecoder.decodeStore(protoBuf, source.readByteArray())
                     }
                     val extensionList = netStore.extensionList
                     if (extensionList != null) {
@@ -136,7 +137,7 @@ class AnimeExtensionStoreService(
     }
 
     private fun toAvailableExtensions(
-        extensionList: NetworkExtensionStore.ExtensionList,
+        extensionList: NetworkAnimeExtensionStore.ExtensionList,
         store: ExtensionStore,
     ): List<AnimeExtension.Available> {
         return extensionList.extensions
@@ -160,7 +161,7 @@ class AnimeExtensionStoreService(
                         NetworkExtensionStore.ContentWarning.NSFW -> DomainContentWarning.NSFW
                         else -> DomainContentWarning.SAFE
                     },
-                    isTorrent = false,
+                    isTorrent = extension.isTorrent,
                     sources = extension.sources.map { source ->
                         AnimeExtension.Available.AnimeSource(
                             id = source.id,
@@ -193,7 +194,7 @@ class AnimeExtensionStoreService(
             versionName = netExt.version,
             lang = netExt.lang,
             contentWarning = if (netExt.nsfw == 1) DomainContentWarning.NSFW else DomainContentWarning.SAFE,
-            isTorrent = false,
+            isTorrent = netExt.torrent == 1,
             sources = run {
                 val sources = netExt.sources
                 if (sources.isNullOrEmpty()) {

@@ -1,51 +1,60 @@
-Looking to report an issue/bug or make a feature request? Please refer to the [README file](https://github.com/dark25/animetail2#issues-feature-requests-and-contributing).
+# Contribuire ad AniTenshi
 
----
+Grazie per l'interesse! Prima di tutto leggi il [codice di condotta](./CODE_OF_CONDUCT.md).
 
-Thanks for your interest in contributing to Animetail!
+## Segnalare un problema o proporre un'idea
 
+- Apri una [issue](https://github.com/Borelli99/AniTenshi/issues) su questa repository. Non segnalare ad Animetail i problemi di AniTenshi.
+- Scrivi la versione di AniTenshi (*Altro → Info*), il modello del telefono e la versione di Android, i passaggi per riprodurre il problema e, se puoi, uno screenshot.
+- Se il problema riguarda una singola estensione (un sito che non carica, un episodio con "loading failed"), prova prima la stessa estensione su Aniyomi o Animetail: se succede anche lì, va segnalato a chi mantiene l'estensione.
 
-# Code contributions
+## Contribuire al codice
 
-Pull requests are welcome!
+Le pull request sono benvenute. Per modifiche grandi apri prima una issue, così ne parliamo.
 
-If you're interested in taking on [an open issue](https://github.com/dark25/animetail2/issues), please comment on it so others are aware.
-You do not need to ask for permission nor an assignment.
+### Cosa serve
 
-## Prerequisites
+- Conoscere le basi dello [sviluppo Android](https://developer.android.com/) e di [Kotlin](https://kotlinlang.org/)
+- [Android Studio](https://developer.android.com/studio) e JDK 21
+- Un emulatore o un telefono con le opzioni sviluppatore attive
 
-Before you start, please note that the ability to use following technologies is **required** and that existing contributors will not actively teach them to you.
+### Compilare e provare
 
-- Basic [Android development](https://developer.android.com/)
-- [Kotlin](https://kotlinlang.org/)
+```bash
+./gradlew assembleDebug           # APK di debug (pacchetto com.borelli99.anitenshi.dev)
+./gradlew testDebugUnitTest       # test
+./gradlew spotlessApply           # formatta il codice come richiesto dai controlli
+```
 
-### Tools
+La build di debug ha un nome di pacchetto diverso, quindi si installa accanto alla versione normale.
 
-- [Android Studio](https://developer.android.com/studio)
-- Emulator or phone with developer options enabled to test changes.
+### Come vengono pubblicate le versioni
 
-## Getting help
+Il workflow [`Build AniTenshi APK`](./.github/workflows/build_fork.yml) parte a ogni push su `master` (le modifiche ai soli file `.md` non avviano la build), oppure a mano dalla scheda *Actions*. Esegue i test, compila l'APK di release, lo firma e lo pubblica nelle [Releases](https://github.com/Borelli99/AniTenshi/releases).
 
-- Join [the Discord server](https://discord.gg/s82Vu589Ya) for online help and to ask questions while developing.
+La firma usa la chiave salvata nel secret `KEYSTORE_BASE64` della repository. Deve restare sempre la stessa: con una chiave diversa le nuove versioni non si installano sopra quelle vecchie.
 
-# Translations
+### Restare aggiornati con Animetail
 
-Translations are done externally via Weblate. See [our website](https://aniyomi.org/docs/contribute#translation) for more details.
+AniTenshi segue Animetail. Per prendere le novità, sulla pagina GitHub della repository tocca **Sync fork**, oppure da terminale:
 
+```bash
+git remote add upstream https://github.com/Animetailapp/Animetail.git
+git fetch upstream
+git merge upstream/master
+```
 
-# Forks
+Le correzioni utili a tutti (come quella sulle repository anime) conviene proporle anche ad [Animetail](https://github.com/Animetailapp/Animetail), così non devono essere mantenute solo qui.
 
-Forks are allowed so long as they abide by [the project's LICENSE](https://github.com/Dark25/animetail2/blob/master/LICENSE).
+## Traduzioni
 
-When creating a fork, remember to:
+I testi dell'app arrivano da Animetail, Aniyomi e Mihon: per migliorare una traduzione contribuisci al progetto da cui proviene il testo. Le uniche stringhe proprie di AniTenshi sono il nome dell'app e i testi di questa repository.
 
-- To avoid confusion with the main app:
-    - Change the app name
-    - Change the app icon
+## Fork di AniTenshi
 
-    - Change or disable the [app update checker](https://github.com/Dark25/animetail2/blob/master/app/src/master/java/eu/kanade/tachiyomi/data/updater/AppUpdateChecker.kt)
-- To avoid installation conflicts:
-    - Change the `applicationId` in [`build.gradle.kts`](https://github.com/Dark25/animetail2/blob/master/app/build.gradle.kts)
-- To avoid having your data polluting the main app's analytics and crash report services:
-    - If you want to use Firebase analytics, replace [`google-services.json`](https://github.com/Dark25/animetail2/blob/master/app/src/standard/google-services.json) with your own
-    - If you want to use ACRA crash reporting, replace the `ACRA_URI` endpoint in [`build.gradle.kts`](https://github.com/Dark25/animetail2/blob/master/app/build.gradle.kts) with your own
+Puoi fare una fork di AniTenshi rispettando la [licenza](./LICENSE). Per evitare confusione e conflitti:
+
+- cambia il nome dell'app (`app_name` in `i18n/src/commonMain/moko-resources/base/strings.xml`) e l'icona;
+- cambia l'`applicationId` in [`app/build.gradle.kts`](./app/build.gradle.kts), altrimenti la tua app non può essere installata accanto a questa;
+- crea una tua chiave di firma (formato PKCS12, alias e password `anitenshi`, oppure cambia questi valori nel workflow) e salvala in base64 nel secret `KEYSTORE_BASE64` della tua repository;
+- lascia disattivato il controllo aggiornamenti (lo è già nelle build di questa repository), oppure puntalo alle tue Releases.

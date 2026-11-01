@@ -1,12 +1,14 @@
 <!--
-  Please include a summary of the change and which issue is fixed.
-  Also make sure you've tested your code and also done a self-review of it.
-  Don't forget to check all base themes and tablet mode for relevant changes.
-  
-  If your changes are visual, please provide images below:
+  Descrivi la modifica e, se c'è, la issue che risolve (es. "Risolve #12").
+  Prima di aprire la pull request:
+  - prova la modifica sul telefono o sull'emulatore;
+  - esegui ./gradlew spotlessApply e ./gradlew testDebugUnitTest;
+  - se la modifica è visiva, controlla tema chiaro, scuro e modalità tablet.
 
-### Images
-| Image 1 | Image 2 |
-| ------- | ------- |
-| ![](https://github.githubassets.com/images/modules/logos_page/Octocat.png) | ![](https://github.githubassets.com/images/modules/logos_page/Octocat.png) |
+  Se la modifica è visiva, aggiungi gli screenshot qui sotto:
+
+### Screenshot
+| Prima | Dopo |
+| ----- | ---- |
+|       |      |
 -->

@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: ❌ Help with Extensions
+  - name: ❌ Problemi con le estensioni
     url: https://aniyomi.org/docs/faq/browse/extensions
-    about: For extension-related questions/issues
-  - name: 🧑‍💻 Animetail help discord
-    url: https://discord.gg/Bp8ZJkNYXJ
-    about: Common questions are answered here
-  - name: 🖥️ Aniyomi website
+    about: Domande e problemi sulle estensioni (vanno segnalati a chi le mantiene)
+  - name: 📖 Guida di AniTenshi
+    url: https://github.com/Borelli99/AniTenshi#primi-passi
+    about: Installazione, backup e come aggiungere le repository di estensioni
+  - name: 🖥️ Sito di Aniyomi
     url: https://aniyomi.org/
-    about: Guides, troubleshooting, and answers to common questions
+    about: Guide, risoluzione dei problemi e risposte alle domande più comuni

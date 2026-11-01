@@ -1,38 +1,36 @@
-name: ⭐ Feature request
-description: Suggest a feature to improve Animetail
+name: ⭐ Proponi una funzione
+description: Suggerisci un modo per migliorare AniTenshi
 labels: [Feature request]
 body:
   - type: textarea
     id: feature-description
     attributes:
-      label: Describe your suggested feature
-      description: How can Animetail be improved?
+      label: Descrivi la funzione
+      description: Come potrebbe migliorare AniTenshi?
       placeholder: |
-        Example:
-          "It should work like this..."
+        Esempio:
+          "Dovrebbe funzionare così..."
     validations:
       required: true
 
   - type: textarea
     id: other-details
     attributes:
-      label: Other details
+      label: Altri dettagli
       placeholder: |
-        Additional details and attachments.
+        Altre informazioni, esempi o allegati.
 
   - type: checkboxes
     id: acknowledgements
     attributes:
-      label: Acknowledgements
-      description: Read this carefully, we will close and ignore your issue if you skimmed through this.
+      label: Conferme
+      description: Leggi con attenzione, le richieste incomplete vengono chiuse.
       options:
-        - label: I have searched the existing issues and this is a new ticket, **NOT** a duplicate or related to another open or closed issue.
+        - label: Ho cercato tra le issue esistenti e questa è una richiesta nuova, **non** un duplicato.
           required: true
-        - label: I have written a short but informative title.
+        - label: Ho scritto un titolo breve ma chiaro.
           required: true
-        - label: If this is a request regarding an extension, I should be opening an issue in the extension's repository.
+        - label: La richiesta non riguarda una singola estensione (in quel caso va fatta a chi la mantiene).
           required: true
-        - label: I have updated the app to version **[0.21.2.0](https://github.com/Animetailapp/Animetail/releases/latest)**.
-          required: true
-        - label: I will fill out all of the requested information in this form.
+        - label: Uso l'**[ultima versione di AniTenshi](https://github.com/Borelli99/AniTenshi/releases/latest)**.
           required: true

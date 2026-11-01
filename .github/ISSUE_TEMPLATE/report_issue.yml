@@ -1,103 +1,101 @@
-name: 🐞 Issue report
-description: Report an issue in Animetail
+name: 🐞 Segnala un problema
+description: Segnala un problema di AniTenshi
 labels: [Bug]
 body:
   - type: textarea
     id: reproduce-steps
     attributes:
-      label: Steps to reproduce
-      description: Provide an example of the issue.
+      label: Passaggi per riprodurlo
+      description: Descrivi cosa fare per far comparire il problema.
       placeholder: |
-        Example:
-          1. First step
-          2. Second step
-          3. Issue here
+        Esempio:
+          1. Primo passaggio
+          2. Secondo passaggio
+          3. Qui compare il problema
     validations:
       required: true
 
   - type: textarea
     id: expected-behavior
     attributes:
-      label: Expected behavior
-      description: Explain what you should expect to happen.
+      label: Cosa ti aspettavi
+      description: Spiega cosa dovrebbe succedere.
       placeholder: |
-        Example:
-          "This should happen..."
+        Esempio:
+          "Dovrebbe succedere questo..."
     validations:
       required: true
 
   - type: textarea
     id: actual-behavior
     attributes:
-      label: Actual behavior
-      description: Explain what actually happens.
+      label: Cosa succede invece
+      description: Spiega cosa succede davvero.
       placeholder: |
-        Example:
-          "This happened instead..."
+        Esempio:
+          "Invece succede questo..."
     validations:
       required: true
 
   - type: textarea
     id: crash-logs
     attributes:
-      label: Crash logs
+      label: Registro dei crash
       description: |
-        If you're experiencing crashes, if possible, go to the app's **More → Settings → Advanced** page, press **Dump crash logs** and share the crash logs here.
+        Se l'app si chiude da sola, vai in **Altro → Impostazioni → Avanzate**, tocca **Condividi il registro dei crash** e allegalo qui.
       placeholder: |
-        You can upload the crash log file as an attachment, or paste the crash logs in plain text if needed.
+        Puoi allegare il file oppure incollarne il testo.
 
   - type: input
-    id: animetail-version
+    id: anitenshi-version
     attributes:
-      label: Animetail version
-      description: You can find your Animetail version in **More → About**.
+      label: Versione di AniTenshi
+      description: La trovi in **Altro → Info**.
       placeholder: |
-        Example: "0.21.2.0"
+        Esempio: "0.21.2.0"
     validations:
       required: true
 
   - type: input
     id: android-version
     attributes:
-      label: Android version
-      description: You can find this somewhere in your Android settings.
+      label: Versione di Android
+      description: La trovi nelle impostazioni del telefono, di solito in "Info sul telefono".
       placeholder: |
-        Example: "Android 11"
+        Esempio: "Android 14"
     validations:
       required: true
 
   - type: input
     id: device
     attributes:
-      label: Device
-      description: List your device and model.
+      label: Dispositivo
+      description: Marca e modello del telefono o del tablet.
       placeholder: |
-        Example: "Google Pixel 5"
+        Esempio: "Samsung Galaxy S23"
     validations:
       required: true
 
   - type: textarea
     id: other-details
     attributes:
-      label: Other details
+      label: Altri dettagli
       placeholder: |
-        Additional details and attachments.
+        Altre informazioni, screenshot o allegati.
 
   - type: checkboxes
     id: acknowledgements
     attributes:
-      label: Acknowledgements
-      description: Read this carefully, we will close and ignore your issue if you skimmed through this.
+      label: Conferme
+      description: Leggi con attenzione, le segnalazioni incomplete vengono chiuse.
       options:
-        - label: I have searched the existing issues and this is a new ticket, **NOT** a duplicate or related to another open or closed issue.
+        - label: Ho cercato tra le issue esistenti e questa è una segnalazione nuova, **non** un duplicato.
           required: true
-        - label: I have written a short but informative title.
+        - label: Ho scritto un titolo breve ma chiaro.
           required: true
-        - label: If this is an issue with an extension, I should be opening an issue in the extension's repository.
+        - label: Il problema non riguarda una singola estensione (in quel caso va segnalato a chi la mantiene).
           required: true
-        - label: I have updated the app to version **[0.21.2.0](https://github.com/Animetailapp/Animetail/releases/latest)**.
+        - label: Uso l'**[ultima versione di AniTenshi](https://github.com/Borelli99/AniTenshi/releases/latest)**.
           required: true
-        - label: I have filled out all of the requested information in this form, including specific version numbers.
-          required: true
-        - label: I understand that **Aniyomi does not have or fix any extensions**, and I **will not receive help** for any issues related to sources or extensions.
+        - label: Ho compilato tutte le informazioni richieste, compresi i numeri di versione.
           required: true

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AniTenshi: splash screen background, same as the launcher icon -->
+    <color name="splash">#1B1446</color>
+</resources>

@@ -26,7 +26,8 @@ android {
     namespace = "eu.kanade.tachiyomi"
 
     defaultConfig {
-        applicationId = "com.dark.animetailv2"
+        // AniTenshi (fork of Animetail): own package name, so it installs next to the official app.
+        applicationId = "com.borelli99.anitenshi"
 
         versionCode = 144
         versionName = "0.21.2.0"

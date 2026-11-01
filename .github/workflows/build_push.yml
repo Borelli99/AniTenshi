@@ -18,6 +18,8 @@ concurrency:
 jobs:
   build:
     name: Build app
+    # Official release pipeline: needs the upstream signing secrets, so it only runs upstream.
+    if: github.repository == 'Animetailapp/Animetail'
     runs-on: ubuntu-latest
 
     steps:

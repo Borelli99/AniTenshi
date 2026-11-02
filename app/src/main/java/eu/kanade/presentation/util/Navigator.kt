@@ -15,8 +15,6 @@ import cafe.adriel.voyager.core.screen.uniqueScreenKey
 import cafe.adriel.voyager.core.stack.StackEvent
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.ScreenTransitionContent
-import eu.kanade.domain.ui.UiPreferences
-import eu.kanade.domain.ui.model.NavStyle
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,9 +23,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.plus
 import soup.compose.material.motion.animation.materialSharedAxisX
 import soup.compose.material.motion.animation.rememberSlideDistance
-import tachiyomi.presentation.core.util.collectAsState
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
 
 val ScreenModel.ioCoroutineScope: CoroutineScope
     get() = screenModelScope + Dispatchers.IO
@@ -37,8 +32,6 @@ val ScreenModel.ioCoroutineScope: CoroutineScope
  */
 val LocalBackPress: ProvidableCompositionLocal<(() -> Unit)?> = staticCompositionLocalOf { null }
 
-private val uiPreferences: UiPreferences = Injekt.get()
-
 interface Tab : cafe.adriel.voyager.navigator.tab.Tab {
     suspend fun onReselect(navigator: Navigator) {}
 
@@ -46,9 +39,6 @@ interface Tab : cafe.adriel.voyager.navigator.tab.Tab {
     @Composable
     fun isEnabled(): Boolean = true
     // SY <--
-
-    @Composable
-    fun currentNavigationStyle(): NavStyle = uiPreferences.navStyle.collectAsState().value
 }
 
 abstract class Screen : Screen {

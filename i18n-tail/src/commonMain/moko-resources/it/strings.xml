@@ -346,4 +346,20 @@
   <string name="pref_tracking_sync_enhanced">Sincronizza i progressi dai tracker potenziati</string>
   <string name="pref_smart_sync_tracker">Stagione di sincronizzazione intelligente</string>
   <string name="pref_smart_sync_tracker_summary">Salta gli elementi completati e ferma alla voce in corso</string>
+  <!-- AniTenshi: Home, scorciatoie delle librerie e Sfoglia per tipo -->
+  <string name="anitenshi_continue_watching">Continua a guardare</string>
+  <string name="anitenshi_continue_reading">Continua a leggere</string>
+  <string name="anitenshi_latest_anime">Ultimi anime</string>
+  <string name="anitenshi_latest_manga">Ultimi manga</string>
+  <string name="anitenshi_nothing_to_continue_anime">Qui troverai gli anime che inizi a guardare</string>
+  <string name="anitenshi_nothing_to_continue_manga">Qui troverai i manga che inizi a leggere</string>
+  <string name="anitenshi_no_pinned_anime_sources">Fissa una fonte anime con la puntina (Anime › + › Fonti) per vedere qui le sue ultime uscite</string>
+  <string name="anitenshi_no_pinned_manga_sources">Fissa una fonte manga con la puntina (Manga › + › Fonti) per vedere qui le sue ultime uscite</string>
+  <string name="anitenshi_episode_short">Ep. %1$s</string>
+  <string name="anitenshi_chapter_short">Cap. %1$s</string>
+  <string name="anitenshi_browse_anime">Sfoglia anime</string>
+  <string name="anitenshi_browse_manga">Sfoglia manga</string>
+  <string name="anitenshi_updates_anime">Novità anime</string>
+  <string name="anitenshi_updates_manga">Novità manga</string>
+  <string name="anitenshi_add_entries">Aggiungi dalle fonti</string>
 </resources>

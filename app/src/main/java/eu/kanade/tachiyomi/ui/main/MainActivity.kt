@@ -581,15 +581,31 @@ class MainActivity : BaseActivity() {
                 HomeScreen.Tab.AnimeLib(idToOpen)
             }
 
-            Constants.SHORTCUT_UPDATES -> HomeScreen.Tab.Updates
+            Constants.SHORTCUT_UPDATES -> {
+                navigator.popUntilRoot()
+                // Library update notifications say whether they are about anime or manga
+                HomeScreen.Tab.Updates(anime = intent.getBooleanExtra(Constants.UPDATES_ANIME_EXTRA, true))
+            }
 
-            Constants.SHORTCUT_HISTORY -> HomeScreen.Tab.History
+            Constants.SHORTCUT_HISTORY -> {
+                navigator.popUntilRoot()
+                HomeScreen.Tab.History
+            }
 
-            Constants.SHORTCUT_SOURCES -> HomeScreen.Tab.Browse(false)
+            Constants.SHORTCUT_SOURCES -> {
+                navigator.popUntilRoot()
+                HomeScreen.Tab.Browse(toExtensions = false, anime = true)
+            }
 
-            Constants.SHORTCUT_ANIMEEXTENSIONS -> HomeScreen.Tab.Browse(true, true)
+            Constants.SHORTCUT_ANIMEEXTENSIONS -> {
+                navigator.popUntilRoot()
+                HomeScreen.Tab.Browse(toExtensions = true, anime = true)
+            }
 
-            Constants.SHORTCUT_EXTENSIONS -> HomeScreen.Tab.Browse(true)
+            Constants.SHORTCUT_EXTENSIONS -> {
+                navigator.popUntilRoot()
+                HomeScreen.Tab.Browse(toExtensions = true, anime = false)
+            }
 
             Constants.SHORTCUT_DOWNLOADS -> {
                 navigator.popUntilRoot()

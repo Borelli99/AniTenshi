@@ -383,10 +383,12 @@ class MangaLibraryUpdateNotifier(
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             action = Constants.SHORTCUT_UPDATES
+            putExtra(Constants.UPDATES_ANIME_EXTRA, false)
         }
         return PendingIntent.getActivity(
             context,
-            0,
+            // Different request codes, so the anime and manga notifications keep their own extra
+            1,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

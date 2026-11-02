@@ -2,6 +2,7 @@ package eu.kanade.presentation.more
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.VideoSettings
 import androidx.compose.material3.HorizontalDivider
@@ -10,7 +11,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import eu.kanade.domain.ui.model.NavStyle
+import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.more.settings.widget.SwitchPreferenceWidget
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.tachiyomi.R
@@ -40,12 +41,7 @@ fun MoreScreen(
     onDownloadedOnlyChange: (Boolean) -> Unit,
     incognitoMode: Boolean,
     onIncognitoModeChange: (Boolean) -> Unit,
-    // SY -->
-    showNavUpdates: Boolean,
-    showNavHistory: Boolean,
-    // SY <--
-    navStyle: NavStyle,
-    onClickAlt: () -> Unit,
+    onClickHistory: () -> Unit,
     onClickDownloadQueue: () -> Unit,
     onClickCategories: () -> Unit,
     onClickStats: () -> Unit,
@@ -55,10 +51,22 @@ fun MoreScreen(
     onClickPlayerSettings: () -> Unit,
     onClickSettings: () -> Unit,
     onClickAbout: () -> Unit,
+    navigateUp: (() -> Unit)? = null,
 ) {
     val uriHandler = LocalUriHandler.current
 
-    Scaffold { contentPadding ->
+    Scaffold(
+        topBar = { scrollBehavior ->
+            // More is opened from the Home button, so it gets a way back
+            if (navigateUp != null) {
+                AppBar(
+                    title = stringResource(MR.strings.label_more),
+                    navigateUp = navigateUp,
+                    scrollBehavior = scrollBehavior,
+                )
+            }
+        },
+    ) { contentPadding ->
         ScrollbarLazyColumn(contentPadding = contentPadding) {
             item {
                 LogoHeader(
@@ -88,9 +96,9 @@ fun MoreScreen(
 
             item {
                 TextPreferenceWidget(
-                    title = navStyle.moreTab.options.title,
-                    icon = navStyle.moreIcon,
-                    onPreferenceClick = onClickAlt,
+                    title = stringResource(MR.strings.history),
+                    icon = Icons.Outlined.History,
+                    onPreferenceClick = onClickHistory,
                 )
             }
 

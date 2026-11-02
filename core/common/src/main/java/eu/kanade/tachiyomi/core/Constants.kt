@@ -28,6 +28,9 @@ object Constants {
     const val SHORTCUT_ANIME = "eu.kanade.tachiyomi.SHOW_ANIME"
     const val SHORTCUT_MANGA = "eu.kanade.tachiyomi.SHOW_MANGA"
     const val SHORTCUT_UPDATES = "eu.kanade.tachiyomi.SHOW_RECENTLY_UPDATED"
+
+    /** Boolean extra of [SHORTCUT_UPDATES]: true for anime updates, false for manga updates. */
+    const val UPDATES_ANIME_EXTRA = "updates_anime"
     const val SHORTCUT_HISTORY = "eu.kanade.tachiyomi.SHOW_RECENTLY_READ"
     const val SHORTCUT_SOURCES = "eu.kanade.tachiyomi.SHOW_CATALOGUES"
     const val SHORTCUT_ANIMEEXTENSIONS = "eu.kanade.tachiyomi.ANIMEEXTENSIONS"

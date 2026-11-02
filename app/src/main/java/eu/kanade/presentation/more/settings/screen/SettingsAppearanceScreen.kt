@@ -15,7 +15,6 @@ import com.materialkolor.PaletteStyle
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.domain.ui.model.AppTheme
-import eu.kanade.domain.ui.model.NavStyle
 import eu.kanade.domain.ui.model.StartScreen
 import eu.kanade.domain.ui.model.TabletUiMode
 import eu.kanade.domain.ui.model.ThemeMode
@@ -232,18 +231,6 @@ object SettingsAppearanceScreen : SearchableSettings {
                     },
                 ),
                 Preference.PreferenceItem.ListPreference(
-                    preference = uiPreferences.navStyle,
-                    entries = NavStyle.entries
-                        .associateWith { stringResource(it.titleRes) }
-                        .toMap(),
-                    title = stringResource(MR.strings.pref_navigation_style),
-                    onValueChanged = { true },
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.showHomeTab,
-                    title = stringResource(MR.strings.pref_show_home_tab),
-                ),
-                Preference.PreferenceItem.ListPreference(
                     preference = uiPreferences.dateFormat,
                     entries = DateFormats
                         .associateWith {
@@ -381,14 +368,6 @@ object SettingsAppearanceScreen : SearchableSettings {
         return Preference.PreferenceGroup(
             stringResource(TLMR.strings.pref_category_navbar),
             preferenceItems = listOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.showNavUpdates,
-                    title = stringResource(TLMR.strings.pref_hide_updates_button),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.showNavHistory,
-                    title = stringResource(TLMR.strings.pref_hide_history_button),
-                ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = uiPreferences.bottomBarLabels,
                     title = stringResource(TLMR.strings.pref_show_bottom_bar_labels),

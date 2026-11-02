@@ -6,22 +6,15 @@ import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import dev.zacsweers.metrox.viewmodel.metroViewModel
-import eu.kanade.core.preference.asState
-import eu.kanade.domain.ui.UiPreferences
-import eu.kanade.domain.ui.model.NavStyle
 import eu.kanade.presentation.components.TabbedScreen
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.ui.browse.feed.FeedScreenModel
 import eu.kanade.tachiyomi.ui.history.anime.AnimeHistoryViewModel
 import eu.kanade.tachiyomi.ui.history.anime.animeHistoryTab
 import eu.kanade.tachiyomi.ui.history.anime.resumeLastEpisodeSeenEvent
@@ -31,9 +24,11 @@ import eu.kanade.tachiyomi.ui.main.MainActivity
 import kotlinx.collections.immutable.persistentListOf
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
 
+/**
+ * History of anime and manga. In AniTenshi it is not in the bottom bar any more:
+ * it opens from More (and from the history notification shortcut).
+ */
 data object HistoriesTab : Tab {
 
     override val options: TabOptions
@@ -41,13 +36,8 @@ data object HistoriesTab : Tab {
         get() {
             val isSelected = LocalTabNavigator.current.current.key == key
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_history_enter)
-            val index: UShort = when (currentNavigationStyle()) {
-                NavStyle.MOVE_HISTORY_TO_MORE -> 5u
-                NavStyle.MOVE_BROWSE_TO_MORE -> 3u
-                else -> 2u
-            }
             return TabOptions(
-                index = index,
+                index = 5u,
                 title = stringResource(MR.strings.history),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
@@ -57,27 +47,13 @@ data object HistoriesTab : Tab {
         resumeLastEpisodeSeenEvent.send(Unit)
     }
 
-    // SY -->
-    @Composable
-    override fun isEnabled(): Boolean {
-        val scope = rememberCoroutineScope()
-        return remember {
-            Injekt.get<UiPreferences>().showNavHistory.asState(scope)
-        }.value
-    }
-    // SY <--
-
     @Composable
     override fun Content() {
         val context = LocalContext.current
-        val fromMore = currentNavigationStyle() == NavStyle.MOVE_HISTORY_TO_MORE
         // Hoisted for history tab's search bar
         val mangaHistoryViewModel = metroViewModel<MangaHistoryViewModel>()
         val mangaHistoryState by mangaHistoryViewModel.state.collectAsStateWithLifecycle()
         val mangaSearchQuery = mangaHistoryState.searchQuery
-        // KMK -->
-        val feedScreenModel = rememberScreenModel { FeedScreenModel() }
-        // KMK <--
         val animeHistoryViewModel = metroViewModel<AnimeHistoryViewModel>()
         val animeHistoryState by animeHistoryViewModel.state.collectAsStateWithLifecycle()
         val animeSearchQuery = animeHistoryState.searchQuery
@@ -85,8 +61,8 @@ data object HistoriesTab : Tab {
         TabbedScreen(
             titleRes = MR.strings.label_recent_manga,
             tabs = persistentListOf(
-                animeHistoryTab(context, fromMore),
-                mangaHistoryTab(context, fromMore),
+                animeHistoryTab(context, fromMore = true),
+                mangaHistoryTab(context, fromMore = true),
             ),
             mangaSearchQuery = mangaSearchQuery,
             onChangeMangaSearchQuery = mangaHistoryViewModel::updateSearchQuery,
@@ -94,10 +70,6 @@ data object HistoriesTab : Tab {
             onChangeAnimeSearchQuery = animeHistoryViewModel::search,
             animeExtensionsTabIndex = TAB_ANIME,
             mangaExtensionsTabIndex = TAB_MANGA,
-            // KMK -->
-            feedScreenModel = feedScreenModel,
-            // KMK <--
-
         )
 
         LaunchedEffect(Unit) {

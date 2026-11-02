@@ -446,4 +446,20 @@
     <!-- Top align cover -->
     <string name="pref_top_align_cover">Align cover to top</string>
     <string name="pref_top_align_cover_summary">Align the cover image to the top instead of center</string>
+    <!-- AniTenshi: Home, library shortcuts and per-type Browse -->
+    <string name="anitenshi_continue_watching">Continue watching</string>
+    <string name="anitenshi_continue_reading">Continue reading</string>
+    <string name="anitenshi_latest_anime">Latest anime</string>
+    <string name="anitenshi_latest_manga">Latest manga</string>
+    <string name="anitenshi_nothing_to_continue_anime">Anime you start watching will show up here</string>
+    <string name="anitenshi_nothing_to_continue_manga">Manga you start reading will show up here</string>
+    <string name="anitenshi_no_pinned_anime_sources">Pin an anime source (Anime › + › Sources) to see its latest releases here</string>
+    <string name="anitenshi_no_pinned_manga_sources">Pin a manga source (Manga › + › Sources) to see its latest releases here</string>
+    <string name="anitenshi_episode_short">Ep. %1$s</string>
+    <string name="anitenshi_chapter_short">Ch. %1$s</string>
+    <string name="anitenshi_browse_anime">Browse anime</string>
+    <string name="anitenshi_browse_manga">Browse manga</string>
+    <string name="anitenshi_updates_anime">Anime updates</string>
+    <string name="anitenshi_updates_manga">Manga updates</string>
+    <string name="anitenshi_add_entries">Add from sources</string>
 </resources>

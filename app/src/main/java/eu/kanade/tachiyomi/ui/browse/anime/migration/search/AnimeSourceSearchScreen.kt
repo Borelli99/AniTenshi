@@ -157,7 +157,7 @@ data class AnimeSourceSearchScreen(
                     onPopScreen = {
                         scope.launch {
                             navigator.popUntilRoot()
-                            HomeScreen.openTab(HomeScreen.Tab.Browse())
+                            HomeScreen.openTab(HomeScreen.Tab.AnimeLib())
                             navigator.push(AnimeScreen(dialog.newAnime.id))
                         }
                     },

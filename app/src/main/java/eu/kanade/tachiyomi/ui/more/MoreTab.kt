@@ -34,6 +34,7 @@ import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadManager
 import eu.kanade.tachiyomi.ui.category.CategoriesTab
 import eu.kanade.tachiyomi.ui.download.DownloadsTab
+import eu.kanade.tachiyomi.ui.history.HistoriesTab
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.setting.PlayerSettingsScreen
 import eu.kanade.tachiyomi.ui.setting.SettingsScreen
@@ -73,19 +74,19 @@ data object MoreTab : Tab {
         val context = LocalContext.current
         val viewModel = metroViewModel<MoreViewModel>()
         val downloadQueueState by viewModel.downloadQueueState.collectAsState()
-        val navStyle = currentNavigationStyle()
+        // More is pushed from the Home button: give it a back arrow
+        val navigateUp: (() -> Unit)? = if (navigator.canPop) {
+            { navigator.pop() }
+        } else {
+            null
+        }
         MoreScreen(
             downloadQueueStateProvider = { downloadQueueState },
             downloadedOnly = viewModel.downloadedOnly,
             onDownloadedOnlyChange = { viewModel.downloadedOnly = it },
             incognitoMode = viewModel.incognitoMode,
             onIncognitoModeChange = { viewModel.incognitoMode = it },
-            // SY -->
-            showNavUpdates = viewModel.showNavUpdates,
-            showNavHistory = viewModel.showNavHistory,
-            // SY <--
-            navStyle = navStyle,
-            onClickAlt = { navigator.push(navStyle.moreTab) },
+            onClickHistory = { navigator.push(HistoriesTab) },
             onClickDownloadQueue = { navigator.push(DownloadsTab) },
             onClickCategories = { navigator.push(CategoriesTab) },
             onClickStats = { navigator.push(StatsTab) },
@@ -95,6 +96,7 @@ data object MoreTab : Tab {
             onClickPlayerSettings = { navigator.push(PlayerSettingsScreen(mainSettings = false)) },
             onClickSettings = { navigator.push(SettingsScreen()) },
             onClickAbout = { navigator.push(SettingsScreen(SettingsScreen.Destination.About)) },
+            navigateUp = navigateUp,
         )
 
         LaunchedEffect(Unit) {
@@ -121,10 +123,6 @@ class MoreViewModel(
     var downloadedOnly by preferences.downloadedOnly.asState(viewModelScope)
     var incognitoMode by preferences.incognitoMode.asState(viewModelScope)
 
-    // SY -->
-    val showNavUpdates by uiPreferences.showNavUpdates.asState(viewModelScope)
-    val showNavHistory by uiPreferences.showNavHistory.asState(viewModelScope)
-    // SY <--
 
     private var _downloadQueueState: MutableStateFlow<DownloadQueueState> = MutableStateFlow(
         DownloadQueueState.Stopped,

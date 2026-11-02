@@ -6,6 +6,8 @@ import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -28,14 +30,13 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import dev.zacsweers.metrox.viewmodel.metroViewModel
-import eu.kanade.domain.ui.model.NavStyle
 import eu.kanade.presentation.category.components.ChangeCategoryDialog
 import eu.kanade.presentation.entries.components.LibraryBottomActionMenu
 import eu.kanade.presentation.library.DeleteLibraryEntryDialog
+import eu.kanade.presentation.library.components.LibraryAddButton
 import eu.kanade.presentation.library.components.LibraryToolbar
 import eu.kanade.presentation.library.manga.MangaLibraryContent
 import eu.kanade.presentation.library.manga.MangaLibrarySettingsDialog
-import eu.kanade.presentation.more.onboarding.GETTING_STARTED_URL
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.connections.discord.DiscordRPCService
@@ -43,16 +44,19 @@ import eu.kanade.tachiyomi.data.connections.discord.DiscordScreen
 import eu.kanade.tachiyomi.data.library.manga.MangaLibraryUpdateJob
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.ui.browse.manga.source.globalsearch.GlobalMangaSearchScreen
+import eu.kanade.tachiyomi.ui.browse.MangaBrowseScreen
 import eu.kanade.tachiyomi.ui.category.CategoriesTab
 import eu.kanade.tachiyomi.ui.entries.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
+import eu.kanade.tachiyomi.ui.updates.MangaUpdatesScreen
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import mihon.app.di.appGraph
 import mihon.feature.migration.config.MangaMigrationConfigScreen
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.Help
@@ -70,6 +74,7 @@ import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.EmptyScreenAction
 import tachiyomi.presentation.core.screens.LoadingScreen
+import tachiyomi.presentation.core.util.collectAsState
 import tachiyomi.source.local.entries.manga.isLocal
 
 data object MangaLibraryTab : Tab {
@@ -78,13 +83,11 @@ data object MangaLibraryTab : Tab {
     override val options: TabOptions
         @Composable
         get() {
-            val fromMore = currentNavigationStyle() == NavStyle.MOVE_MANGA_TO_MORE
             val title = AYMR.strings.label_manga_library
             val isSelected = LocalTabNavigator.current.current.key == key
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_library_enter)
-            val index: UShort = if (fromMore) 5u else 1u
             return TabOptions(
-                index = index,
+                index = 2u,
                 title = stringResource(title),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
@@ -107,6 +110,7 @@ data object MangaLibraryTab : Tab {
         val state by viewModel.state.collectAsStateWithLifecycle()
 
         val snackbarHostState = remember { SnackbarHostState() }
+        val extensionUpdates by context.appGraph.sourcePreferences.extensionUpdatesCount.collectAsState()
 
         val onClickRefresh: (Category?) -> Boolean = { category ->
             // SY -->
@@ -132,20 +136,6 @@ data object MangaLibraryTab : Tab {
                 snackbarHostState.showSnackbar(context.stringResource(msgRes))
             }
             started
-        }
-
-        val fromMore = currentNavigationStyle() == NavStyle.MOVE_MANGA_TO_MORE
-
-        val navigateUp: (() -> Unit)? = if (fromMore) {
-            {
-                if (navigator.lastItem == HomeScreen) {
-                    scope.launch { HomeScreen.openTab(HomeScreen.Tab.AnimeLib()) }
-                } else {
-                    navigator.pop()
-                }
-            }
-        } else {
-            null
         }
 
         val defaultTitle = stringResource(AYMR.strings.label_manga_library)
@@ -198,7 +188,7 @@ data object MangaLibraryTab : Tab {
                     searchQuery = state.searchQuery,
                     onSearchQueryChange = viewModel::search,
                     scrollBehavior = scrollBehavior.takeIf { !tabVisible }, // For scroll overlay when no tab
-                    navigateUp = navigateUp,
+                    onClickUpdates = { navigator.push(MangaUpdatesScreen()) },
                 )
             },
             bottomBar = {
@@ -220,21 +210,27 @@ data object MangaLibraryTab : Tab {
                     isManga = true,
                 )
             },
+            floatingActionButton = {
+                LibraryAddButton(
+                    visible = !state.selectionMode,
+                    extensionUpdates = extensionUpdates,
+                    onClick = { navigator.push(MangaBrowseScreen()) },
+                )
+            },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         ) { contentPadding ->
             when {
                 state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
 
                 state.searchQuery.isNullOrEmpty() && !state.hasActiveFilters && state.isLibraryEmpty -> {
-                    val handler = LocalUriHandler.current
                     EmptyScreen(
                         stringRes = MR.strings.information_empty_library,
                         modifier = Modifier.padding(contentPadding),
                         actions = listOf(
                             EmptyScreenAction(
-                                stringRes = MR.strings.getting_started_guide,
-                                icon = MaterialSymbols.AutoMirroredRounded.Help,
-                                onClick = { handler.openUri(GETTING_STARTED_URL) },
+                                stringRes = TLMR.strings.anitenshi_add_entries,
+                                icon = Icons.Outlined.Add,
+                                onClick = { navigator.push(MangaBrowseScreen()) },
                             ),
                         ),
                     )

@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -51,7 +50,8 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import eu.kanade.core.preference.asState
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.isTabletUi
-import eu.kanade.tachiyomi.ui.browse.BrowseTab
+import eu.kanade.tachiyomi.ui.browse.AnimeBrowseScreen
+import eu.kanade.tachiyomi.ui.browse.MangaBrowseScreen
 import eu.kanade.tachiyomi.ui.download.DownloadsTab
 import eu.kanade.tachiyomi.ui.entries.anime.AnimeScreen
 import eu.kanade.tachiyomi.ui.entries.manga.MangaScreen
@@ -61,10 +61,10 @@ import eu.kanade.tachiyomi.ui.library.manga.MangaLibraryTab
 import eu.kanade.tachiyomi.ui.more.MoreTab
 import eu.kanade.tachiyomi.ui.player.CastManager
 import eu.kanade.tachiyomi.ui.player.cast.CastMiniController
-import eu.kanade.tachiyomi.ui.updates.UpdatesTab
+import eu.kanade.tachiyomi.ui.updates.AnimeUpdatesScreen
+import eu.kanade.tachiyomi.ui.updates.MangaUpdatesScreen
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
@@ -88,7 +88,6 @@ object HomeScreen : Screen() {
     override fun Content() {
         val context = LocalContext.current
         val uiPreferences = context.appGraph.uiPreferences
-        val navStyle by uiPreferences.navStyle.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         // SY -->
         val scope = rememberCoroutineScope()
@@ -105,17 +104,11 @@ object HomeScreen : Screen() {
             castManager.reconnect()
         }
 
-        val showHomeTab by uiPreferences.showHomeTab.collectAsState()
+        // AniTenshi: the bottom bar is always Home, Anime and Manga.
+        // Everything else opens from Home (More button) or from the libraries (+ and bell).
+        val tabs = remember { listOf<eu.kanade.presentation.util.Tab>(HomeTab, AnimeLibraryTab, MangaLibraryTab) }
         val startScreenPref by uiPreferences.startScreen.collectAsState()
-
-        val effectiveStartTab = remember(showHomeTab, startScreenPref) {
-            val configuredTab = startScreenPref.tab
-            if (configuredTab == HomeTab && !showHomeTab) {
-                AnimeLibraryTab
-            } else {
-                configuredTab
-            }
-        }
+        val effectiveStartTab = remember(startScreenPref) { startScreenPref.tab }
 
         TabNavigator(
             tab = effectiveStartTab,
@@ -126,11 +119,9 @@ object HomeScreen : Screen() {
                 Row(modifier = Modifier.fillMaxSize()) {
                     if (isTabletUi()) {
                         NavigationRail {
-                            navStyle.tabs
-                                .fastFilter { it.isEnabled() }
-                                .fastForEach {
-                                    NavigationRailItem(it, alwaysShowLabel)
-                                }
+                            tabs.fastForEach {
+                                NavigationRailItem(it, alwaysShowLabel)
+                            }
                         }
                     }
                     Scaffold(
@@ -157,16 +148,14 @@ object HomeScreen : Screen() {
                                     }
 
                                     AnimatedVisibility(
-                                        visible = bottomNavVisible && tabNavigator.current != navStyle.moreTab,
+                                        visible = bottomNavVisible,
                                         enter = expandVertically(),
                                         exit = shrinkVertically(),
                                     ) {
                                         NavigationBar {
-                                            navStyle.tabs
-                                                .fastFilter { it.isEnabled() }
-                                                .fastForEach {
-                                                    NavigationBarItem(it, alwaysShowLabel)
-                                                }
+                                            tabs.fastForEach {
+                                                NavigationBarItem(it, alwaysShowLabel)
+                                            }
                                         }
                                     }
                                 }
@@ -200,15 +189,10 @@ object HomeScreen : Screen() {
             }
 
             val goToStartScreen = {
-                if (effectiveStartTab != navStyle.moreTab) {
-                    tabNavigator.current = effectiveStartTab
-                } else {
-                    tabNavigator.current = if (showHomeTab) HomeTab else AnimeLibraryTab
-                }
+                tabNavigator.current = effectiveStartTab
             }
             BackHandler(
-                enabled = (tabNavigator.current == navStyle.moreTab || tabNavigator.current != effectiveStartTab) &&
-                    (tabNavigator.current != AnimeLibraryTab || effectiveStartTab != navStyle.moreTab),
+                enabled = tabNavigator.current != effectiveStartTab,
                 onBack = goToStartScreen,
             )
 
@@ -226,38 +210,29 @@ object HomeScreen : Screen() {
                 launch {
                     openTabEvent.receiveAsFlow().collectLatest {
                         tabNavigator.current = when (it) {
-                            is Tab.Home -> if (showHomeTab) HomeTab else AnimeLibraryTab
-
+                            is Tab.Home -> HomeTab
                             is Tab.AnimeLib -> AnimeLibraryTab
-
                             is Tab.Library -> MangaLibraryTab
-
-                            is Tab.Updates -> UpdatesTab
-
-                            is Tab.History -> HistoriesTab
-
-                            is Tab.Browse -> {
-                                if (it.toExtensions) {
-                                    if (!it.anime) {
-                                        BrowseTab.showExtension()
-                                    } else {
-                                        BrowseTab.showAnimeExtension()
-                                    }
-                                }
-                                BrowseTab
-                            }
-
-                            is Tab.More -> MoreTab
+                            is Tab.Updates -> if (it.anime) AnimeLibraryTab else MangaLibraryTab
+                            is Tab.History -> HomeTab
+                            is Tab.Browse -> if (it.anime) AnimeLibraryTab else MangaLibraryTab
+                            is Tab.More -> HomeTab
                         }
 
-                        if (it is Tab.AnimeLib && it.animeIdToOpen != null) {
-                            navigator.push(AnimeScreen(it.animeIdToOpen))
-                        }
-                        if (it is Tab.Library && it.mangaIdToOpen != null) {
-                            navigator.push(MangaScreen(it.mangaIdToOpen))
-                        }
-                        if (it is Tab.More && it.toDownloads) {
-                            navigator.push(DownloadsTab)
+                        when (it) {
+                            is Tab.AnimeLib -> it.animeIdToOpen?.let { id -> navigator.push(AnimeScreen(id)) }
+                            is Tab.Library -> it.mangaIdToOpen?.let { id -> navigator.push(MangaScreen(id)) }
+                            is Tab.Updates -> navigator.push(if (it.anime) AnimeUpdatesScreen() else MangaUpdatesScreen())
+                            is Tab.History -> navigator.push(HistoriesTab)
+                            is Tab.Browse -> navigator.push(
+                                if (it.anime) {
+                                    AnimeBrowseScreen(toExtensions = it.toExtensions)
+                                } else {
+                                    MangaBrowseScreen(toExtensions = it.toExtensions)
+                                },
+                            )
+                            is Tab.More -> navigator.push(if (it.toDownloads) DownloadsTab else MoreTab)
+                            is Tab.Home -> {}
                         }
                     }
                 }
@@ -369,52 +344,27 @@ object HomeScreen : Screen() {
         val context = LocalContext.current
         BadgedBox(
             badge = {
-                when {
-                    UpdatesTab::class.isInstance(tab) -> {
-                        val count by produceState(initialValue = 0) {
-                            val pref = context.appGraph.libraryPreferences
-                            combine(
-                                pref.newAnimeUpdatesCount.changes(),
-                                pref.newMangaUpdatesCount.changes(),
-                            ) { countAnime, countManga -> countAnime + countManga }
-                                .collectLatest { value = if (pref.newShowUpdatesCount.get()) it else 0 }
-                        }
-                        if (count > 0) {
-                            Badge {
-                                val desc = pluralStringResource(
-                                    MR.plurals.notification_chapters_generic,
-                                    count = count,
-                                    count,
-                                )
-                                Text(
-                                    text = count.toString(),
-                                    modifier = Modifier.semantics { contentDescription = desc },
-                                )
-                            }
-                        }
+                // New episodes / chapters of the library: shown on the library they belong to
+                val isAnimeLibrary = AnimeLibraryTab::class.isInstance(tab)
+                val isMangaLibrary = MangaLibraryTab::class.isInstance(tab)
+                if (isAnimeLibrary || isMangaLibrary) {
+                    val count by produceState(initialValue = 0, isAnimeLibrary) {
+                        val pref = context.appGraph.libraryPreferences
+                        val counter = if (isAnimeLibrary) pref.newAnimeUpdatesCount else pref.newMangaUpdatesCount
+                        counter.changes()
+                            .collectLatest { value = if (pref.newShowUpdatesCount.get()) it else 0 }
                     }
-
-                    BrowseTab::class.isInstance(tab) -> {
-                        val count by produceState(initialValue = 0) {
-                            val pref = context.appGraph.sourcePreferences
-                            combine(
-                                pref.extensionUpdatesCount.changes(),
-                                pref.animeExtensionUpdatesCount.changes(),
-                            ) { extCount, animeExtCount -> extCount + animeExtCount }
-                                .collectLatest { value = it }
-                        }
-                        if (count > 0) {
-                            Badge {
-                                val desc = pluralStringResource(
-                                    MR.plurals.update_check_notification_ext_updates,
-                                    count = count,
-                                    count,
-                                )
-                                Text(
-                                    text = count.toString(),
-                                    modifier = Modifier.semantics { contentDescription = desc },
-                                )
-                            }
+                    if (count > 0) {
+                        Badge {
+                            val desc = pluralStringResource(
+                                MR.plurals.notification_chapters_generic,
+                                count = count,
+                                count,
+                            )
+                            Text(
+                                text = count.toString(),
+                                modifier = Modifier.semantics { contentDescription = desc },
+                            )
                         }
                     }
                 }
@@ -445,7 +395,7 @@ object HomeScreen : Screen() {
         data object Home : Tab
         data class AnimeLib(val animeIdToOpen: Long? = null) : Tab
         data class Library(val mangaIdToOpen: Long? = null) : Tab
-        data object Updates : Tab
+        data class Updates(val anime: Boolean) : Tab
         data object History : Tab
         data class Browse(val toExtensions: Boolean = false, val anime: Boolean = false) : Tab
         data class More(val toDownloads: Boolean) : Tab

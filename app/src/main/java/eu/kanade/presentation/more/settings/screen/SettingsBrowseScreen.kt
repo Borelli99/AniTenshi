@@ -44,7 +44,6 @@ object SettingsBrowseScreen : SearchableSettings {
         // SY -->
         val scope = rememberCoroutineScope()
         val uiPreferences = remember { context.appGraph.uiPreferences }
-        val hideFeedTab by remember { uiPreferences.hideFeedTab.asState(scope) }
         // SY <--
 
         return listOf(
@@ -78,27 +77,6 @@ object SettingsBrowseScreen : SearchableSettings {
                         title = stringResource(TLMR.strings.pref_source_navigation),
                         subtitle = stringResource(TLMR.strings.pref_source_navigation_summery),
                     ),
-                ),
-            ),
-            Preference.PreferenceGroup(
-                title = stringResource(TLMR.strings.feed),
-                preferenceItems = listOf(
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = uiPreferences.hideFeedTab,
-                        title = stringResource(TLMR.strings.pref_hide_feed),
-                    ),
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = uiPreferences.feedTabInFront,
-                        title = stringResource(TLMR.strings.pref_feed_position),
-                        subtitle = stringResource(TLMR.strings.pref_feed_position_summery),
-                        enabled = hideFeedTab.not(),
-                    ),
-                    // KMK -->
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = sourcePreferences.hideInLibraryFeedItems,
-                        title = stringResource(MR.strings.pref_hide_in_library_items),
-                    ),
-                    // KMK <--
                 ),
             ),
             // SY <--

@@ -2,6 +2,8 @@ package eu.kanade.presentation.library.components
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -42,6 +44,7 @@ fun LibraryToolbar(
     onSearchQueryChange: (String?) -> Unit,
     scrollBehavior: TopAppBarScrollBehavior?,
     navigateUp: (() -> Unit)? = null,
+    onClickUpdates: (() -> Unit)? = null,
 ) = when {
     selectedCount > 0 -> LibrarySelectionToolbar(
         selectedCount = selectedCount,
@@ -62,6 +65,7 @@ fun LibraryToolbar(
         onClickSyncNow = onClickSyncNow,
         scrollBehavior = scrollBehavior,
         navigateUp = navigateUp,
+        onClickUpdates = onClickUpdates,
     )
 }
 
@@ -78,6 +82,7 @@ private fun LibraryRegularToolbar(
     onClickSyncNow: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior?,
     navigateUp: (() -> Unit)?,
+    onClickUpdates: (() -> Unit)?,
 ) {
     val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
     SearchToolbar(
@@ -103,7 +108,15 @@ private fun LibraryRegularToolbar(
         actions = {
             val filterTint = if (hasFilters) MaterialTheme.colorScheme.active else LocalContentColor.current
             AppBarActions(
-                listOf(
+                listOfNotNull(
+                    // AniTenshi: new episodes / chapters of this library
+                    onClickUpdates?.let {
+                        AppBar.Action(
+                            title = stringResource(MR.strings.label_recent_updates),
+                            icon = Icons.Outlined.Notifications,
+                            onClick = it,
+                        )
+                    },
                     AppBar.Action(
                         title = stringResource(MR.strings.action_filter),
                         icon = MaterialSymbols.Rounded.FilterList,

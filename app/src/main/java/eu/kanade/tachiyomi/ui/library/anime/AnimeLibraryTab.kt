@@ -7,6 +7,7 @@ import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHost
@@ -35,8 +36,8 @@ import eu.kanade.presentation.entries.components.LibraryBottomActionMenu
 import eu.kanade.presentation.library.DeleteLibraryEntryDialog
 import eu.kanade.presentation.library.anime.AnimeLibraryContent
 import eu.kanade.presentation.library.anime.AnimeLibrarySettingsDialog
+import eu.kanade.presentation.library.components.LibraryAddButton
 import eu.kanade.presentation.library.components.LibraryToolbar
-import eu.kanade.presentation.more.onboarding.GETTING_STARTED_URL
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.connections.discord.DiscordRPCService
@@ -44,11 +45,13 @@ import eu.kanade.tachiyomi.data.connections.discord.DiscordScreen
 import eu.kanade.tachiyomi.data.library.anime.AnimeLibraryUpdateJob
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.ui.browse.anime.source.globalsearch.GlobalAnimeSearchScreen
+import eu.kanade.tachiyomi.ui.browse.AnimeBrowseScreen
 import eu.kanade.tachiyomi.ui.category.CategoriesTab
 import eu.kanade.tachiyomi.ui.entries.anime.AnimeScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
+import eu.kanade.tachiyomi.ui.updates.AnimeUpdatesScreen
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.channels.Channel
@@ -72,6 +75,7 @@ import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.EmptyScreenAction
 import tachiyomi.presentation.core.screens.LoadingScreen
+import tachiyomi.presentation.core.util.collectAsState
 import tachiyomi.source.local.entries.anime.isLocal
 import uy.kohesive.injekt.injectLazy
 
@@ -87,7 +91,7 @@ data object AnimeLibraryTab : Tab {
                 R.drawable.anim_animelibrary_leave,
             )
             return TabOptions(
-                index = 0u,
+                index = 1u,
                 title = stringResource(title),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
@@ -110,6 +114,7 @@ data object AnimeLibraryTab : Tab {
         val state by viewModel.state.collectAsStateWithLifecycle()
 
         val snackbarHostState = remember { SnackbarHostState() }
+        val extensionUpdates by context.appGraph.sourcePreferences.animeExtensionUpdatesCount.collectAsState()
 
         val onClickRefresh: (Category?) -> Boolean = { category ->
             // SY -->
@@ -198,6 +203,7 @@ data object AnimeLibraryTab : Tab {
                     searchQuery = state.searchQuery,
                     onSearchQueryChange = viewModel::search,
                     scrollBehavior = scrollBehavior.takeIf { !tabVisible }, // For scroll overlay when no tab
+                    onClickUpdates = { navigator.push(AnimeUpdatesScreen()) },
                 )
             },
             bottomBar = {
@@ -217,21 +223,27 @@ data object AnimeLibraryTab : Tab {
                     isManga = false,
                 )
             },
+            floatingActionButton = {
+                LibraryAddButton(
+                    visible = !state.selectionMode,
+                    extensionUpdates = extensionUpdates,
+                    onClick = { navigator.push(AnimeBrowseScreen()) },
+                )
+            },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         ) { contentPadding ->
             when {
                 state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
 
                 state.searchQuery.isNullOrEmpty() && !state.hasActiveFilters && state.isLibraryEmpty -> {
-                    val handler = LocalUriHandler.current
                     EmptyScreen(
                         stringRes = MR.strings.information_empty_library,
                         modifier = Modifier.padding(contentPadding),
                         actions = persistentListOf(
                             EmptyScreenAction(
-                                stringRes = MR.strings.getting_started_guide,
-                                icon = Icons.AutoMirrored.Outlined.HelpOutline,
-                                onClick = { handler.openUri(GETTING_STARTED_URL) },
+                                stringRes = TLMR.strings.anitenshi_add_entries,
+                                icon = Icons.Outlined.Add,
+                                onClick = { navigator.push(AnimeBrowseScreen()) },
                             ),
                         ),
                     )

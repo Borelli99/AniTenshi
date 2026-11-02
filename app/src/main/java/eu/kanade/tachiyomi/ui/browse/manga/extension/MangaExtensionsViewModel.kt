@@ -53,7 +53,7 @@ class MangaExtensionsViewModel(
 
     private val currentDownloads = MutableStateFlow<Map<String, InstallStep>>(hashMapOf())
 
-    // Public so BrowseTab's search bar can observe it without subscribing to the whole state.
+    // Public so the Browse screen's search bar can observe it without subscribing to the whole state.
     val searchQuery: StateFlow<String?>
         field = MutableStateFlow(null)
 

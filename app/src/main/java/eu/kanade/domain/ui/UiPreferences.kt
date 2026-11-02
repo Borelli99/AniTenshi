@@ -60,6 +60,12 @@ class UiPreferences(
 
     val startScreen: Preference<StartScreen> = preferenceStore.getEnum("start_screen", StartScreen.HOME)
 
+    // AniTenshi: ids of the library titles hidden from Home's "Continue watching" and "Continue reading"
+    val homeHiddenContinueAnime: Preference<Set<String>> =
+        preferenceStore.getStringSet("anitenshi_home_hidden_continue_anime", emptySet())
+    val homeHiddenContinueManga: Preference<Set<String>> =
+        preferenceStore.getStringSet("anitenshi_home_hidden_continue_manga", emptySet())
+
     // SY -->
     val bottomBarLabels: Preference<Boolean> = preferenceStore.getBoolean("pref_show_bottom_bar_labels", true)
     val expandFilters: Preference<Boolean> = preferenceStore.getBoolean("eh_expand_filters", false)

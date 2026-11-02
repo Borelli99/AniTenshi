@@ -351,8 +351,8 @@
   <string name="anitenshi_continue_reading">Continua a leggere</string>
   <string name="anitenshi_latest_anime">Ultimi anime</string>
   <string name="anitenshi_latest_manga">Ultimi manga</string>
-  <string name="anitenshi_nothing_to_continue_anime">Qui troverai gli anime che inizi a guardare</string>
-  <string name="anitenshi_nothing_to_continue_manga">Qui troverai i manga che inizi a leggere</string>
+  <string name="anitenshi_nothing_to_continue_anime">Qui troverai gli anime della libreria con episodi ancora da vedere</string>
+  <string name="anitenshi_nothing_to_continue_manga">Qui troverai i manga della libreria con capitoli ancora da leggere</string>
   <string name="anitenshi_no_pinned_anime_sources">Fissa una fonte anime con la puntina (Anime › + › Fonti) per vedere qui le sue ultime uscite</string>
   <string name="anitenshi_no_pinned_manga_sources">Fissa una fonte manga con la puntina (Manga › + › Fonti) per vedere qui le sue ultime uscite</string>
   <string name="anitenshi_episode_short">Ep. %1$s</string>
@@ -362,4 +362,11 @@
   <string name="anitenshi_updates_anime">Novità anime</string>
   <string name="anitenshi_updates_manga">Novità manga</string>
   <string name="anitenshi_add_entries">Aggiungi dalle fonti</string>
+  <string name="anitenshi_continue_open_entry">Apri la scheda</string>
+  <string name="anitenshi_continue_hide_anime">Nascondi da Continua a guardare</string>
+  <string name="anitenshi_continue_hide_manga">Nascondi da Continua a leggere</string>
+  <string name="anitenshi_continue_hidden_count">Nascosti (%1$d)</string>
+  <string name="anitenshi_continue_hidden_anime_title">Nascosti da Continua a guardare</string>
+  <string name="anitenshi_continue_hidden_manga_title">Nascosti da Continua a leggere</string>
+  <string name="anitenshi_continue_show_again">Mostra di nuovo</string>
 </resources>

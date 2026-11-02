@@ -14,6 +14,7 @@ import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import eu.kanade.domain.entries.anime.model.toDomainAnime
 import eu.kanade.domain.entries.manga.model.toDomainManga
 import eu.kanade.domain.source.service.SourcePreferences
+import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.animesource.AnimeCatalogueSource
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.util.system.LocaleHelper
@@ -32,22 +33,27 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+import kotlin.math.max
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
+import tachiyomi.core.common.preference.getAndSet
+import tachiyomi.domain.entries.EntryCover
 import tachiyomi.domain.entries.anime.interactor.GetAnime
+import tachiyomi.domain.entries.anime.interactor.GetLibraryAnime
 import tachiyomi.domain.entries.anime.interactor.NetworkToLocalAnime
 import tachiyomi.domain.entries.anime.model.Anime
+import tachiyomi.domain.entries.anime.model.asAnimeCover
+import tachiyomi.domain.entries.manga.interactor.GetLibraryManga
 import tachiyomi.domain.entries.manga.interactor.GetManga
 import tachiyomi.domain.entries.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.entries.manga.model.Manga
-import tachiyomi.domain.history.anime.interactor.GetAnimeHistory
+import tachiyomi.domain.entries.manga.model.asMangaCover
 import tachiyomi.domain.history.anime.interactor.GetNextEpisodes
-import tachiyomi.domain.history.anime.model.AnimeHistoryWithRelations
-import tachiyomi.domain.history.manga.interactor.GetMangaHistory
 import tachiyomi.domain.history.manga.interactor.GetNextChapters
-import tachiyomi.domain.history.manga.model.MangaHistoryWithRelations
 import tachiyomi.domain.items.chapter.model.Chapter
 import tachiyomi.domain.items.episode.model.Episode
+import tachiyomi.domain.library.anime.LibraryAnime
+import tachiyomi.domain.library.manga.LibraryManga
 import tachiyomi.domain.source.anime.service.AnimeSourceManager
 import tachiyomi.domain.source.manga.service.MangaSourceManager
 
@@ -59,8 +65,8 @@ import tachiyomi.domain.source.manga.service.MangaSourceManager
 @ViewModelKey
 @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())
 class HomeViewModel(
-    private val getAnimeHistory: GetAnimeHistory,
-    private val getMangaHistory: GetMangaHistory,
+    private val getLibraryAnime: GetLibraryAnime,
+    private val getLibraryManga: GetLibraryManga,
     private val getNextEpisodes: GetNextEpisodes,
     private val getNextChapters: GetNextChapters,
     private val getAnime: GetAnime,
@@ -70,6 +76,7 @@ class HomeViewModel(
     private val animeSourceManager: AnimeSourceManager,
     private val mangaSourceManager: MangaSourceManager,
     private val sourcePreferences: SourcePreferences,
+    private val uiPreferences: UiPreferences,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeState())
@@ -79,15 +86,51 @@ class HomeViewModel(
     private val refreshTrigger = MutableStateFlow(0)
 
     init {
+        // Continue watching: library anime with episodes left, unless hidden by the user.
+        // An anime leaves the row when everything is watched and comes back with a new episode.
         viewModelScope.launch {
-            getAnimeHistory.subscribe("")
-                .map { history -> history.distinctBy { it.animeId }.take(MAX_CONTINUE_ITEMS) }
-                .collectLatest { list -> _state.update { it.copy(continueAnime = list) } }
+            combine(
+                getLibraryAnime.subscribe(),
+                uiPreferences.homeHiddenContinueAnime.changes(),
+            ) { library, hidden ->
+                // The library has one row per category: keep one per anime
+                val entries = library.distinctBy { it.id }
+                val visible = entries
+                    .filter { it.unseenCount > 0 && it.id.toString() !in hidden }
+                    .sortedByDescending { max(it.lastSeen, it.episodeFetchedAt) }
+                    .take(MAX_CONTINUE_ITEMS)
+                    .map { it.toContinueEntry() }
+                val hiddenEntries = entries
+                    .filter { it.id.toString() in hidden }
+                    .sortedBy { it.anime.title.lowercase() }
+                    .map { it.toContinueEntry() }
+                visible to hiddenEntries
+            }
+                .collectLatest { (visible, hiddenEntries) ->
+                    _state.update { it.copy(continueAnime = visible, hiddenAnime = hiddenEntries) }
+                }
         }
+        // Continue reading: the same for manga and unread chapters
         viewModelScope.launch {
-            getMangaHistory.subscribe("")
-                .map { history -> history.distinctBy { it.mangaId }.take(MAX_CONTINUE_ITEMS) }
-                .collectLatest { list -> _state.update { it.copy(continueManga = list) } }
+            combine(
+                getLibraryManga.subscribe(),
+                uiPreferences.homeHiddenContinueManga.changes(),
+            ) { library, hidden ->
+                val entries = library.distinctBy { it.id }
+                val visible = entries
+                    .filter { it.unreadCount > 0 && it.id.toString() !in hidden }
+                    .sortedByDescending { max(it.lastRead, it.chapterFetchedAt) }
+                    .take(MAX_CONTINUE_ITEMS)
+                    .map { it.toContinueEntry() }
+                val hiddenEntries = entries
+                    .filter { it.id.toString() in hidden }
+                    .sortedBy { it.manga.title.lowercase() }
+                    .map { it.toContinueEntry() }
+                visible to hiddenEntries
+            }
+                .collectLatest { (visible, hiddenEntries) ->
+                    _state.update { it.copy(continueManga = visible, hiddenManga = hiddenEntries) }
+                }
         }
         observeLatestAnime()
         observeLatestManga()
@@ -244,25 +287,59 @@ class HomeViewModel(
 
     suspend fun localManga(manga: Manga): Manga = withIOContext { networkToLocalManga.getLocal(manga) }
 
-    /** The episode to play to continue an anime, or null when there is nothing left. */
-    suspend fun nextEpisode(history: AnimeHistoryWithRelations): Episode? = withIOContext {
-        getNextEpisodes.await(history.animeId, history.episodeId, onlyUnseen = false).firstOrNull()
+    /** The first episode left to watch, or null when there is nothing left. */
+    suspend fun nextEpisode(animeId: Long): Episode? = withIOContext {
+        getNextEpisodes.await(animeId, onlyUnseen = true).firstOrNull()
     }
 
-    /** The chapter to open to continue a manga, or null when there is nothing left. */
-    suspend fun nextChapter(history: MangaHistoryWithRelations): Chapter? = withIOContext {
-        getNextChapters.await(history.mangaId, history.chapterId, onlyUnread = false).firstOrNull()
+    /** The first chapter left to read, or null when there is nothing left. */
+    suspend fun nextChapter(mangaId: Long): Chapter? = withIOContext {
+        getNextChapters.await(mangaId, onlyUnread = true).firstOrNull()
     }
+
+    fun hideAnime(animeId: Long) {
+        uiPreferences.homeHiddenContinueAnime.getAndSet { it + animeId.toString() }
+    }
+
+    fun showAnime(animeId: Long) {
+        uiPreferences.homeHiddenContinueAnime.getAndSet { it - animeId.toString() }
+    }
+
+    fun hideManga(mangaId: Long) {
+        uiPreferences.homeHiddenContinueManga.getAndSet { it + mangaId.toString() }
+    }
+
+    fun showManga(mangaId: Long) {
+        uiPreferences.homeHiddenContinueManga.getAndSet { it - mangaId.toString() }
+    }
+
+    private fun LibraryAnime.toContinueEntry() = ContinueEntry(
+        id = id,
+        title = anime.title,
+        cover = anime.asAnimeCover(),
+        remaining = unseenCount,
+    )
+
+    private fun LibraryManga.toContinueEntry() = ContinueEntry(
+        id = id,
+        title = manga.title,
+        cover = manga.asMangaCover(),
+        remaining = unreadCount,
+    )
 
     companion object {
-        private const val MAX_CONTINUE_ITEMS = 20
+        private const val MAX_CONTINUE_ITEMS = 30
     }
 }
 
 @Immutable
 data class HomeState(
-    val continueAnime: List<AnimeHistoryWithRelations> = emptyList(),
-    val continueManga: List<MangaHistoryWithRelations> = emptyList(),
+    val continueAnime: List<ContinueEntry> = emptyList(),
+    val continueManga: List<ContinueEntry> = emptyList(),
+    /** Library anime the user hid from "Continue watching". */
+    val hiddenAnime: List<ContinueEntry> = emptyList(),
+    /** Library manga the user hid from "Continue reading". */
+    val hiddenManga: List<ContinueEntry> = emptyList(),
     /** One row per pinned anime source; null until the sources are loaded. */
     val latestAnime: List<LatestRow<Anime>>? = null,
     /** One row per pinned manga source; null until the sources are loaded. */
@@ -278,4 +355,14 @@ data class LatestRow<T>(
     val supportsLatest: Boolean,
     val items: List<T>? = null,
     val error: String? = null,
+)
+
+/** A library title in "Continue watching" or "Continue reading". */
+@Immutable
+data class ContinueEntry(
+    val id: Long,
+    val title: String,
+    val cover: EntryCover,
+    /** Episodes left to watch or chapters left to read. */
+    val remaining: Long,
 )

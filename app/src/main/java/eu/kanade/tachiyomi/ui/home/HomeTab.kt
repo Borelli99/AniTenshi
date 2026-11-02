@@ -60,29 +60,35 @@ data object HomeTab : Tab {
             snackbarHostState = snackbarHostState,
             getAnime = { viewModel.anime(it) },
             getManga = { viewModel.manga(it) },
-            onClickContinueAnime = { history ->
+            onClickContinueAnime = { entry ->
+                // Plays the first episode left; without one, opens the anime page
                 scope.launch {
-                    val episode = viewModel.nextEpisode(history)
+                    val episode = viewModel.nextEpisode(entry.id)
                     if (episode != null) {
                         val extPlayer = context.appGraph.playerPreferences.alwaysUseExternalPlayer().get()
                         MainActivity.startPlayerActivity(context, episode.animeId, episode.id, extPlayer)
                     } else {
-                        navigator.push(AnimeScreen(history.animeId))
+                        navigator.push(AnimeScreen(entry.id))
                     }
                 }
             },
-            onLongClickContinueAnime = { navigator.push(AnimeScreen(it.animeId)) },
-            onClickContinueManga = { history ->
+            onOpenAnime = { navigator.push(AnimeScreen(it)) },
+            onHideAnime = viewModel::hideAnime,
+            onShowAnime = viewModel::showAnime,
+            onClickContinueManga = { entry ->
+                // Opens the first chapter left; without one, opens the manga page
                 scope.launch {
-                    val chapter = viewModel.nextChapter(history)
+                    val chapter = viewModel.nextChapter(entry.id)
                     if (chapter != null) {
                         context.startActivity(ReaderActivity.newIntent(context, chapter.mangaId, chapter.id))
                     } else {
-                        navigator.push(MangaScreen(history.mangaId))
+                        navigator.push(MangaScreen(entry.id))
                     }
                 }
             },
-            onLongClickContinueManga = { navigator.push(MangaScreen(it.mangaId)) },
+            onOpenManga = { navigator.push(MangaScreen(it)) },
+            onHideManga = viewModel::hideManga,
+            onShowManga = viewModel::showManga,
             onClickAnimeSource = { row ->
                 navigator.push(
                     BrowseAnimeSourceScreen(

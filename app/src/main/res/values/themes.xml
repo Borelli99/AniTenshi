@@ -735,7 +735,7 @@
     <style name="Theme.Tachiyomi.SplashScreen" parent="Theme.SplashScreen">
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_tachi_splash</item>
         <!-- AniTenshi: length of the halo animation on Android 12 (later versions ignore it) -->
-        <item name="windowSplashScreenAnimationDuration">800</item>
+        <item name="windowSplashScreenAnimationDuration">1300</item>
         <item name="windowSplashScreenBackground">@color/splash</item>
         <item name="postSplashScreenTheme">@style/Theme.Tachiyomi</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

@@ -818,7 +818,7 @@ class MainActivity : BaseActivity() {
 }
 
 // Splash screen
-private const val SPLASH_MIN_DURATION = 800 // ms, AniTenshi: long enough for the halo to land
+private const val SPLASH_MIN_DURATION = 1600 // ms, AniTenshi: the halo lands, then stays a moment
 private const val SPLASH_MAX_DURATION = 5000 // ms
 private const val SPLASH_EXIT_ANIM_DURATION = 400L // ms
 

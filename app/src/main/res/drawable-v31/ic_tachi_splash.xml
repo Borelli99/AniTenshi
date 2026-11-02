@@ -17,7 +17,7 @@
                 android:translateY="-0.7">
                 <group
                     android:name="haloBack"
-                    android:translateY="-16">
+                    android:translateY="-24">
                     <path
                         android:name="haloBackPath"
                         android:pathData="M39,52 A15,4.6 0,0 1,69 52"
@@ -33,7 +33,7 @@
                     android:strokeWidth="7.5" />
                 <group
                     android:name="haloFront"
-                    android:translateY="-16">
+                    android:translateY="-24">
                     <path
                         android:name="haloFrontPath"
                         android:pathData="M39,52 A15,4.6 0,0 0,69 52"
@@ -49,11 +49,11 @@
     <target android:name="haloBack">
         <aapt:attr name="android:animation">
             <objectAnimator
-                android:duration="650"
+                android:duration="1000"
                 android:interpolator="@android:anim/overshoot_interpolator"
                 android:propertyName="translateY"
-                android:startOffset="120"
-                android:valueFrom="-16"
+                android:startOffset="250"
+                android:valueFrom="-24"
                 android:valueTo="0"
                 android:valueType="floatType" />
         </aapt:attr>
@@ -61,11 +61,11 @@
     <target android:name="haloFront">
         <aapt:attr name="android:animation">
             <objectAnimator
-                android:duration="650"
+                android:duration="1000"
                 android:interpolator="@android:anim/overshoot_interpolator"
                 android:propertyName="translateY"
-                android:startOffset="120"
-                android:valueFrom="-16"
+                android:startOffset="250"
+                android:valueFrom="-24"
                 android:valueTo="0"
                 android:valueType="floatType" />
         </aapt:attr>
@@ -73,9 +73,9 @@
     <target android:name="haloBackPath">
         <aapt:attr name="android:animation">
             <objectAnimator
-                android:duration="260"
+                android:duration="450"
                 android:propertyName="strokeAlpha"
-                android:startOffset="120"
+                android:startOffset="250"
                 android:valueFrom="0"
                 android:valueTo="1"
                 android:valueType="floatType" />
@@ -84,9 +84,9 @@
     <target android:name="haloFrontPath">
         <aapt:attr name="android:animation">
             <objectAnimator
-                android:duration="260"
+                android:duration="450"
                 android:propertyName="strokeAlpha"
-                android:startOffset="120"
+                android:startOffset="250"
                 android:valueFrom="0"
                 android:valueTo="1"
                 android:valueType="floatType" />

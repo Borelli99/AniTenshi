@@ -9,7 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.LocalCafe
+import androidx.compose.material.icons.outlined.Payment
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -36,12 +37,18 @@ import tachiyomi.presentation.core.components.AniTenshiMark
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
 
+/** A donation page: the name shown in the app, its link and a generic icon. */
+data class DonationLink(val name: String, val url: String, val icon: ImageVector)
+
 /**
- * AniTenshi's donation pages, as (name shown in the app, link).
+ * AniTenshi's donation pages.
  * While the list is empty the "Support AniTenshi" entry stays hidden in More.
  */
 object AniTenshiDonations {
-    val links: List<Pair<String, String>> = emptyList()
+    val links: List<DonationLink> = listOf(
+        DonationLink("PayPal", "https://paypal.me/Borelli99", Icons.Outlined.Payment),
+        DonationLink("Buy Me a Coffee", "https://buymeacoffee.com/anitenshi", Icons.Outlined.LocalCafe),
+    )
 }
 
 /**
@@ -83,11 +90,11 @@ class SupportUsScreen : Screen() {
                     ),
                 )
 
-                AniTenshiDonations.links.forEach { (name, url) ->
+                AniTenshiDonations.links.forEach { link ->
                     SupportItem(
-                        icon = Icons.Outlined.FavoriteBorder,
-                        title = name,
-                        onClick = { uriHandler.openUri(url) },
+                        icon = link.icon,
+                        title = link.name,
+                        onClick = { uriHandler.openUri(link.url) },
                     )
                 }
 

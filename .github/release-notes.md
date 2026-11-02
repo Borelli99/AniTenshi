@@ -1,4 +1,3 @@
-## Novità di AniTenshi 1.0.6
+## Novità di AniTenshi 1.0.7
 
-- **AniList e MyAnimeList**: ora l'accesso passa dalle registrazioni di AniTenshi e non più da quelle di Animetail. Al primo utilizzo rifai l'accesso a questi due servizi da Impostazioni › Tracciamento. Se sul telefono hai anche Animetail, Android non ti chiederà più quale app aprire dopo l'accesso.
-- **Donazioni**: è pronta la pagina "Supporta AniTenshi" in Altro. Comparirà appena saranno attivi i link per le donazioni.
+- **Supporta AniTenshi**: in Altro c'è la nuova voce con il cuore. Da lì puoi fare una donazione con PayPal o Buy Me a Coffee, oppure lasciare una stella su GitHub. Grazie!

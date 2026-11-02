@@ -29,8 +29,8 @@ android {
         // AniTenshi (fork of Animetail): own package name, so it installs next to the official app.
         applicationId = "com.borelli99.anitenshi"
 
-        versionCode = 155
-        versionName = "1.0.11"
+        versionCode = 156
+        versionName = "1.0.12"
 
         buildConfigField("boolean", "UPDATER_ENABLED", "${Config.enableUpdater}")
         buildConfigField("Long", "DISCORD_APP_ID", "1173423931865170070L")

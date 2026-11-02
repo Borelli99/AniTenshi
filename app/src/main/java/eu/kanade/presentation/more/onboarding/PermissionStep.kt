@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,24 +61,40 @@ internal class PermissionStep : OnboardingStep {
 
         val installGranted = rememberRequestPackageInstallsPermissionState()
 
-        DisposableEffect(lifecycleOwner.lifecycle) {
+        // AniTenshi: check again right away, after each answer and whenever the app comes back.
+        // The screen's own lifecycle doesn't always report coming back from the system dialogs,
+        // so the activity's lifecycle is used too.
+        val refresh = {
+            notificationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                    PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+            batteryGranted = context.getSystemService<PowerManager>()!!
+                .isIgnoringBatteryOptimizations(context.packageName)
+        }
+        LaunchedEffect(Unit) { refresh() }
+
+        val activityLifecycle = (LocalActivity.current as? ComponentActivity)?.lifecycle
+        DisposableEffect(lifecycleOwner.lifecycle, activityLifecycle) {
             val observer = object : DefaultLifecycleObserver {
                 override fun onResume(owner: LifecycleOwner) {
-                    notificationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                            PackageManager.PERMISSION_GRANTED
-                    } else {
-                        true
-                    }
-                    batteryGranted = context.getSystemService<PowerManager>()!!
-                        .isIgnoringBatteryOptimizations(context.packageName)
+                    refresh()
                 }
             }
             lifecycleOwner.lifecycle.addObserver(observer)
+            activityLifecycle?.addObserver(observer)
             onDispose {
                 lifecycleOwner.lifecycle.removeObserver(observer)
+                activityLifecycle?.removeObserver(observer)
             }
         }
+
+        val batteryRequester = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult(),
+            onResult = { refresh() },
+        )
 
         Column {
             PermissionItem(
@@ -90,9 +109,7 @@ internal class PermissionStep : OnboardingStep {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 val permissionRequester = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission(),
-                    onResult = {
-                        // no-op. resulting checks is being done on resume
-                    },
+                    onResult = { refresh() },
                 )
                 PermissionItem(
                     title = stringResource(MR.strings.onboarding_permission_notifications),
@@ -111,7 +128,7 @@ internal class PermissionStep : OnboardingStep {
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                         data = "package:${context.packageName}".toUri()
                     }
-                    context.startActivity(intent)
+                    batteryRequester.launch(intent)
                 },
             )
         }

@@ -2,4 +2,35 @@
 <resources>
     <!-- AniTenshi: splash screen background, same as the launcher icon -->
     <color name="splash">#1B1446</color>
+
+    <!-- AniTenshi theme, dark variant (same values as AniTenshiColorScheme.kt) -->
+    <color name="anitenshi_primary">#F2C14E</color>
+    <color name="anitenshi_onPrimary">#1B1446</color>
+    <color name="anitenshi_primaryContainer">#F2C14E</color>
+    <color name="anitenshi_onPrimaryContainer">#1B1446</color>
+    <color name="anitenshi_inversePrimary">#1B1446</color>
+    <color name="anitenshi_secondary">#F2C14E</color>
+    <color name="anitenshi_onSecondary">#1B1446</color>
+    <color name="anitenshi_secondaryContainer">#352C72</color>
+    <color name="anitenshi_onSecondaryContainer">#F6F2EA</color>
+    <color name="anitenshi_tertiary">#B9B2D9</color>
+    <color name="anitenshi_onTertiary">#1B1446</color>
+    <color name="anitenshi_tertiaryContainer">#4A3F8C</color>
+    <color name="anitenshi_onTertiaryContainer">#F6F2EA</color>
+    <color name="anitenshi_background">#100B2C</color>
+    <color name="anitenshi_onBackground">#F6F2EA</color>
+    <color name="anitenshi_surface">#100B2C</color>
+    <color name="anitenshi_onSurface">#F6F2EA</color>
+    <color name="anitenshi_surfaceVariant">#241B57</color>
+    <color name="anitenshi_onSurfaceVariant">#B9B2D9</color>
+    <color name="anitenshi_surfaceTint">#8F88B8</color>
+    <color name="anitenshi_inverseSurface">#F6F2EA</color>
+    <color name="anitenshi_inverseOnSurface">#1B1446</color>
+    <color name="anitenshi_outline">#6B6399</color>
+    <color name="anitenshi_outlineVariant">#2E2566</color>
+    <color name="anitenshi_surfaceContainerLowest">#0B0722</color>
+    <color name="anitenshi_surfaceContainerLow">#150F38</color>
+    <color name="anitenshi_surfaceContainer">#1B1446</color>
+    <color name="anitenshi_surfaceContainerHigh">#241B57</color>
+    <color name="anitenshi_surfaceContainerHighest">#2E2566</color>
 </resources>

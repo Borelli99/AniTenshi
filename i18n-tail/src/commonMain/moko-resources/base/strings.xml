@@ -469,4 +469,5 @@
     <string name="anitenshi_continue_hidden_anime_title">Hidden from Continue watching</string>
     <string name="anitenshi_continue_hidden_manga_title">Hidden from Continue reading</string>
     <string name="anitenshi_continue_show_again">Show again</string>
+    <string name="theme_anitenshi">AniTenshi</string>
 </resources>

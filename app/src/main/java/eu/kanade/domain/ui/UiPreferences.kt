@@ -30,14 +30,8 @@ class UiPreferences(
 
     val themeMode: Preference<ThemeMode> = preferenceStore.getEnum("pref_theme_mode_key", ThemeMode.SYSTEM)
 
-    val appTheme: Preference<AppTheme> = preferenceStore.getEnum(
-        "pref_app_theme",
-        if (DeviceUtil.isDynamicColorAvailable) {
-            AppTheme.MONET
-        } else {
-            AppTheme.DEFAULT
-        },
-    )
+    // AniTenshi: the app's own theme by default; light or dark follows the phone (themeMode = SYSTEM)
+    val appTheme: Preference<AppTheme> = preferenceStore.getEnum("pref_app_theme", AppTheme.ANITENSHI)
 
     val colorTheme: Preference<Int> = preferenceStore.getInt("pref_color_theme", 0)
 

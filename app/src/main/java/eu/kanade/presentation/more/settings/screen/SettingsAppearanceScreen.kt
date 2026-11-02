@@ -56,7 +56,6 @@ object SettingsAppearanceScreen : SearchableSettings {
             // KMK <--
             getDisplayGroup(uiPreferences = uiPreferences),
             // SY -->
-            getNavbarGroup(uiPreferences = uiPreferences),
             getForkGroup(uiPreferences = uiPreferences),
             // SY <--
         )
@@ -363,18 +362,6 @@ object SettingsAppearanceScreen : SearchableSettings {
         )
     }
 
-    @Composable
-    fun getNavbarGroup(uiPreferences: UiPreferences): Preference.PreferenceGroup {
-        return Preference.PreferenceGroup(
-            stringResource(TLMR.strings.pref_category_navbar),
-            preferenceItems = listOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.bottomBarLabels,
-                    title = stringResource(TLMR.strings.pref_show_bottom_bar_labels),
-                ),
-            ),
-        )
-    }
 // SY <--
 }
 

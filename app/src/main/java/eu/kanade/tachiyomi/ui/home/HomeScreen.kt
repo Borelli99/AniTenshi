@@ -7,27 +7,23 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -38,6 +34,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -47,9 +44,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
-import eu.kanade.core.preference.asState
 import eu.kanade.presentation.util.Screen
-import eu.kanade.presentation.util.isTabletUi
 import eu.kanade.tachiyomi.ui.browse.AnimeBrowseScreen
 import eu.kanade.tachiyomi.ui.browse.MangaBrowseScreen
 import eu.kanade.tachiyomi.ui.download.DownloadsTab
@@ -72,7 +67,6 @@ import soup.compose.material.motion.animation.materialFadeThroughIn
 import soup.compose.material.motion.animation.materialFadeThroughOut
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.material.Scaffold
-import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.util.collectAsState
 
 object HomeScreen : Screen() {
@@ -89,12 +83,7 @@ object HomeScreen : Screen() {
         val context = LocalContext.current
         val uiPreferences = context.appGraph.uiPreferences
         val navigator = LocalNavigator.currentOrThrow
-        // SY -->
         val scope = rememberCoroutineScope()
-        val alwaysShowLabel by remember {
-            uiPreferences.bottomBarLabels.asState(scope)
-        }
-        // SY <--
         val activity = context as? ComponentActivity
         val preferences = context.appGraph.preferenceStore
         val castManager = remember { CastManager(activity!!, preferences) }
@@ -106,8 +95,12 @@ object HomeScreen : Screen() {
 
         // AniTenshi: the bottom bar is always Home, Anime and Manga.
         // Everything else opens from Home (More button) or from the libraries (+ and bell).
-        val tabs = remember { listOf<eu.kanade.presentation.util.Tab>(HomeTab, AnimeLibraryTab, MangaLibraryTab) }
         val startScreenPref by uiPreferences.startScreen.collectAsState()
+        // New episodes / chapters of the library, shown on the Anime and Manga buttons
+        val libraryPreferences = remember { context.appGraph.libraryPreferences }
+        val showUpdatesCount by libraryPreferences.newShowUpdatesCount.collectAsState()
+        val newAnimeUpdates by libraryPreferences.newAnimeUpdatesCount.collectAsState()
+        val newMangaUpdates by libraryPreferences.newMangaUpdatesCount.collectAsState()
         val effectiveStartTab = remember(startScreenPref) { startScreenPref.tab }
 
         TabNavigator(
@@ -117,47 +110,50 @@ object HomeScreen : Screen() {
             // Provide usable navigator to content screen
             CompositionLocalProvider(LocalNavigator provides navigator) {
                 Row(modifier = Modifier.fillMaxSize()) {
-                    if (isTabletUi()) {
-                        NavigationRail {
-                            tabs.fastForEach {
-                                NavigationRailItem(it, alwaysShowLabel)
-                            }
-                        }
-                    }
+                    // AniTenshi: the same three round buttons on phones and tablets
                     Scaffold(
                         bottomBar = {
-                            if (!isTabletUi()) {
-                                Column {
-                                    val isConnected =
-                                        castManager.castState.collectAsState().value == CastManager.CastState.CONNECTED
-                                    AnimatedVisibility(
-                                        visible = isConnected,
-                                        enter = expandVertically(),
-                                        exit = shrinkVertically(),
-                                    ) {
-                                        CastMiniController(
-                                            castManager = castManager,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .background(MaterialTheme.colorScheme.surfaceVariant),
-                                        )
-                                    }
+                            Column {
+                                val isConnected =
+                                    castManager.castState.collectAsState().value == CastManager.CastState.CONNECTED
+                                AnimatedVisibility(
+                                    visible = isConnected,
+                                    enter = expandVertically(),
+                                    exit = shrinkVertically(),
+                                ) {
+                                    CastMiniController(
+                                        castManager = castManager,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                                    )
+                                }
 
-                                    val bottomNavVisible by produceState(initialValue = true) {
-                                        showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
-                                    }
+                                val bottomNavVisible by produceState(initialValue = true) {
+                                    showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
+                                }
 
-                                    AnimatedVisibility(
-                                        visible = bottomNavVisible,
-                                        enter = expandVertically(),
-                                        exit = shrinkVertically(),
-                                    ) {
-                                        NavigationBar {
-                                            tabs.fastForEach {
-                                                NavigationBarItem(it, alwaysShowLabel)
+                                AnimatedVisibility(
+                                    visible = bottomNavVisible,
+                                    enter = expandVertically(),
+                                    exit = shrinkVertically(),
+                                ) {
+                                    HomeNavButtons(
+                                        current = tabNavigator.current,
+                                        animeBadge = if (showUpdatesCount) newAnimeUpdates else 0,
+                                        mangaBadge = if (showUpdatesCount) newMangaUpdates else 0,
+                                        onClick = { tab ->
+                                            if (tabNavigator.current::class == tab::class) {
+                                                scope.launch { tab.onReselect(navigator) }
+                                            } else {
+                                                tabNavigator.current = tab
                                             }
-                                        }
-                                    }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .navigationBarsPadding()
+                                            .padding(top = 4.dp, bottom = 8.dp),
+                                    )
                                 }
                             }
                         },
@@ -237,145 +233,6 @@ object HomeScreen : Screen() {
                     }
                 }
             }
-        }
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @Composable
-    private fun RowScope.NavigationBarItem(
-        tab: eu.kanade.presentation.util.Tab,
-        // SY -->
-        alwaysShowLabel: Boolean,
-        // SY <--
-    ) {
-        val tabNavigator = LocalTabNavigator.current
-        val navigator = LocalNavigator.currentOrThrow
-        val scope = rememberCoroutineScope()
-        val selected = tabNavigator.current::class == tab::class
-        NavigationBarItem(
-            selected = selected,
-            onClick = {
-                if (!selected) {
-                    tabNavigator.current = tab
-                } else {
-                    scope.launch { tab.onReselect(navigator) }
-                }
-            },
-            modifier = Modifier.combinedClickable(
-                onClick = {
-                    if (!selected) {
-                        tabNavigator.current = tab
-                    } else {
-                        scope.launch { tab.onReselect(navigator) }
-                    }
-                },
-                onLongClick = {
-                    if (!selected) {
-                        tabNavigator.current = tab
-                    }
-                    scope.launch { tab.onReselect(navigator) }
-                },
-            ),
-            icon = { NavigationIconItem(tab) },
-            label = {
-                Text(
-                    text = tab.options.title,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontSize = androidx.compose.ui.unit.TextUnit(11f, androidx.compose.ui.unit.TextUnitType.Sp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            },
-            alwaysShowLabel = alwaysShowLabel,
-        )
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @Composable
-    fun NavigationRailItem(
-        tab: eu.kanade.presentation.util.Tab,
-        // SY -->
-        alwaysShowLabel: Boolean,
-        // SY <--
-    ) {
-        val tabNavigator = LocalTabNavigator.current
-        val navigator = LocalNavigator.currentOrThrow
-        val scope = rememberCoroutineScope()
-        val selected = tabNavigator.current::class == tab::class
-        NavigationRailItem(
-            selected = selected,
-            onClick = {
-                if (!selected) {
-                    tabNavigator.current = tab
-                } else {
-                    scope.launch { tab.onReselect(navigator) }
-                }
-            },
-            modifier = Modifier.combinedClickable(
-                onClick = {
-                    if (!selected) {
-                        tabNavigator.current = tab
-                    } else {
-                        scope.launch { tab.onReselect(navigator) }
-                    }
-                },
-                onLongClick = {
-                    if (!selected) {
-                        tabNavigator.current = tab
-                    }
-                    scope.launch { tab.onReselect(navigator) }
-                },
-            ),
-            icon = { NavigationIconItem(tab) },
-            label = {
-                Text(
-                    text = tab.options.title,
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            },
-            alwaysShowLabel = alwaysShowLabel,
-        )
-    }
-
-    @Composable
-    private fun NavigationIconItem(tab: eu.kanade.presentation.util.Tab) {
-        val context = LocalContext.current
-        BadgedBox(
-            badge = {
-                // New episodes / chapters of the library: shown on the library they belong to
-                val isAnimeLibrary = AnimeLibraryTab::class.isInstance(tab)
-                val isMangaLibrary = MangaLibraryTab::class.isInstance(tab)
-                if (isAnimeLibrary || isMangaLibrary) {
-                    val count by produceState(initialValue = 0, isAnimeLibrary) {
-                        val pref = context.appGraph.libraryPreferences
-                        val counter = if (isAnimeLibrary) pref.newAnimeUpdatesCount else pref.newMangaUpdatesCount
-                        counter.changes()
-                            .collectLatest { value = if (pref.newShowUpdatesCount.get()) it else 0 }
-                    }
-                    if (count > 0) {
-                        Badge {
-                            val desc = pluralStringResource(
-                                MR.plurals.notification_chapters_generic,
-                                count = count,
-                                count,
-                            )
-                            Text(
-                                text = count.toString(),
-                                modifier = Modifier.semantics { contentDescription = desc },
-                            )
-                        }
-                    }
-                }
-            },
-        ) {
-            Icon(
-                painter = tab.options.icon!!,
-                contentDescription = tab.options.title,
-                // TODO: https://issuetracker.google.com/u/0/issues/316327367
-                tint = LocalContentColor.current,
-            )
         }
     }
 

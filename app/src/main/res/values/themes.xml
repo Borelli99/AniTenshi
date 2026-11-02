@@ -273,6 +273,40 @@
         <item name="colorSurfaceContainerLowest">@color/midnightdusk_surfaceContainerLowest</item>
     </style>
 
+    <!--== AniTenshi Theme ==-->
+    <style name="Theme.Tachiyomi.AniTenshi">
+        <!-- Theme Colors -->
+        <item name="colorPrimary">@color/anitenshi_primary</item>
+        <item name="colorOnPrimary">@color/anitenshi_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/anitenshi_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/anitenshi_onPrimaryContainer</item>
+        <item name="colorPrimaryInverse">@color/anitenshi_inversePrimary</item>
+        <item name="colorSecondary">@color/anitenshi_secondary</item>
+        <item name="colorOnSecondary">@color/anitenshi_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/anitenshi_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/anitenshi_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/anitenshi_tertiary</item>
+        <item name="colorOnTertiary">@color/anitenshi_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/anitenshi_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/anitenshi_onTertiaryContainer</item>
+        <item name="android:colorBackground">@color/anitenshi_background</item>
+        <item name="colorOnBackground">@color/anitenshi_onBackground</item>
+        <item name="colorSurface">@color/anitenshi_surface</item>
+        <item name="colorOnSurface">@color/anitenshi_onSurface</item>
+        <item name="colorSurfaceVariant">@color/anitenshi_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/anitenshi_onSurfaceVariant</item>
+        <item name="elevationOverlayColor">@color/anitenshi_surfaceTint</item>
+        <item name="colorSurfaceInverse">@color/anitenshi_inverseSurface</item>
+        <item name="colorOnSurfaceInverse">@color/anitenshi_inverseOnSurface</item>
+        <item name="colorOutline">@color/anitenshi_outline</item>
+        <item name="colorOutlineVariant">@color/anitenshi_outlineVariant</item>
+        <item name="colorSurfaceContainer">@color/anitenshi_surfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/anitenshi_surfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">@color/anitenshi_surfaceContainerHighest</item>
+        <item name="colorSurfaceContainerLow">@color/anitenshi_surfaceContainerLow</item>
+        <item name="colorSurfaceContainerLowest">@color/anitenshi_surfaceContainerLowest</item>
+    </style>
+
     <!--== Mocha Theme ==-->
     <style name="Theme.Tachiyomi.Mocha">
         <!-- Theme Colors -->

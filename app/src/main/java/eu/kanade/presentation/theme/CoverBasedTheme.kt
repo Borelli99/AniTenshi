@@ -101,6 +101,7 @@ private fun CoverBasedThemeImpl(
     if (colorScheme != null) {
         MaterialExpressiveTheme(
             colorScheme = colorScheme,
+            typography = AniTenshiTypography,
             content = content,
         )
     } else {

@@ -4,4 +4,12 @@
     <item quantity="one">Riprovare %1$d pagina non riuscita…</item>
     <item quantity="other">Riprovare le pagine di %1$d fallite…</item>
   </plurals>
+  <plurals name="anitenshi_episodes_left">
+    <item quantity="one">%d episodio da vedere</item>
+    <item quantity="other">%d episodi da vedere</item>
+  </plurals>
+  <plurals name="anitenshi_chapters_left">
+    <item quantity="one">%d capitolo da leggere</item>
+    <item quantity="other">%d capitoli da leggere</item>
+  </plurals>
 </resources>

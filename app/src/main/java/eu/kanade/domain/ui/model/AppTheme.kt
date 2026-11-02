@@ -6,6 +6,7 @@ import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.i18n.tail.TLMR
 
 enum class AppTheme(val titleRes: StringResource?) {
+    ANITENSHI(TLMR.strings.theme_anitenshi),
     DEFAULT(MR.strings.label_default),
     MONET(MR.strings.theme_monet),
     CUSTOM(TLMR.strings.theme_custom),

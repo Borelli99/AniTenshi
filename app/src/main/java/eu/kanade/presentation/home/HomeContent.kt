@@ -1,23 +1,33 @@
 package eu.kanade.presentation.home
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,32 +44,40 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import eu.kanade.presentation.browse.GlobalSearchErrorResultItem
-import eu.kanade.presentation.browse.GlobalSearchLoadingResultItem
-import eu.kanade.presentation.browse.GlobalSearchResultItem
-import eu.kanade.presentation.browse.anime.components.GlobalAnimeSearchCardRow
-import eu.kanade.presentation.browse.manga.components.GlobalMangaSearchCardRow
+import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
-import eu.kanade.presentation.library.components.EntryComfortableGridItem
+import eu.kanade.presentation.entries.components.ItemCover
+import eu.kanade.presentation.theme.AniTenshiPalette
+import eu.kanade.presentation.util.isTabletUi
+import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.home.ContinueEntry
 import eu.kanade.tachiyomi.ui.home.HomeState
 import eu.kanade.tachiyomi.ui.home.LatestRow
 import kotlinx.collections.immutable.persistentListOf
 import tachiyomi.domain.entries.anime.model.Anime
+import tachiyomi.domain.entries.anime.model.asAnimeCover
 import tachiyomi.domain.entries.manga.model.Manga
+import tachiyomi.domain.entries.manga.model.asMangaCover
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.tail.TLMR
-import tachiyomi.presentation.core.components.Badge
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.components.material.padding
+import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 
+private val ContinueCoverWidth = 108.dp
+private val LatestCoverWidth = 96.dp
+
 /**
- * AniTenshi Home: continue watching, continue reading, latest anime and latest manga
- * from the pinned sources. The button at the bottom right opens More.
+ * AniTenshi Home ("Aureola" look): continue watching, continue reading, latest anime and latest manga
+ * from the pinned sources. On tablets anime and manga stand side by side.
+ * The button at the bottom right opens More.
  */
 @Composable
 fun HomeContent(
@@ -87,7 +105,7 @@ fun HomeContent(
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
-                title = stringResource(MR.strings.label_home),
+                titleContent = { HomeTitle() },
                 actions = {
                     AppBarActions(
                         persistentListOf(
@@ -103,122 +121,107 @@ fun HomeContent(
             )
         },
         floatingActionButton = {
+            // The main action of Home: gold in the dark theme, night blue (with gold dots) in the light one
+            val colors = MaterialTheme.colorScheme
             ExtendedFloatingActionButton(
-                text = { Text(text = stringResource(MR.strings.label_more)) },
-                icon = { Icon(imageVector = Icons.Outlined.MoreHoriz, contentDescription = null) },
+                text = { Text(text = stringResource(MR.strings.label_more), fontWeight = FontWeight.Bold) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Outlined.MoreHoriz,
+                        contentDescription = null,
+                        tint = if (colors.primary == AniTenshiPalette.Navy) AniTenshiPalette.Gold else colors.onPrimary,
+                    )
+                },
                 onClick = onClickMore,
+                containerColor = colors.primary,
+                contentColor = colors.onPrimary,
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = contentPadding,
+        val continueAnime: @Composable () -> Unit = {
+            ContinueSection(
+                title = stringResource(TLMR.strings.anitenshi_continue_watching),
+                emptyText = stringResource(TLMR.strings.anitenshi_nothing_to_continue_anime),
+                entries = state.continueAnime,
+                hiddenCount = state.hiddenAnime.size,
+                isAnime = true,
+                onClickHidden = { dialog = HomeDialog.Hidden(anime = true) },
+                onClick = onClickContinueAnime,
+                onLongClick = { dialog = HomeDialog.Actions(entry = it, anime = true) },
+            )
+        }
+        val continueManga: @Composable () -> Unit = {
+            ContinueSection(
+                title = stringResource(TLMR.strings.anitenshi_continue_reading),
+                emptyText = stringResource(TLMR.strings.anitenshi_nothing_to_continue_manga),
+                entries = state.continueManga,
+                hiddenCount = state.hiddenManga.size,
+                isAnime = false,
+                onClickHidden = { dialog = HomeDialog.Hidden(anime = false) },
+                onClick = onClickContinueManga,
+                onLongClick = { dialog = HomeDialog.Actions(entry = it, anime = false) },
+            )
+        }
+        val latestAnime: @Composable () -> Unit = {
+            LatestSection(
+                title = stringResource(TLMR.strings.anitenshi_latest_anime),
+                emptyText = stringResource(TLMR.strings.anitenshi_no_pinned_anime_sources),
+                rows = state.latestAnime,
+                onClickSource = onClickAnimeSource,
+            ) { titles ->
+                LatestRowCovers(titles) { item ->
+                    val anime by getAnime(item)
+                    LatestCard(
+                        title = anime.title,
+                        cover = anime.asAnimeCover(),
+                        onClick = { onClickAnime(anime) },
+                    )
+                }
+            }
+        }
+        val latestManga: @Composable () -> Unit = {
+            LatestSection(
+                title = stringResource(TLMR.strings.anitenshi_latest_manga),
+                emptyText = stringResource(TLMR.strings.anitenshi_no_pinned_manga_sources),
+                rows = state.latestManga,
+                onClickSource = onClickMangaSource,
+            ) { titles ->
+                LatestRowCovers(titles) { item ->
+                    val manga by getManga(item)
+                    LatestCard(
+                        title = manga.title,
+                        cover = manga.asMangaCover(),
+                        onClick = { onClickManga(manga) },
+                    )
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(contentPadding)
+                .padding(bottom = MaterialTheme.padding.medium),
         ) {
-            // 1. Continue watching: library anime with episodes left
-            item(key = "continue_anime_title") {
-                SectionTitle(
-                    text = stringResource(TLMR.strings.anitenshi_continue_watching),
-                    hiddenCount = state.hiddenAnime.size,
-                    onClickHidden = { dialog = HomeDialog.Hidden(anime = true) },
-                )
-            }
-            item(key = "continue_anime") {
-                if (state.continueAnime.isEmpty()) {
-                    SectionHint(stringResource(TLMR.strings.anitenshi_nothing_to_continue_anime))
-                } else {
-                    ContinueRow(
-                        entries = state.continueAnime,
-                        onClick = onClickContinueAnime,
-                        onLongClick = { dialog = HomeDialog.Actions(entry = it, anime = true) },
-                    )
-                }
-            }
-
-            // 2. Continue reading: library manga with chapters left
-            item(key = "continue_manga_title") {
-                SectionTitle(
-                    text = stringResource(TLMR.strings.anitenshi_continue_reading),
-                    hiddenCount = state.hiddenManga.size,
-                    onClickHidden = { dialog = HomeDialog.Hidden(anime = false) },
-                )
-            }
-            item(key = "continue_manga") {
-                if (state.continueManga.isEmpty()) {
-                    SectionHint(stringResource(TLMR.strings.anitenshi_nothing_to_continue_manga))
-                } else {
-                    ContinueRow(
-                        entries = state.continueManga,
-                        onClick = onClickContinueManga,
-                        onLongClick = { dialog = HomeDialog.Actions(entry = it, anime = false) },
-                    )
-                }
-            }
-
-            // 3. Latest anime from the pinned anime sources
-            item(key = "latest_anime_title") {
-                SectionTitle(stringResource(TLMR.strings.anitenshi_latest_anime))
-            }
-            val latestAnime = state.latestAnime
-            when {
-                latestAnime == null -> item(key = "latest_anime_loading") { GlobalSearchLoadingResultItem() }
-
-                latestAnime.isEmpty() -> item(key = "latest_anime_hint") {
-                    SectionHint(stringResource(TLMR.strings.anitenshi_no_pinned_anime_sources))
-                }
-
-                else -> items(latestAnime, key = { "latest_anime_${it.sourceId}" }) { row ->
-                    GlobalSearchResultItem(
-                        title = row.name,
-                        subtitle = row.language,
-                        onClick = { onClickAnimeSource(row) },
-                    ) {
-                        val titles = row.items
-                        when {
-                            titles == null -> GlobalSearchLoadingResultItem()
-                            row.error != null -> GlobalSearchErrorResultItem(message = row.error)
-                            else -> GlobalAnimeSearchCardRow(
-                                titles = titles,
-                                getAnime = getAnime,
-                                onClick = onClickAnime,
-                                onLongClick = onClickAnime,
-                            )
-                        }
+            if (isTabletUi()) {
+                // Tablet: anime on the left, manga on the right
+                Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.large)) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        continueAnime()
+                        latestAnime()
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        continueManga()
+                        latestManga()
                     }
                 }
-            }
-
-            // 4. Latest manga from the pinned manga sources
-            item(key = "latest_manga_title") {
-                SectionTitle(stringResource(TLMR.strings.anitenshi_latest_manga))
-            }
-            val latestManga = state.latestManga
-            when {
-                latestManga == null -> item(key = "latest_manga_loading") { GlobalSearchLoadingResultItem() }
-
-                latestManga.isEmpty() -> item(key = "latest_manga_hint") {
-                    SectionHint(stringResource(TLMR.strings.anitenshi_no_pinned_manga_sources))
-                }
-
-                else -> items(latestManga, key = { "latest_manga_${it.sourceId}" }) { row ->
-                    GlobalSearchResultItem(
-                        title = row.name,
-                        subtitle = row.language,
-                        onClick = { onClickMangaSource(row) },
-                    ) {
-                        val titles = row.items
-                        when {
-                            titles == null -> GlobalSearchLoadingResultItem()
-                            row.error != null -> GlobalSearchErrorResultItem(message = row.error)
-                            else -> GlobalMangaSearchCardRow(
-                                titles = titles,
-                                getManga = getManga,
-                                onClick = onClickManga,
-                                onLongClick = onClickManga,
-                            )
-                        }
-                    }
-                }
+            } else {
+                continueAnime()
+                continueManga()
+                latestAnime()
+                latestManga()
             }
         }
     }
@@ -264,6 +267,292 @@ fun HomeContent(
                 onDismissRequest = { dialog = null },
             )
         }
+    }
+}
+
+/** The logo (A in the text color, halo in gold) and the app name. */
+@Composable
+private fun HomeTitle() {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(30.dp)) {
+            Image(
+                painter = painterResource(R.drawable.ic_logo_halo_back),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Icon(
+                painter = painterResource(R.drawable.ic_logo_a),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Image(
+                painter = painterResource(R.drawable.ic_logo_halo_front),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = stringResource(MR.strings.app_name),
+            style = MaterialTheme.typography.titleLarge,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun SectionTitle(
+    text: String,
+    hiddenCount: Int = 0,
+    onClickHidden: (() -> Unit)? = null,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .padding(
+                start = MaterialTheme.padding.medium,
+                end = MaterialTheme.padding.small,
+                top = MaterialTheme.padding.small,
+            ),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+            modifier = Modifier.weight(1f),
+        )
+        if (hiddenCount > 0 && onClickHidden != null) {
+            TextButton(onClick = onClickHidden) {
+                Text(
+                    text = stringResource(TLMR.strings.anitenshi_continue_hidden_count, hiddenCount),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionHint(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(
+            horizontal = MaterialTheme.padding.medium,
+            vertical = MaterialTheme.padding.small,
+        ),
+    )
+}
+
+@Composable
+private fun ContinueSection(
+    title: String,
+    emptyText: String,
+    entries: List<ContinueEntry>,
+    hiddenCount: Int,
+    isAnime: Boolean,
+    onClickHidden: () -> Unit,
+    onClick: (ContinueEntry) -> Unit,
+    onLongClick: (ContinueEntry) -> Unit,
+) {
+    SectionTitle(text = title, hiddenCount = hiddenCount, onClickHidden = onClickHidden)
+    if (entries.isEmpty()) {
+        SectionHint(emptyText)
+        return
+    }
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = MaterialTheme.padding.medium, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(entries, key = { it.id }) { entry ->
+            ContinueCard(
+                entry = entry,
+                isAnime = isAnime,
+                onClick = { onClick(entry) },
+                onLongClick = { onLongClick(entry) },
+            )
+        }
+    }
+}
+
+/** A title to continue: cover with the gold play (or book) button, name, and how much is left. */
+@Composable
+private fun ContinueCard(
+    entry: ContinueEntry,
+    isAnime: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    val remaining = entry.remaining.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    Column(
+        modifier = Modifier
+            .width(ContinueCoverWidth)
+            .combinedClickableCard(onClick = onClick, onLongClick = onLongClick),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box {
+            ItemCover.Book(
+                data = entry.cover,
+                modifier = Modifier.width(ContinueCoverWidth),
+                shape = RoundedCornerShape(12.dp),
+            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+                    .size(32.dp)
+                    .background(AniTenshiPalette.Gold, CircleShape),
+            ) {
+                Icon(
+                    painter = painterResource(if (isAnime) R.drawable.ic_nav_anime else R.drawable.ic_nav_manga),
+                    contentDescription = null,
+                    tint = AniTenshiPalette.Navy,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+        Text(
+            text = entry.title,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        Text(
+            text = pluralStringResource(
+                if (isAnime) TLMR.plurals.anitenshi_episodes_left else TLMR.plurals.anitenshi_chapters_left,
+                count = remaining,
+                remaining,
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun <T> LatestSection(
+    title: String,
+    emptyText: String,
+    rows: List<LatestRow<T>>?,
+    onClickSource: (LatestRow<T>) -> Unit,
+    covers: @Composable (List<T>) -> Unit,
+) {
+    SectionTitle(text = title)
+    when {
+        rows == null -> LoadingRow()
+
+        rows.isEmpty() -> SectionHint(emptyText)
+
+        else -> rows.forEach { row ->
+            SourceHeader(
+                name = row.name,
+                language = row.language,
+                onClick = { onClickSource(row) },
+            )
+            val titles = row.items
+            when {
+                titles == null -> LoadingRow()
+                row.error != null -> SectionHint(row.error)
+                titles.isEmpty() -> SectionHint(stringResource(MR.strings.no_results_found))
+                else -> covers(titles)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SourceHeader(
+    name: String,
+    language: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clickable(onClick = onClick)
+            .padding(start = MaterialTheme.padding.medium, end = MaterialTheme.padding.small),
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        Text(
+            text = language,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .weight(1f),
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun <T> LatestRowCovers(
+    titles: List<T>,
+    card: @Composable (T) -> Unit,
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = MaterialTheme.padding.medium, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        items(titles) { item -> card(item) }
+    }
+}
+
+@Composable
+private fun LatestCard(
+    title: String,
+    cover: Any,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(LatestCoverWidth)
+            .combinedClickableCard(onClick = onClick, onLongClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        ItemCover.Book(
+            data = cover,
+            modifier = Modifier.width(LatestCoverWidth),
+            shape = RoundedCornerShape(10.dp),
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.5.sp, lineHeight = 16.sp),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun LoadingRow() {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = MaterialTheme.padding.medium),
+    ) {
+        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
     }
 }
 
@@ -341,71 +630,10 @@ private fun HiddenEntriesDialog(
     )
 }
 
-@Composable
-private fun SectionTitle(
-    text: String,
-    hiddenCount: Int = 0,
-    onClickHidden: (() -> Unit)? = null,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                start = MaterialTheme.padding.medium,
-                end = MaterialTheme.padding.small,
-                top = MaterialTheme.padding.large,
-                bottom = MaterialTheme.padding.small,
-            ),
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.weight(1f),
-        )
-        if (hiddenCount > 0 && onClickHidden != null) {
-            TextButton(onClick = onClickHidden) {
-                Text(text = stringResource(TLMR.strings.anitenshi_continue_hidden_count, hiddenCount))
-            }
-        }
-    }
-}
-
-@Composable
-private fun SectionHint(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(
-            horizontal = MaterialTheme.padding.medium,
-            vertical = MaterialTheme.padding.small,
-        ),
-    )
-}
-
-@Composable
-private fun ContinueRow(
-    entries: List<ContinueEntry>,
-    onClick: (ContinueEntry) -> Unit,
-    onLongClick: (ContinueEntry) -> Unit,
-) {
-    LazyRow(
-        contentPadding = PaddingValues(MaterialTheme.padding.small),
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
-    ) {
-        items(entries, key = { it.id }) { entry ->
-            Box(modifier = Modifier.width(112.dp)) {
-                EntryComfortableGridItem(
-                    title = entry.title,
-                    titleMaxLines = 2,
-                    coverData = entry.cover,
-                    // Episodes left to watch / chapters left to read
-                    coverBadgeStart = { Badge(text = entry.remaining.toString()) },
-                    onClick = { onClick(entry) },
-                    onLongClick = { onLongClick(entry) },
-                )
-            }
-        }
-    }
-}
+/** Tap and long press on a whole card, with the ripple clipped to the card's corners. */
+private fun Modifier.combinedClickableCard(
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+): Modifier = this
+    .clip(RoundedCornerShape(12.dp))
+    .combinedClickable(onClick = onClick, onLongClick = onLongClick)

@@ -27,9 +27,9 @@
   <string name="special_services">Särskilda tjänster</string>
   <string name="pref_category_connections">Anslutningar</string>
   <string name="pref_connections_summary">Discord, mer att komma..</string>
-  <string name="connections_info">Specialtjänster som är unika för Animetail och förbättra hur du använder appen</string>
+  <string name="connections_info">Specialtjänster som är unika för AniTenshi och förbättra hur du använder appen</string>
   <string name="connections_discord">Discord</string>
-  <string name="connections_discord_info">Denna Discord-tjänst fungerar genom tokenloggning. Använd på egen risk. Din token lagras lokalt och Animetail delar den inte någon annanstans</string>
+  <string name="connections_discord_info">Denna Discord-tjänst fungerar genom tokenloggning. Använd på egen risk. Din token lagras lokalt och AniTenshi delar den inte någon annanstans</string>
   <string name="pref_discord_rpc">Discord Rich Presence</string>
   <string name="show_chapters_titles_title">Visa avsnitt/kapitel titlar</string>
   <string name="show_chapters_titles_subtitle">Visa titeln på avsnittet du läser</string>

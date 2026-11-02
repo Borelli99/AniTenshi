@@ -29,7 +29,7 @@
   <string name="pref_connections_summary">Discord, více k nám.</string>
   <string name="connections_info">Speciální služby, které jsou unikátní pro animetail a vylepšují způsob, jakým používáte aplikaci</string>
   <string name="connections_discord">Discord</string>
-  <string name="connections_discord_info">Tato Discord služba funguje pomocí logování tokenů. Použijte na vlastní riziko. Tvůj token je uložen lokálně a Animetail ji nesdílejí nikde jinde</string>
+  <string name="connections_discord_info">Tato Discord služba funguje pomocí logování tokenů. Použijte na vlastní riziko. Tvůj token je uložen lokálně a AniTenshi ji nesdílejí nikde jinde</string>
   <string name="pref_discord_rpc">Discord Rich Presence</string>
   <string name="show_chapters_titles_title">Zobrazit názvy epizod/kapitol</string>
   <string name="show_chapters_titles_subtitle">Zobrazit název epizody/kapitoly, kterou čtete</string>

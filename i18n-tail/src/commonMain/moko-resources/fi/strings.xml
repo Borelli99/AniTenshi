@@ -27,9 +27,9 @@
   <string name="special_services">Erityiset Palvelut</string>
   <string name="pref_category_connections">Yhteydet</string>
   <string name="pref_connections_summary">Discord, lisää tullaan..</string>
-  <string name="connections_info">Erikoispalvelut, jotka ovat ainutlaatuisia Animetail ja parantaa tapaa käyttää sovellusta</string>
+  <string name="connections_info">Erikoispalvelut, jotka ovat ainutlaatuisia AniTenshi ja parantaa tapaa käyttää sovellusta</string>
   <string name="connections_discord">Discord</string>
-  <string name="connections_discord_info">Tämä Discord-palvelu toimii tunnuksen lokilla. Käytä omalla vastuullasi. Tunnuksesi tallennetaan paikallisesti ja Animetail ei jaa sitä mistään muualta.</string>
+  <string name="connections_discord_info">Tämä Discord-palvelu toimii tunnuksen lokilla. Käytä omalla vastuullasi. Tunnuksesi tallennetaan paikallisesti ja AniTenshi ei jaa sitä mistään muualta.</string>
   <string name="pref_discord_rpc">Discord Rich Presence</string>
   <string name="show_chapters_titles_title">Näytä Jaksot/Lukujen Otsikot</string>
   <string name="show_chapters_titles_subtitle">Näytä jakson / luvun otsikko, jota olet lukemassa</string>

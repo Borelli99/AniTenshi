@@ -27,9 +27,9 @@
   <string name="special_services">特別サービス</string>
   <string name="pref_category_connections">コネクション</string>
   <string name="pref_connections_summary">不一致、もっと来るべきchar@@0</string>
-  <string name="connections_info">Animetailならではのスペシャルサービス</string>
+  <string name="connections_info">AniTenshiならではのスペシャルサービス</string>
   <string name="connections_discord">Discord</string>
-  <string name="connections_discord_info">このDiscordサービスはトークンロギングを通じて機能します。自己責任で使用してください。あなたのトークンはローカルに保存され、Animetailは他のどこにも共有しません。</string>
+  <string name="connections_discord_info">このDiscordサービスはトークンロギングを通じて機能します。自己責任で使用してください。あなたのトークンはローカルに保存され、AniTenshiは他のどこにも共有しません。</string>
   <string name="pref_discord_rpc">Discord Rich Presence</string>
   <string name="show_chapters_titles_title">エピソード/章タイトルを表示</string>
   <string name="show_chapters_titles_subtitle">読んでいるエピソード/チャプターのタイトルを表示する</string>

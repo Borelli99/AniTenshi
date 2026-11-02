@@ -27,9 +27,9 @@
   <string name="special_services">Særlige Tjenester</string>
   <string name="pref_category_connections">Forbindelser</string>
   <string name="pref_connections_summary">Discord, mere at komme.</string>
-  <string name="connections_info">Særlige tjenester, der er unikke for Animetail og forbedre den måde, du bruger appen</string>
+  <string name="connections_info">Særlige tjenester, der er unikke for AniTenshi og forbedre den måde, du bruger appen</string>
   <string name="connections_discord">Uenighed</string>
-  <string name="connections_discord_info">Denne Discord Service fungerer gennem token logning. Bruges på egen risiko. Dit token gemmes lokalt, og Animetail deler det ikke andre steder</string>
+  <string name="connections_discord_info">Denne Discord Service fungerer gennem token logning. Bruges på egen risiko. Dit token gemmes lokalt, og AniTenshi deler det ikke andre steder</string>
   <string name="pref_discord_rpc">Discord Rig Tilstedeværelse</string>
   <string name="show_chapters_titles_title">Vis Episoder/Kapitler Titler</string>
   <string name="show_chapters_titles_subtitle">Vis titlen på episoden/kapitlet du læser</string>

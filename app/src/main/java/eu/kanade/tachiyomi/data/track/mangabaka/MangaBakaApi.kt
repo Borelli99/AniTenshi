@@ -52,9 +52,9 @@ class MangaBakaApi(
             .header(
                 "User-Agent",
                 buildString {
-                    append("Animetail/v${BuildConfig.VERSION_NAME} ")
+                    append("AniTenshi/v${BuildConfig.VERSION_NAME} ")
                     append("(${BuildConfig.APPLICATION_ID} ${BuildConfig.COMMIT_SHA}) ")
-                    append("(Android) (https://github.com/Animetailapp/Animetail)")
+                    append("(Android) (https://github.com/Borelli99/AniTenshi)")
                 },
             )
             .build()

@@ -27,9 +27,9 @@
   <string name="special_services">Özel Servis</string>
   <string name="pref_category_connections">Bağlantılar</string>
   <string name="pref_connections_summary">Discord, yakında daha fazlası gelecek..</string>
-  <string name="connections_info">Animetail\'e özgü ve uygulamayı kullanım şeklinizi geliştiren özel hizmetler</string>
+  <string name="connections_info">AniTenshi\'e özgü ve uygulamayı kullanım şeklinizi geliştiren özel hizmetler</string>
   <string name="connections_discord">Discord</string>
-  <string name="connections_discord_info">Bu Discord Hizmeti, token kaydı üzerinden çalışır. Kendi riskinizle kullanın. Token\'ınız yerel olarak saklanır ve Animetail bunu başka hiçbir yerde paylaşmaz.</string>
+  <string name="connections_discord_info">Bu Discord Hizmeti, token kaydı üzerinden çalışır. Kendi riskinizle kullanın. Token\'ınız yerel olarak saklanır ve AniTenshi bunu başka hiçbir yerde paylaşmaz.</string>
   <string name="pref_discord_rpc">Discord Zengin Varlık Durumu</string>
   <string name="show_chapters_titles_title">Bölüm/Konu Başlıklarını Göster</string>
   <string name="show_chapters_titles_subtitle">Okuduğunuz bölüm/konunun başlığını göster</string>

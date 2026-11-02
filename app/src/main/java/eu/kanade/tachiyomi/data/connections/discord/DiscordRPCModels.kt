@@ -17,9 +17,10 @@ const val RICH_PRESENCE_TAG = "discord_rpc"
 const val RICH_PRESENCE_APPLICATION_ID = "1173423931865170070"
 
 const val DOWNLOAD_BUTTON_LABEL = "Download"
-const val DOWNLOAD_BUTTON_URL = "https://github.com/Dark25/Animetail2/releases"
-const val DISCORD_BUTTON_LABEL = "Discord"
-const val DISCORD_BUTTON_URL = "https://discord.gg/fvskrQZb9j"
+const val DOWNLOAD_BUTTON_URL = "https://github.com/Borelli99/AniTenshi/releases"
+// AniTenshi has no Discord server: the second button links to the GitHub repository.
+const val DISCORD_BUTTON_LABEL = "GitHub"
+const val DISCORD_BUTTON_URL = "https://github.com/Borelli99/AniTenshi"
 
 data class PlayerData(
     val incognitoMode: Boolean = false,

@@ -26,7 +26,7 @@ class TraktApi(private val client: OkHttpClient, private val interceptor: TraktI
 
     private val baseUrl = "https://api.trakt.tv"
     private val json = Json { ignoreUnknownKeys = true }
-    private val userAgent = "Animetail v${BuildConfig.VERSION_NAME} (${BuildConfig.APPLICATION_ID})"
+    private val userAgent = "AniTenshi v${BuildConfig.VERSION_NAME} (${BuildConfig.APPLICATION_ID})"
 
     private val publicClient by lazy {
         client.newBuilder().cookieJar(CookieJar.NO_COOKIES).build()

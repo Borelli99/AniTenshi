@@ -27,7 +27,7 @@
   <string name="special_services">الخدمات الخاصة</string>
   <string name="pref_category_connections">اتصالات</string>
   <string name="pref_connections_summary">ديسكورد، أكثر من ذلك..</string>
-  <string name="connections_info">الخدمات الخاصة الفريدة من نوعها في Animetail وتعزيز طريقة استخدام التطبيق</string>
+  <string name="connections_info">الخدمات الخاصة الفريدة من نوعها في AniTenshi وتعزيز طريقة استخدام التطبيق</string>
   <string name="connections_discord">ديسكورد</string>
   <string name="connections_discord_info">خدمة ديسكورد هذه تعمل من خلال تسجيل الرمز المميز. استخدمها على مسؤوليتك الخاصة. يتم تخزين الرمز المميز الخاص بك محليا ولا يشاركه الذيل في أي مكان آخر</string>
   <string name="pref_discord_rpc">وجود ديسكورد الغني</string>

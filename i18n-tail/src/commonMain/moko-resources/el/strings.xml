@@ -27,9 +27,9 @@
   <string name="special_services">Ειδικές Υπηρεσίες</string>
   <string name="pref_category_connections">Συνδέσεις</string>
   <string name="pref_connections_summary">Discord, περισσότερα για να έρθει..</string>
-  <string name="connections_info">Ειδικές Υπηρεσίες που είναι μοναδικές για την Animetail και ενισχύουν τον τρόπο με τον οποίο χρησιμοποιείτε την εφαρμογή</string>
+  <string name="connections_info">Ειδικές Υπηρεσίες που είναι μοναδικές για την AniTenshi και ενισχύουν τον τρόπο με τον οποίο χρησιμοποιείτε την εφαρμογή</string>
   <string name="connections_discord">Discord</string>
-  <string name="connections_discord_info">Αυτή η υπηρεσία του Discord λειτουργεί μέσω καταγραφής συμβόλων. Χρησιμοποιήστε το με δική σας ευθύνη. Το διακριτικό αποθηκεύεται τοπικά και το Animetail δεν το μοιράζεται πουθενά αλλού</string>
+  <string name="connections_discord_info">Αυτή η υπηρεσία του Discord λειτουργεί μέσω καταγραφής συμβόλων. Χρησιμοποιήστε το με δική σας ευθύνη. Το διακριτικό αποθηκεύεται τοπικά και το AniTenshi δεν το μοιράζεται πουθενά αλλού</string>
   <string name="pref_discord_rpc">Discord Πλούσια Παρουσία</string>
   <string name="show_chapters_titles_title">Εμφάνιση Τίτλων Επεισόδια/Κεφάλαια</string>
   <string name="show_chapters_titles_subtitle">Εμφάνιση του τίτλου του επεισοδίου/κεφαλαίου που διαβάζετε</string>

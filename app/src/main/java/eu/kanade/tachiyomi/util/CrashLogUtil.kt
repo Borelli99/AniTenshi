@@ -53,9 +53,10 @@ class CrashLogUtil(
     fun getDebugInfo(): String {
         val now = Clock.System.now()
         val tz = TimeZone.currentSystemDefault()
+        val appVersion = "AniTenshi r${BuildConfig.COMMIT_COUNT}, based on Animetail ${BuildConfig.VERSION_NAME}"
         return """
             App ID: ${BuildConfig.APPLICATION_ID}
-            App version: ${BuildConfig.VERSION_NAME} (${BuildConfig.COMMIT_SHA}, ${BuildConfig.VERSION_CODE}, ${BuildConfig.BUILD_TIME})
+            App version: $appVersion (${BuildConfig.COMMIT_SHA}, ${BuildConfig.VERSION_CODE}, ${BuildConfig.BUILD_TIME})
             Installation ID: ${preferences.installationId.get()}
             Android version: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT}; build ${Build.DISPLAY})
             Android build ID: ${Build.DISPLAY}

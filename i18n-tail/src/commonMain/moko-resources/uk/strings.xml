@@ -27,7 +27,7 @@
   <string name="special_services">Спеціальні послуги</string>
   <string name="pref_category_connections">З\'єднання</string>
   <string name="pref_connections_summary">Discord, ще більше...</string>
-  <string name="connections_info">Спеціальні послуги, які унікальні для Animetail та підвищують спосіб використання додатку</string>
+  <string name="connections_info">Спеціальні послуги, які унікальні для AniTenshi та підвищують спосіб використання додатку</string>
   <string name="connections_discord">Discord</string>
   <string name="connections_discord_info">Цей сервіс Discord працює з використанням протоколу жетонів. Використовуйте на ваш власний ризик. Ваш токен зберігається в місцевому та аніметрі не поширює його більше ніде</string>
   <string name="pref_discord_rpc">Rich Presence Discord</string>

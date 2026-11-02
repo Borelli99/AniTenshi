@@ -35,7 +35,6 @@ import eu.kanade.tachiyomi.data.updater.RELEASE_URL
 import eu.kanade.tachiyomi.ui.more.NewUpdateScreen
 import eu.kanade.tachiyomi.util.lang.toDateTimestampString
 import eu.kanade.tachiyomi.util.system.copyToClipboard
-import eu.kanade.tachiyomi.util.system.isFossBuildType
 import eu.kanade.tachiyomi.util.system.isNightlyBuildType
 import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.system.updaterEnabled
@@ -45,8 +44,8 @@ import kotlinx.datetime.toLocalDateTime
 import logcat.LogPriority
 import mihon.app.di.appGraph
 import mihon.icons.materialsymbols.MaterialSymbols
-import mihon.icons.materialsymbols.rounded.Public
-import mihon.icons.simpleicons.Discord
+import mihon.icons.materialsymbols.rounded.BugReport
+import mihon.icons.materialsymbols.rounded.Download
 import mihon.icons.simpleicons.Github
 import mihon.icons.simpleicons.SimpleIcons
 import tachiyomi.core.common.util.lang.withIOContext
@@ -160,9 +159,7 @@ object AboutScreen : Screen() {
                     TextPreferenceWidget(
                         title = stringResource(MR.strings.help_translate),
                         onPreferenceClick = {
-                            uriHandler.openUri(
-                                "https://aniyomi.org/docs/contribute#translation",
-                            )
+                            uriHandler.openUri(Constants.URL_TRANSLATE)
                         },
                     )
                 }
@@ -177,7 +174,7 @@ object AboutScreen : Screen() {
                 item {
                     TextPreferenceWidget(
                         title = stringResource(MR.strings.privacy_policy),
-                        onPreferenceClick = { uriHandler.openUri("https://aniyomi.org/privacy/") },
+                        onPreferenceClick = { uriHandler.openUri(Constants.URL_PRIVACY) },
                     )
                 }
 
@@ -189,19 +186,19 @@ object AboutScreen : Screen() {
                         horizontalArrangement = Arrangement.Center,
                     ) {
                         LinkIcon(
-                            label = stringResource(MR.strings.website),
-                            icon = MaterialSymbols.Rounded.Public,
-                            url = "https://akiled.org",
-                        )
-                        LinkIcon(
-                            label = "Discord",
-                            icon = SimpleIcons.Discord,
-                            url = Constants.URL_DISCORD,
-                        )
-                        LinkIcon(
                             label = "GitHub",
                             icon = SimpleIcons.Github,
-                            url = "https://github.com/Animetailapp/Animetail",
+                            url = Constants.URL_GITHUB,
+                        )
+                        LinkIcon(
+                            label = "Releases",
+                            icon = MaterialSymbols.Rounded.Download,
+                            url = Constants.URL_RELEASES,
+                        )
+                        LinkIcon(
+                            label = "Issues",
+                            icon = MaterialSymbols.Rounded.BugReport,
+                            url = Constants.URL_ISSUES,
                         )
                     }
                 }
@@ -265,8 +262,8 @@ object AboutScreen : Screen() {
             }
 
             else -> {
-                val channel = if (isFossBuildType) "FOSS" else "Stable"
-                "$channel v${BuildConfig.VERSION_NAME}".let {
+                // Same number as the GitHub release tag (r<commit count>)
+                "AniTenshi r${BuildConfig.COMMIT_COUNT}".let {
                     if (withBuildDate) {
                         "$it (${getFormattedBuildTime(dateFormat)})"
                     } else {

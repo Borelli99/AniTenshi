@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import eu.kanade.presentation.theme.AniTenshiPalette
 import eu.kanade.presentation.util.Tab
+import eu.kanade.presentation.util.isTabletUi
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.library.anime.AnimeLibraryTab
 import eu.kanade.tachiyomi.ui.library.manga.MangaLibraryTab
@@ -49,8 +50,17 @@ val LocalBottomNavPadding = compositionLocalOf { 0.dp }
 
 private val RingWidth = 3.dp
 private val RingGap = 4.dp
-private val SideDiameter = 60.dp
-private val HomeDiameter = 80.dp
+
+/** Button sizes: a little larger on tablets. */
+private class NavSizes(
+    val side: Dp,
+    val home: Dp,
+    val sideIcon: Dp,
+    val homeIcon: Dp,
+)
+
+private val PhoneSizes = NavSizes(side = 60.dp, home = 80.dp, sideIcon = 26.dp, homeIcon = 44.dp)
+private val TabletSizes = NavSizes(side = 72.dp, home = 96.dp, sideIcon = 31.dp, homeIcon = 53.dp)
 
 /** How far the side buttons slide under the Home button, as in the AniTenshi sketch. */
 private val SideOverlap = 8.dp
@@ -68,6 +78,7 @@ internal fun HomeNavButtons(
     onClick: (Tab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val sizes = if (isTabletUi()) TabletSizes else PhoneSizes
     val animeSelected = current::class == AnimeLibraryTab::class
     val homeSelected = current::class == HomeTab::class
     val mangaSelected = current::class == MangaLibraryTab::class
@@ -81,7 +92,7 @@ internal fun HomeNavButtons(
     ) {
         NavCircle(
             selected = animeSelected,
-            diameter = SideDiameter,
+            diameter = sizes.side,
             label = stringResource(AYMR.strings.label_anime_library),
             badge = animeBadge,
             onClick = { onClick(AnimeLibraryTab) },
@@ -93,12 +104,12 @@ internal fun HomeNavButtons(
                 painter = painterResource(R.drawable.ic_nav_anime),
                 contentDescription = null,
                 tint = if (animeSelected) AniTenshiPalette.Ivory else AniTenshiPalette.Lavender,
-                modifier = Modifier.size(26.dp),
+                modifier = Modifier.size(sizes.sideIcon),
             )
         }
         NavCircle(
             selected = homeSelected,
-            diameter = HomeDiameter,
+            diameter = sizes.home,
             label = stringResource(MR.strings.label_home),
             badge = 0,
             onClick = { onClick(HomeTab) },
@@ -109,12 +120,12 @@ internal fun HomeNavButtons(
                     if (homeSelected) R.drawable.ic_nav_home_on else R.drawable.ic_nav_home_off,
                 ),
                 contentDescription = null,
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(sizes.homeIcon),
             )
         }
         NavCircle(
             selected = mangaSelected,
-            diameter = SideDiameter,
+            diameter = sizes.side,
             label = stringResource(AYMR.strings.label_manga_library),
             badge = mangaBadge,
             onClick = { onClick(MangaLibraryTab) },
@@ -126,7 +137,7 @@ internal fun HomeNavButtons(
                 painter = painterResource(R.drawable.ic_nav_manga),
                 contentDescription = null,
                 tint = if (mangaSelected) AniTenshiPalette.Ivory else AniTenshiPalette.Lavender,
-                modifier = Modifier.size(26.dp),
+                modifier = Modifier.size(sizes.sideIcon),
             )
         }
     }

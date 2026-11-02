@@ -52,7 +52,8 @@ jobs:
         run: ./gradlew :app:testDebugUnitTest --tests "mihon.data.extension.model.AnimeExtensionStoreDecoderTest"
 
       - name: Build app
-        run: ./gradlew assembleRelease
+        # The in-app updater checks this repository's latest release.
+        run: ./gradlew assembleRelease -Penable-updater
 
       - name: Sign APKs
         env:
@@ -96,10 +97,32 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="r${{ github.run_number }}"
+          set -euo pipefail
+          # Tag = commit count, the same number the app compares against (BuildConfig.COMMIT_COUNT).
+          TAG="r$(git rev-list --count HEAD)"
           SHORT_SHA="$(git rev-parse --short HEAD)"
-          gh release create "${TAG}" signed/*.apk \
-            --target "${{ github.sha }}" \
-            --title "AniTenshi r${{ github.run_number }} (${SHORT_SHA})" \
-            --notes "Build automatica di AniTenshi dal commit ${SHORT_SHA}. Per la maggior parte dei telefoni scarica anitenshi-arm64-v8a.apk; se non si installa, usa anitenshi-universal.apk." \
-            --latest
+
+          PREVIOUS_TAG="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"
+          {
+            echo "AniTenshi ${TAG}, built from ${SHORT_SHA}."
+            echo
+            if [ -n "${PREVIOUS_TAG}" ] && [ "${PREVIOUS_TAG}" != "${TAG}" ] && git rev-parse -q --verify "refs/tags/${PREVIOUS_TAG}" > /dev/null; then
+              echo "### Changes since ${PREVIOUS_TAG}"
+              git log --no-merges -n 40 --pretty='- %s' "${PREVIOUS_TAG}..HEAD"
+              echo
+            fi
+            echo "### Download"
+            echo "- \`anitenshi-arm64-v8a.apk\`: most phones"
+            echo "- \`anitenshi-universal.apk\`: any device, larger download"
+            echo "- \`anitenshi-armeabi-v7a.apk\`: older 32-bit phones"
+          } > "${RUNNER_TEMP}/notes.md"
+
+          if gh release view "${TAG}" > /dev/null 2>&1; then
+            gh release upload "${TAG}" signed/*.apk --clobber
+          else
+            gh release create "${TAG}" signed/*.apk \
+              --target "${{ github.sha }}" \
+              --title "AniTenshi ${TAG}" \
+              --notes-file "${RUNNER_TEMP}/notes.md" \
+              --latest
+          fi

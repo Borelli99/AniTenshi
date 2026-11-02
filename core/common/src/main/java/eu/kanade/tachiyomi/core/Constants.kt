@@ -8,6 +8,14 @@ object Constants {
     const val URL_DONATE_OPENCOLLECTIVE = "https://opencollective.com/animetail/contribute"
     const val URL_DISCORD = "https://discord.gg/wPRFW6ccDE"
 
+    // AniTenshi
+    const val GITHUB_REPO = "Borelli99/AniTenshi"
+    const val URL_GITHUB = "https://github.com/$GITHUB_REPO"
+    const val URL_RELEASES = "$URL_GITHUB/releases"
+    const val URL_ISSUES = "$URL_GITHUB/issues"
+    const val URL_PRIVACY = "$URL_GITHUB/blob/master/PRIVACY.md"
+    const val URL_TRANSLATE = "$URL_GITHUB/blob/master/CONTRIBUTING.md#translations"
+
     const val MANGA_EXTRA = "manga"
 
     const val ANIME_EXTRA = "anime"

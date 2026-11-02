@@ -375,4 +375,21 @@
   <string name="anitenshi_no_repos_title">Nessuna repo</string>
   <string name="anitenshi_no_repos_body">Le estensioni arrivano dalle repo. Aggiungi l\'indirizzo di una repo per vedere quelle disponibili e installarle.</string>
   <string name="anitenshi_add_repo">Aggiungi una repo</string>
+  <string name="pref_anime_info">Tema della scheda</string>
+  <string name="pref_custom_theme_style">Stile del tema personalizzato</string>
+  <string name="pref_panorama_cover">Copertina panoramica</string>
+  <string name="pref_panorama_cover_summary">Mostra per intero le copertine larghe, senza ritagliarle</string>
+  <string name="pref_theme_cover_based">Tema dalla copertina</string>
+  <string name="pref_theme_cover_based_style">Stile del tema dalla copertina</string>
+  <string name="pref_theme_cover_based_style_content">Contenuto</string>
+  <string name="pref_theme_cover_based_style_expressive">Espressivo</string>
+  <string name="pref_theme_cover_based_style_fidelity">Fedele</string>
+  <string name="pref_theme_cover_based_style_fruitsalad">Macedonia</string>
+  <string name="pref_theme_cover_based_style_monochrome">Monocromatico</string>
+  <string name="pref_theme_cover_based_style_neutral">Neutro</string>
+  <string name="pref_theme_cover_based_style_rainbow">Arcobaleno</string>
+  <string name="pref_theme_cover_based_style_tonalspot">Tonale</string>
+  <string name="pref_theme_cover_based_style_vibrant">Vivace</string>
+  <string name="pref_top_align_cover">Allinea la copertina in alto</string>
+  <string name="pref_top_align_cover_summary">Allinea l\'immagine di copertina in alto invece che al centro</string>
 </resources>

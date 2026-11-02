@@ -924,4 +924,19 @@
     <string name="extensionStoresScreen.addStoreDeeplink.bodyText">Vuoi aggiungere questa repo?</string>
     <string name="extensionStoresScreen.deleteStore.title">Rimuovi repo</string>
     <string name="extensionStoresScreen.deleteStore.body">Vuoi rimuovere la repo \"%1$s\" (%2$s)?</string>
+    <string name="pref_enable_chapter_name_hash_details">Aggiunge un suffisso univoco ai nomi dei capitoli per evitare conflitti. Se lo disattivi, i capitoli con lo stesso nome non si possono scaricare.</string>
+    <string name="pref_high_quality_renderer">Usa il rendering ad alta qualità</string>
+    <string name="pref_include_download_filename_hash">Aggiungi un hash ai nomi dei file</string>
+    <string name="pref_include_download_filename_hash_summary">Aggiunge parte dell\'hash dell\'indirizzo ai nomi di cartelle e file scaricati, per distinguere quelli con lo stesso nome</string>
+    <string name="pref_load_ahead_only_over_wifi">Precarica solo con il Wi-Fi</string>
+    <string name="pref_load_ahead_only_over_wifi_summary">Risparmia dati mobili caricando solo le pagine vicine a quella che stai leggendo</string>
+    <string name="pref_redact_sensitive_headers">Nascondi le intestazioni sensibili</string>
+    <string name="pref_redact_sensitive_headers_summary">Nasconde alcuni dati sensibili nei log. Tienilo attivo per sicurezza quando condividi i log con altre persone.</string>
+    <string name="pref_time_format">Formato dell\'ora</string>
+    <string name="pref_vertical_navigator">Usa il navigatore verticale dei capitoli in</string>
+    <string name="pref_vertical_navigator_height">Altezza del navigatore verticale</string>
+    <string name="pref_webtoon_vertical_navigator_on_left">Metti il navigatore verticale a sinistra</string>
+    <string name="refresh_tracker_error">Errore nell\'aggiornare %1$s: %2$s</string>
+    <string name="refresh_tracker_profile">Aggiorna il profilo del tracker</string>
+    <string name="refresh_tracker_success">Profilo di %s aggiornato</string>
 </resources>

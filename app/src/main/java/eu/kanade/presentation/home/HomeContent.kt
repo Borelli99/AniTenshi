@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -413,6 +415,29 @@ private fun ContinueCard(
                 modifier = Modifier.width(ContinueCoverWidth),
                 shape = RoundedCornerShape(12.dp),
             )
+            // Gold line along the bottom of the cover: how far into the next episode you got
+            entry.progress?.let { progress ->
+                Box(
+                    contentAlignment = Alignment.BottomStart,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(RoundedCornerShape(12.dp)),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .background(AniTenshiPalette.Night.copy(alpha = 0.6f)),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(progress)
+                                .fillMaxHeight()
+                                .background(AniTenshiPalette.Gold),
+                        )
+                    }
+                }
+            }
             // Gold pill: play (or book) and the episode / chapter that a tap opens
             Row(
                 verticalAlignment = Alignment.CenterVertically,

@@ -15,7 +15,6 @@ import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.browse.anime.SourceFeedUI
 import eu.kanade.tachiyomi.animesource.AnimeCatalogueSource
 import eu.kanade.tachiyomi.animesource.model.AnimeFilterList
-import eu.kanade.tachiyomi.ui.browse.feed.MAX_FEED_ITEMS
 import exh.util.nullIfBlank
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -444,3 +443,6 @@ data class SourceFeedState(
     val isLoading
         get() = items.isEmpty()
 }
+
+/** Most saved searches a source feed can hold. */
+const val MAX_FEED_ITEMS = 20

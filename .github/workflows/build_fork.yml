@@ -105,7 +105,16 @@ jobs:
           VERSION_NAME="$(grep -m1 -oP 'versionName = "\K[^"]+' app/build.gradle.kts)"
 
           PREVIOUS_TAG="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"
+          # Readable notes for this version (Italian), shown by the in-app updater above the "---" line.
+          # Used only when its first line names this version, so stale notes never reach a new release.
+          NOTES_FILE=".github/release-notes.md"
           {
+            if [ -f "${NOTES_FILE}" ] && head -n1 "${NOTES_FILE}" | grep -qF "${VERSION_NAME}"; then
+              cat "${NOTES_FILE}"
+              echo
+              echo "---"
+              echo
+            fi
             echo "AniTenshi ${VERSION_NAME} (${TAG}), built from ${SHORT_SHA}."
             echo
             if [ -n "${PREVIOUS_TAG}" ] && [ "${PREVIOUS_TAG}" != "${TAG}" ] && git rev-parse -q --verify "refs/tags/${PREVIOUS_TAG}" > /dev/null; then

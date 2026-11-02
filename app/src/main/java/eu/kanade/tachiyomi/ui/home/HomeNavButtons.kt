@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -77,6 +78,7 @@ internal fun HomeNavButtons(
     mangaBadge: Int,
     onClick: (Tab) -> Unit,
     modifier: Modifier = Modifier,
+    vertical: Boolean = false,
 ) {
     val sizes = if (isTabletUi()) TabletSizes else PhoneSizes
     val animeSelected = current::class == AnimeLibraryTab::class
@@ -84,12 +86,11 @@ internal fun HomeNavButtons(
     val mangaSelected = current::class == MangaLibraryTab::class
     // The side buttons sit inside boxes as large as their ring: move them in until the circles overlap
     val sideShift = RingWidth + RingGap + RingWidth + RingGap + SideOverlap
+    // In a row the side buttons slide sideways towards Home; in a column (tablet held sideways) they slide vertically
+    val firstShift = if (vertical) Modifier.offset(y = sideShift) else Modifier.offset(x = sideShift)
+    val lastShift = if (vertical) Modifier.offset(y = -sideShift) else Modifier.offset(x = -sideShift)
 
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    val buttons: @Composable () -> Unit = {
         NavCircle(
             selected = animeSelected,
             diameter = sizes.side,
@@ -98,7 +99,7 @@ internal fun HomeNavButtons(
             onClick = { onClick(AnimeLibraryTab) },
             modifier = Modifier
                 .zIndex(if (animeSelected) 3f else 1f)
-                .offset(x = sideShift),
+                .then(firstShift),
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_nav_anime),
@@ -131,7 +132,7 @@ internal fun HomeNavButtons(
             onClick = { onClick(MangaLibraryTab) },
             modifier = Modifier
                 .zIndex(if (mangaSelected) 3f else 1f)
-                .offset(x = -sideShift),
+                .then(lastShift),
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_nav_manga),
@@ -140,6 +141,20 @@ internal fun HomeNavButtons(
                 modifier = Modifier.size(sizes.sideIcon),
             )
         }
+    }
+
+    if (vertical) {
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) { buttons() }
+    } else {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) { buttons() }
     }
 }
 

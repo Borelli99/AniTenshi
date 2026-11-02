@@ -68,7 +68,8 @@ fun NewUpdateScreen(
                 ),
             ),
         ) {
-            Markdown(content = changelogInfo)
+            // Only the readable notes: everything after the first "---" line is the technical log
+            Markdown(content = changelogInfo.split(UpdateNotesSeparator, limit = 2).first().trim())
 
             TextButton(
                 onClick = onOpenInBrowser,
@@ -81,6 +82,8 @@ fun NewUpdateScreen(
         }
     }
 }
+
+private val UpdateNotesSeparator = Regex("\\r?\\n---\\r?\\n")
 
 @PreviewLightDark
 @Composable

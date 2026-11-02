@@ -4,7 +4,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -13,13 +15,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -40,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
@@ -53,6 +62,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import eu.kanade.presentation.util.Screen
+import eu.kanade.presentation.util.isTabletUi
 import eu.kanade.tachiyomi.ui.browse.AnimeBrowseScreen
 import eu.kanade.tachiyomi.ui.browse.MangaBrowseScreen
 import eu.kanade.tachiyomi.ui.download.DownloadsTab
@@ -119,76 +129,118 @@ object HomeScreen : Screen() {
             CompositionLocalProvider(LocalNavigator provides navigator) {
                 // AniTenshi: the three round buttons float over the content, with nothing behind them.
                 // The screens get the room they take through LocalBottomNavPadding.
+                // On a tablet held sideways they stand in a column on the left instead, beside the content.
                 var navAreaHeight by remember { mutableStateOf(0.dp) }
                 val density = LocalDensity.current
                 val navBarInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                Box(modifier = Modifier.fillMaxSize()) {
-                    CompositionLocalProvider(
-                        LocalBottomNavPadding provides (navAreaHeight - navBarInset).coerceAtLeast(0.dp),
-                    ) {
-                        AnimatedContent(
-                            targetState = tabNavigator.current,
-                            transitionSpec = {
-                                materialFadeThroughIn(
-                                    initialScale = 1f,
-                                    durationMillis = TAB_FADE_DURATION,
-                                ) togetherWith
-                                    materialFadeThroughOut(durationMillis = TAB_FADE_DURATION)
-                            },
-                            label = "tabContent",
-                        ) {
-                            tabNavigator.saveableState(key = "currentTab", it) {
-                                it.Content()
-                            }
-                        }
+                val configuration = LocalConfiguration.current
+                val sideButtons = isTabletUi() && configuration.screenWidthDp > configuration.screenHeightDp
+                val bottomNavVisible by produceState(initialValue = true) {
+                    showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
+                }
+                val onClickNav: (eu.kanade.presentation.util.Tab) -> Unit = { tab ->
+                    if (tabNavigator.current::class == tab::class) {
+                        scope.launch { tab.onReselect(navigator) }
+                    } else {
+                        tabNavigator.current = tab
                     }
-
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .onSizeChanged { navAreaHeight = with(density) { it.height.toDp() } },
-                    ) {
-                        val isConnected =
-                            castManager.castState.collectAsState().value == CastManager.CastState.CONNECTED
-                        AnimatedVisibility(
-                            visible = isConnected,
-                            enter = expandVertically(),
-                            exit = shrinkVertically(),
-                        ) {
-                            CastMiniController(
-                                castManager = castManager,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                            )
-                        }
-
-                        val bottomNavVisible by produceState(initialValue = true) {
-                            showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
-                        }
-
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                ) {
+                    if (sideButtons) {
                         AnimatedVisibility(
                             visible = bottomNavVisible,
-                            enter = expandVertically(),
-                            exit = shrinkVertically(),
+                            enter = expandHorizontally(),
+                            exit = shrinkHorizontally(),
                         ) {
                             HomeNavButtons(
                                 current = tabNavigator.current,
                                 animeBadge = if (showUpdatesCount) newAnimeUpdates else 0,
                                 mangaBadge = if (showUpdatesCount) newMangaUpdates else 0,
-                                onClick = { tab ->
-                                    if (tabNavigator.current::class == tab::class) {
-                                        scope.launch { tab.onReselect(navigator) }
-                                    } else {
-                                        tabNavigator.current = tab
-                                    }
-                                },
+                                onClick = onClickNav,
+                                vertical = true,
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .navigationBarsPadding()
-                                    .padding(top = 4.dp, bottom = 8.dp),
+                                    .fillMaxHeight()
+                                    .windowInsetsPadding(
+                                        WindowInsets.navigationBars
+                                            .union(WindowInsets.displayCutout)
+                                            .only(WindowInsetsSides.Start),
+                                    )
+                                    .padding(horizontal = 8.dp),
                             )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                    ) {
+                        CompositionLocalProvider(
+                            LocalBottomNavPadding provides if (sideButtons) {
+                                navAreaHeight
+                            } else {
+                                (navAreaHeight - navBarInset).coerceAtLeast(0.dp)
+                            },
+                        ) {
+                            AnimatedContent(
+                                targetState = tabNavigator.current,
+                                transitionSpec = {
+                                    materialFadeThroughIn(
+                                        initialScale = 1f,
+                                        durationMillis = TAB_FADE_DURATION,
+                                    ) togetherWith
+                                        materialFadeThroughOut(durationMillis = TAB_FADE_DURATION)
+                                },
+                                label = "tabContent",
+                            ) {
+                                tabNavigator.saveableState(key = "currentTab", it) {
+                                    it.Content()
+                                }
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .onSizeChanged { navAreaHeight = with(density) { it.height.toDp() } },
+                        ) {
+                            val isConnected =
+                                castManager.castState.collectAsState().value == CastManager.CastState.CONNECTED
+                            AnimatedVisibility(
+                                visible = isConnected,
+                                enter = expandVertically(),
+                                exit = shrinkVertically(),
+                            ) {
+                                CastMiniController(
+                                    castManager = castManager,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                                )
+                            }
+
+                            if (!sideButtons) {
+                                AnimatedVisibility(
+                                    visible = bottomNavVisible,
+                                    enter = expandVertically(),
+                                    exit = shrinkVertically(),
+                                ) {
+                                    HomeNavButtons(
+                                        current = tabNavigator.current,
+                                        animeBadge = if (showUpdatesCount) newAnimeUpdates else 0,
+                                        mangaBadge = if (showUpdatesCount) newMangaUpdates else 0,
+                                        onClick = onClickNav,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .navigationBarsPadding()
+                                            .padding(top = 4.dp, bottom = 8.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                 }

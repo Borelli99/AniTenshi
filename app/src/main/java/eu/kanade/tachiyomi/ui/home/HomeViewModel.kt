@@ -314,13 +314,18 @@ class HomeViewModel(
     }
 
     /** [withNext]: also look up the number of the episode to watch next (only for the visible row). */
-    private suspend fun LibraryAnime.toContinueEntry(withNext: Boolean = false) = ContinueEntry(
-        id = id,
-        title = anime.title,
-        cover = anime.asAnimeCover(),
-        remaining = unseenCount,
-        nextNumber = if (withNext) nextEpisode(id)?.episodeNumber else null,
-    )
+    private suspend fun LibraryAnime.toContinueEntry(withNext: Boolean = false): ContinueEntry {
+        val next = if (withNext) nextEpisode(id) else null
+        return ContinueEntry(
+            id = id,
+            title = anime.title,
+            cover = anime.asAnimeCover(),
+            remaining = unseenCount,
+            nextNumber = next?.episodeNumber,
+            progress = next?.takeIf { it.totalSeconds > 0 && it.lastSecondSeen > 0 }
+                ?.let { (it.lastSecondSeen.toFloat() / it.totalSeconds).coerceIn(0f, 1f) },
+        )
+    }
 
     /** [withNext]: also look up the number of the chapter to read next (only for the visible row). */
     private suspend fun LibraryManga.toContinueEntry(withNext: Boolean = false) = ContinueEntry(
@@ -371,4 +376,6 @@ data class ContinueEntry(
     val remaining: Long,
     /** Number of the next episode or chapter (as the source numbers it), when known. */
     val nextNumber: Double? = null,
+    /** How far into the next episode the user got (0..1), when it was started. */
+    val progress: Float? = null,
 )

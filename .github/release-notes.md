@@ -1,3 +1,3 @@
-## Novità di AniTenshi 1.0.12
+## Novità di AniTenshi 1.0.13
 
-- **Primo avvio, passo dei permessi**: dopo aver consentito le notifiche o l'uso della batteria in secondo piano compare subito la spunta. Prima restava scritto "Consenti" anche se il permesso era stato dato.
+- **Home più pulita**: il pulsante "Altro" non sta più in basso a destra sopra le copertine. Ora è l'icona ⋯ nella barra in alto, accanto ad Aggiorna.

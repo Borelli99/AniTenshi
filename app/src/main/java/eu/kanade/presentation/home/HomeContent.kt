@@ -30,7 +30,6 @@ import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -120,29 +119,16 @@ fun HomeContent(
                                 icon = Icons.Outlined.Refresh,
                                 onClick = onClickRefresh,
                             ),
+                            // AniTenshi: "More" lives up here, so nothing covers the covers at the bottom
+                            AppBar.Action(
+                                title = stringResource(MR.strings.label_more),
+                                icon = Icons.Outlined.MoreHoriz,
+                                onClick = onClickMore,
+                            ),
                         ),
                     )
                 },
                 scrollBehavior = scrollBehavior,
-            )
-        },
-        floatingActionButton = {
-            // The main action of Home: gold in the dark theme, night blue (with gold dots) in the light one
-            val colors = MaterialTheme.colorScheme
-            ExtendedFloatingActionButton(
-                // Above the round buttons of the main screens
-                modifier = Modifier.padding(bottom = LocalBottomNavPadding.current),
-                text = { Text(text = stringResource(MR.strings.label_more), fontWeight = FontWeight.Bold) },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Outlined.MoreHoriz,
-                        contentDescription = null,
-                        tint = if (colors.primary == AniTenshiPalette.Navy) AniTenshiPalette.Gold else colors.onPrimary,
-                    )
-                },
-                onClick = onClickMore,
-                containerColor = colors.primary,
-                contentColor = colors.onPrimary,
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -211,7 +197,8 @@ fun HomeContent(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(contentPadding)
-                .padding(bottom = MaterialTheme.padding.medium),
+                // Room for the round buttons floating at the bottom
+                .padding(bottom = LocalBottomNavPadding.current + MaterialTheme.padding.medium),
         ) {
             if (isTabletUi()) {
                 // Tablet: anime on the left, manga on the right

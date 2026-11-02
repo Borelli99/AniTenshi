@@ -26,6 +26,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.StateFlow
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.domain.entries.anime.model.Anime
+import tachiyomi.domain.items.episode.model.NoEpisodesException
 import tachiyomi.domain.library.model.LibraryDisplayMode
 import tachiyomi.domain.source.anime.model.StubAnimeSource
 import tachiyomi.i18n.MR
@@ -79,6 +80,7 @@ fun BrowseAnimeSourceContent(
         EmptyScreen(
             modifier = Modifier.padding(contentPadding),
             message = getErrorMessage(errorState),
+            isError = errorState.error !is NoEpisodesException,
             actions = if (source is LocalAnimeSource) {
                 persistentListOf(
                     EmptyScreenAction(
@@ -181,6 +183,7 @@ internal fun MissingSourceScreen(
         EmptyScreen(
             message = stringResource(MR.strings.source_not_installed, source.toString()),
             modifier = Modifier.padding(paddingValues),
+            isError = true,
         )
     }
 }

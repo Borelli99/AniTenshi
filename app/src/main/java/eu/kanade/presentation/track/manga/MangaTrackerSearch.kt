@@ -231,6 +231,7 @@ fun MangaTrackerSearch(
                     modifier = Modifier.padding(innerPadding),
                     message = queryResult.exceptionOrNull()?.message
                         ?: stringResource(MR.strings.unknown_error),
+                    isError = true,
                 )
             }
         }

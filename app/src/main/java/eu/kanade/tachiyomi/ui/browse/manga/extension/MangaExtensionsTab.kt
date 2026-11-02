@@ -5,6 +5,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +22,8 @@ import eu.kanade.tachiyomi.extension.manga.model.MangaExtension
 import eu.kanade.tachiyomi.ui.browse.manga.extension.details.MangaExtensionDetailsScreen
 import eu.kanade.tachiyomi.ui.webview.WebViewScreen
 import eu.kanade.tachiyomi.util.system.isPackageInstalled
+import kotlinx.coroutines.flow.map
+import mihon.app.di.appGraph
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -33,6 +36,9 @@ fun mangaExtensionsTab(
     val context = LocalContext.current
 
     val updatesCount by extensionsViewModel.updatesCount.collectAsStateWithLifecycle()
+    val repoCount: Int? by remember {
+        context.appGraph.getMangaExtensionStoreCountAsFlow.subscribe().map { it.toInt() }
+    }.collectAsState(initial = null)
     var privateExtensionToUninstall by remember { mutableStateOf<MangaExtension.Installed?>(null) }
 
     return TabContent(
@@ -43,10 +49,6 @@ fun mangaExtensionsTab(
             AppBar.OverflowAction(
                 title = stringResource(MR.strings.action_filter),
                 onClick = { navigator.push(MangaExtensionFilterScreen()) },
-            ),
-            AppBar.OverflowAction(
-                title = stringResource(MR.strings.extensionStores),
-                onClick = { navigator.push(ExtensionStoresScreen(isManga = true)) },
             ),
         ),
         content = { contentPadding, _ ->
@@ -92,6 +94,9 @@ fun mangaExtensionsTab(
                 onUninstallExtension = { extensionsViewModel.uninstallExtension(it) },
                 onUpdateExtension = extensionsViewModel::updateExtension,
                 onRefresh = extensionsViewModel::findAvailableExtensions,
+                repoCount = repoCount,
+                onClickRepos = { navigator.push(ExtensionStoresScreen(isManga = true, openCreate = repoCount == 0)) },
+                onAddRepo = { navigator.push(ExtensionStoresScreen(isManga = true, openCreate = true)) },
             )
 
             privateExtensionToUninstall?.let { extension ->

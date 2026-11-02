@@ -3,6 +3,9 @@ package eu.kanade.presentation.more.settings.screen.browse
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -22,6 +25,7 @@ import tachiyomi.presentation.core.screens.LoadingScreen
 class ExtensionStoresScreen(
     val isManga: Boolean,
     private val url: String? = null,
+    private val openCreate: Boolean = false,
 ) : Screen() {
 
     @Composable
@@ -36,6 +40,15 @@ class ExtensionStoresScreen(
 
         LaunchedEffect(url) {
             url?.let { viewModel.addFromDeeplink(url) }
+        }
+
+        // Opened from the "Add a repo" button: go straight to the add dialog, only once.
+        var createShown by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(openCreate) {
+            if (openCreate && url == null && !createShown) {
+                createShown = true
+                viewModel.showDialog(ExtensionStoreDialog.Create())
+            }
         }
 
         if (state is ExtensionStoreScreenState.Loading) {

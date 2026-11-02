@@ -25,6 +25,7 @@ import mihon.icons.materialsymbols.rounded.Public
 import mihon.icons.materialsymbols.rounded.Refresh
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.domain.entries.manga.model.Manga
+import tachiyomi.domain.items.chapter.model.NoChaptersException
 import tachiyomi.domain.library.model.LibraryDisplayMode
 import tachiyomi.domain.source.manga.model.StubMangaSource
 import tachiyomi.i18n.MR
@@ -78,6 +79,7 @@ fun BrowseSourceContent(
         EmptyScreen(
             modifier = Modifier.padding(contentPadding),
             message = getErrorMessage(errorState),
+            isError = errorState.error !is NoChaptersException,
             actions = if (source is LocalMangaSource) {
                 listOf(
                     EmptyScreenAction(
@@ -180,6 +182,7 @@ internal fun MissingSourceScreen(
         EmptyScreen(
             message = stringResource(MR.strings.source_not_installed, source.toString()),
             modifier = Modifier.padding(paddingValues),
+            isError = true,
         )
     }
 }

@@ -12,4 +12,8 @@
     <item quantity="one">%d da leggere</item>
     <item quantity="other">%d da leggere</item>
   </plurals>
+  <plurals name="anitenshi_repos_count">
+    <item quantity="one">%d repo</item>
+    <item quantity="other">%d repo</item>
+  </plurals>
 </resources>

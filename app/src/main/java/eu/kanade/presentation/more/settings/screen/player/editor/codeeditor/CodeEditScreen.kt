@@ -115,6 +115,7 @@ class CodeEditScreen(private val filePath: String) : Screen() {
                 is CodeEditScreenState.Error -> {
                     EmptyScreen(
                         message = (state as CodeEditScreenState.Error).throwable.message ?: "Unknown exception",
+                        isError = true,
                     )
                 }
 

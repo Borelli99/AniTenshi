@@ -470,4 +470,9 @@
     <string name="anitenshi_continue_hidden_manga_title">Hidden from Continue reading</string>
     <string name="anitenshi_continue_show_again">Show again</string>
     <string name="theme_anitenshi">AniTenshi</string>
+    <string name="anitenshi_repos_manage">Add or manage</string>
+    <string name="anitenshi_repos_none_add">No repos yet · add one</string>
+    <string name="anitenshi_no_repos_title">No repos</string>
+    <string name="anitenshi_no_repos_body">Extensions come from repos. Add the address of a repo to see the extensions it offers and install them.</string>
+    <string name="anitenshi_add_repo">Add a repo</string>
 </resources>

@@ -13,4 +13,8 @@
         <item quantity="one">%d left</item>
         <item quantity="other">%d left</item>
     </plurals>
+    <plurals name="anitenshi_repos_count">
+        <item quantity="one">%d repo</item>
+        <item quantity="other">%d repos</item>
+    </plurals>
 </resources>

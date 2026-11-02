@@ -27,7 +27,9 @@ import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.presentation.core.i18n.stringResource
 
 @Composable
-fun Screen.animeSourcesTab(): TabContent {
+fun Screen.animeSourcesTab(
+    onGoToExtensions: (() -> Unit)? = null,
+): TabContent {
     val navigator = LocalNavigator.currentOrThrow
     val viewModel = metroViewModel<AnimeSourcesViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -63,6 +65,7 @@ fun Screen.animeSourcesTab(): TabContent {
                 },
                 onClickPin = viewModel::togglePin,
                 onLongClickItem = viewModel::showSourceDialog,
+                onGoToExtensions = onGoToExtensions,
             )
 
             state.dialog?.let { dialog ->

@@ -914,4 +914,14 @@
     <string name="ext_not_loaded_dialog">Impossibile da caricare</string>
     <string name="ext_not_loaded_details">Perché non è caricata</string>
     <string name="ext_copy_stacktrace">Copia traccia di stack</string>
+    <string name="extensionStores">Repo delle estensioni</string>
+    <string name="action.addExtensionStore">Aggiungi una repo</string>
+    <string name="extensionStoresScreen.emptyLabel">Non hai ancora aggiunto nessuna repo</string>
+    <string name="extensionStoresScreen.addStore.title">Aggiungi una repo</string>
+    <string name="extensionStoresScreen.addStore.alreadyExists">Questa repo è già stata aggiunta</string>
+    <string name="extensionStoresScreen.addStore.processing">Elaborazione…</string>
+    <string name="extensionStoresScreen.addStoreInput.inputLabel">Indirizzo della repo</string>
+    <string name="extensionStoresScreen.addStoreDeeplink.bodyText">Vuoi aggiungere questa repo?</string>
+    <string name="extensionStoresScreen.deleteStore.title">Rimuovi repo</string>
+    <string name="extensionStoresScreen.deleteStore.body">Vuoi rimuovere la repo \"%1$s\" (%2$s)?</string>
 </resources>

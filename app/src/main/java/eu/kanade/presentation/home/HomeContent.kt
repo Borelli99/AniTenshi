@@ -69,6 +69,7 @@ import tachiyomi.domain.entries.manga.model.Manga
 import tachiyomi.domain.entries.manga.model.asMangaCover
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.tail.TLMR
+import tachiyomi.presentation.core.components.AniTenshiMark
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.pluralStringResource
@@ -340,16 +341,24 @@ private fun SectionTitle(
 }
 
 @Composable
-private fun SectionHint(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+private fun SectionHint(text: String, isError: Boolean = false) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
         modifier = Modifier.padding(
             horizontal = MaterialTheme.padding.medium,
             vertical = MaterialTheme.padding.small,
         ),
-    )
+    ) {
+        if (isError) {
+            AniTenshiMark(isError = true, size = 32.dp)
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Composable
@@ -478,7 +487,7 @@ private fun <T> LatestSection(
             val titles = row.items
             when {
                 titles == null -> LoadingRow()
-                row.error != null -> SectionHint(row.error)
+                row.error != null -> SectionHint(row.error, isError = true)
                 titles.isEmpty() -> SectionHint(stringResource(MR.strings.no_results_found))
                 else -> covers(titles)
             }

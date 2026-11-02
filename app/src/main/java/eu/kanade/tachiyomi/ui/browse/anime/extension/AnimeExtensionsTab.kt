@@ -5,6 +5,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +23,8 @@ import eu.kanade.tachiyomi.ui.browse.anime.extension.details.AnimeExtensionDetai
 import eu.kanade.tachiyomi.ui.webview.WebViewScreen
 import eu.kanade.tachiyomi.util.system.isPackageInstalled
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.map
+import mihon.app.di.appGraph
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -34,6 +37,9 @@ fun animeExtensionsTab(
     val context = LocalContext.current
 
     val updatesCount by extensionsViewModel.updatesCount.collectAsStateWithLifecycle()
+    val repoCount: Int? by remember {
+        context.appGraph.getAnimeExtensionStoreCountAsFlow.subscribe().map { it.toInt() }
+    }.collectAsState(initial = null)
     var privateExtensionToUninstall by remember { mutableStateOf<AnimeExtension.Installed?>(null) }
 
     return TabContent(
@@ -48,10 +54,6 @@ fun animeExtensionsTab(
                         AnimeExtensionFilterScreen(),
                     )
                 },
-            ),
-            AppBar.OverflowAction(
-                title = stringResource(MR.strings.extensionStores),
-                onClick = { navigator.push(ExtensionStoresScreen(isManga = false)) },
             ),
         ),
         content = { contentPadding, _ ->
@@ -97,6 +99,9 @@ fun animeExtensionsTab(
                 onUninstallExtension = { extensionsViewModel.uninstallExtension(it) },
                 onUpdateExtension = extensionsViewModel::updateExtension,
                 onRefresh = extensionsViewModel::findAvailableExtensions,
+                repoCount = repoCount,
+                onClickRepos = { navigator.push(ExtensionStoresScreen(isManga = false, openCreate = repoCount == 0)) },
+                onAddRepo = { navigator.push(ExtensionStoresScreen(isManga = false, openCreate = true)) },
             )
 
             privateExtensionToUninstall?.let { extension ->

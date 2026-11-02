@@ -39,16 +39,15 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.browse.BaseBrowseItem
 import eu.kanade.presentation.browse.components.ExtensionPill
+import eu.kanade.presentation.browse.components.ExtensionStoresCard
+import eu.kanade.presentation.browse.components.NoExtensionStoresScreen
 import eu.kanade.presentation.browse.components.label
 import eu.kanade.presentation.browse.manga.components.MangaExtensionIcon
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.presentation.components.WarningBanner
-import eu.kanade.presentation.more.settings.screen.browse.ExtensionStoresScreen
 import eu.kanade.presentation.util.rememberRequestPackageInstallsPermissionState
 import eu.kanade.tachiyomi.extension.InstallStep
 import eu.kanade.tachiyomi.extension.manga.model.MangaExtension
@@ -94,9 +93,10 @@ fun MangaExtensionScreen(
     onOpenExtension: (MangaExtension.Loaded) -> Unit,
     onClickUpdateAll: () -> Unit,
     onRefresh: () -> Unit,
+    repoCount: Int?,
+    onClickRepos: () -> Unit,
+    onAddRepo: () -> Unit,
 ) {
-    val navigator = LocalNavigator.currentOrThrow
-
     PullRefresh(
         refreshing = state.isRefreshing,
         onRefresh = onRefresh,
@@ -104,6 +104,13 @@ fun MangaExtensionScreen(
     ) {
         when {
             state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
+
+            state.isEmpty && searchQuery.isNullOrEmpty() && repoCount == 0 -> {
+                NoExtensionStoresScreen(
+                    onAddRepo = onAddRepo,
+                    contentPadding = contentPadding,
+                )
+            }
 
             state.isEmpty -> {
                 val msg = if (!searchQuery.isNullOrEmpty()) {
@@ -118,7 +125,7 @@ fun MangaExtensionScreen(
                         EmptyScreenAction(
                             stringRes = MR.strings.extensionStores,
                             icon = MaterialSymbols.Rounded.Settings,
-                            onClick = { navigator.push(ExtensionStoresScreen(isManga = true)) },
+                            onClick = onClickRepos,
                         ),
                     ),
                 )
@@ -128,6 +135,8 @@ fun MangaExtensionScreen(
                 ExtensionContent(
                     state = state,
                     contentPadding = contentPadding,
+                    repoCount = repoCount,
+                    onClickRepos = onClickRepos.takeIf { searchQuery.isNullOrEmpty() },
                     onLongClickItem = onLongClickItem,
                     onClickItemCancel = onClickItemCancel,
                     onOpenWebView = onOpenWebView,
@@ -147,6 +156,8 @@ fun MangaExtensionScreen(
 private fun ExtensionContent(
     state: MangaExtensionsViewModel.State,
     contentPadding: PaddingValues,
+    repoCount: Int?,
+    onClickRepos: (() -> Unit)?,
     onLongClickItem: (MangaExtension) -> Unit,
     onOpenWebView: (MangaExtension.Available) -> Unit,
     onClickItemCancel: (MangaExtension) -> Unit,
@@ -165,6 +176,16 @@ private fun ExtensionContent(
     FastScrollLazyColumn(
         contentPadding = contentPadding + topSmallPaddingValues,
     ) {
+        if (onClickRepos != null && repoCount != null) {
+            item(key = "extension-stores-card", contentType = "stores") {
+                ExtensionStoresCard(
+                    repoCount = repoCount,
+                    onClick = onClickRepos,
+                    modifier = Modifier.animateItem(),
+                )
+            }
+        }
+
         if (!installGranted && state.installer?.requiresSystemPermission == true) {
             item(key = "extension-permissions-warning") {
                 WarningBanner(

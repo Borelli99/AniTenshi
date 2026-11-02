@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.DropdownMenuItem
@@ -810,11 +812,12 @@ private fun RowScope.MangaActionButton(
                 modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.height(4.dp))
-            Text(
+            // AniTenshi: with big system fonts the label shrinks instead of splitting a word in two
+            BasicText(
                 text = title,
-                color = color,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelMedium.copy(color = color, textAlign = TextAlign.Center),
+                maxLines = if (title.contains(' ')) 2 else 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 12.sp),
             )
         }
     }

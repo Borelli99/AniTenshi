@@ -38,7 +38,6 @@ import eu.kanade.presentation.entries.manga.DuplicateMangaDialog
 import eu.kanade.presentation.entries.manga.MangaScreen
 import eu.kanade.presentation.entries.manga.components.MangaCoverDialog
 import eu.kanade.presentation.entries.manga.components.ScanlatorFilterDialog
-import eu.kanade.presentation.theme.CoverBasedTheme
 import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.AssistContentScreen
 import eu.kanade.presentation.util.Screen
@@ -148,9 +147,8 @@ class MangaScreen(
             }
         }
         TachiyomiTheme {
-            CoverBasedTheme(manga = successState.manga) {
-                content()
-            }
+            // AniTenshi: entries always use the app theme, never colors taken from the cover
+            content()
         }
         // KMK <--
 

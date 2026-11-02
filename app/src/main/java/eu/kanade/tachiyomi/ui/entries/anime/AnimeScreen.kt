@@ -45,7 +45,6 @@ import eu.kanade.presentation.entries.components.DeleteItemsDialog
 import eu.kanade.presentation.entries.components.SetDateDialog
 import eu.kanade.presentation.entries.components.SetIntervalDialog
 import eu.kanade.presentation.more.settings.screen.player.PlayerSettingsGesturesScreen.SkipIntroLengthDialog
-import eu.kanade.presentation.theme.CoverBasedTheme
 import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.AssistContentScreen
 import eu.kanade.presentation.util.Screen
@@ -159,9 +158,8 @@ class AnimeScreen(
             }
         }
         TachiyomiTheme {
-            CoverBasedTheme(anime = successState.anime) {
-                content()
-            }
+            // AniTenshi: entries always use the app theme, never colors taken from the cover
+            content()
         }
     }
 

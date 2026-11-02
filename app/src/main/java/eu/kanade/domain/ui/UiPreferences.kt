@@ -79,12 +79,6 @@ class UiPreferences(
     val customThemeStyle: Preference<PaletteStyle> =
         preferenceStore.getEnum("pref_custom_theme_style_key", PaletteStyle.Fidelity)
 
-    val themeCoverBased: Preference<Boolean> =
-        preferenceStore.getBoolean("pref_theme_cover_based_key", true)
-
-    val themeCoverBasedStyle: Preference<PaletteStyle> =
-        preferenceStore.getEnum("pref_theme_cover_based_style_key", PaletteStyle.Vibrant)
-
     val usePanoramaCoverMangaInfo: Preference<Boolean> =
         preferenceStore.getBoolean("use_panorama_cover_manga_info", false)
 

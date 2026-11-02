@@ -155,21 +155,9 @@ object SettingsAppearanceScreen : SearchableSettings {
     private fun getAnimeInfoThemeGroup(
         uiPreferences: UiPreferences,
     ): Preference.PreferenceGroup {
-        val themeCoverBased by uiPreferences.themeCoverBased.collectAsState()
-
         return Preference.PreferenceGroup(
             title = stringResource(TLMR.strings.pref_anime_info),
             preferenceItems = listOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.themeCoverBased,
-                    title = stringResource(TLMR.strings.pref_theme_cover_based),
-                ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = uiPreferences.themeCoverBasedStyle,
-                    entries = paletteStyleEntries(),
-                    title = stringResource(TLMR.strings.pref_theme_cover_based_style),
-                    enabled = themeCoverBased,
-                ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = uiPreferences.usePanoramaCoverMangaInfo,
                     title = stringResource(TLMR.strings.pref_panorama_cover),

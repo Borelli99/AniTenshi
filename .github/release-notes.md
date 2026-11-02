@@ -1,3 +1,4 @@
-## Novità di AniTenshi 1.0.7
+## Novità di AniTenshi 1.0.8
 
-- **Supporta AniTenshi**: in Altro c'è la nuova voce con il cuore. Da lì puoi fare una donazione con PayPal o Buy Me a Coffee, oppure lasciare una stella su GitHub. Grazie!
+- **Scheda di un titolo sempre nel tema AniTenshi**: i colori non cambiano più in base alla copertina. Ho tolto anche l'opzione dalle impostazioni.
+- **Pulsanti sotto la copertina**: con i caratteri grandi le scritte come "Tracciamento" non si spezzano più a metà parola, ma si rimpiccioliscono un po'.

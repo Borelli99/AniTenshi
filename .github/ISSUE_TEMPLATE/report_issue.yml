@@ -1,101 +1,101 @@
-name: 🐞 Segnala un problema
-description: Segnala un problema di AniTenshi
+name: 🐞 Issue report
+description: Report an issue in AniTenshi
 labels: [Bug]
 body:
   - type: textarea
     id: reproduce-steps
     attributes:
-      label: Passaggi per riprodurlo
-      description: Descrivi cosa fare per far comparire il problema.
+      label: Steps to reproduce
+      description: Provide an example of the issue.
       placeholder: |
-        Esempio:
-          1. Primo passaggio
-          2. Secondo passaggio
-          3. Qui compare il problema
+        Example:
+          1. First step
+          2. Second step
+          3. Issue here
     validations:
       required: true
 
   - type: textarea
     id: expected-behavior
     attributes:
-      label: Cosa ti aspettavi
-      description: Spiega cosa dovrebbe succedere.
+      label: Expected behavior
+      description: Explain what you should expect to happen.
       placeholder: |
-        Esempio:
-          "Dovrebbe succedere questo..."
+        Example:
+          "This should happen..."
     validations:
       required: true
 
   - type: textarea
     id: actual-behavior
     attributes:
-      label: Cosa succede invece
-      description: Spiega cosa succede davvero.
+      label: Actual behavior
+      description: Explain what actually happens.
       placeholder: |
-        Esempio:
-          "Invece succede questo..."
+        Example:
+          "This happened instead..."
     validations:
       required: true
 
   - type: textarea
     id: crash-logs
     attributes:
-      label: Registro dei crash
+      label: Crash logs
       description: |
-        Se l'app si chiude da sola, vai in **Altro → Impostazioni → Avanzate**, tocca **Condividi il registro dei crash** e allegalo qui.
+        If the app crashes, go to **More → Settings → Advanced**, tap **Share crash logs** and attach them here.
       placeholder: |
-        Puoi allegare il file oppure incollarne il testo.
+        You can upload the crash log file as an attachment, or paste the crash logs in plain text.
 
   - type: input
     id: anitenshi-version
     attributes:
-      label: Versione di AniTenshi
-      description: La trovi in **Altro → Info**.
+      label: AniTenshi version
+      description: You can find it in **More → About**.
       placeholder: |
-        Esempio: "0.21.2.0"
+        Example: "AniTenshi r9150"
     validations:
       required: true
 
   - type: input
     id: android-version
     attributes:
-      label: Versione di Android
-      description: La trovi nelle impostazioni del telefono, di solito in "Info sul telefono".
+      label: Android version
+      description: You can find this in your Android settings, usually under "About phone".
       placeholder: |
-        Esempio: "Android 14"
+        Example: "Android 14"
     validations:
       required: true
 
   - type: input
     id: device
     attributes:
-      label: Dispositivo
-      description: Marca e modello del telefono o del tablet.
+      label: Device
+      description: Your device's brand and model.
       placeholder: |
-        Esempio: "Samsung Galaxy S23"
+        Example: "Samsung Galaxy S23"
     validations:
       required: true
 
   - type: textarea
     id: other-details
     attributes:
-      label: Altri dettagli
+      label: Other details
       placeholder: |
-        Altre informazioni, screenshot o allegati.
+        Additional details, screenshots and attachments.
 
   - type: checkboxes
     id: acknowledgements
     attributes:
-      label: Conferme
-      description: Leggi con attenzione, le segnalazioni incomplete vengono chiuse.
+      label: Acknowledgements
+      description: Read this carefully, incomplete reports will be closed.
       options:
-        - label: Ho cercato tra le issue esistenti e questa è una segnalazione nuova, **non** un duplicato.
+        - label: I have searched the existing issues and this is a new ticket, **NOT** a duplicate or related to another open or closed issue.
           required: true
-        - label: Ho scritto un titolo breve ma chiaro.
+        - label: I have written a short but informative title.
           required: true
-        - label: Il problema non riguarda una singola estensione (in quel caso va segnalato a chi la mantiene).
+        - label: This is not an issue with a single extension (those should be reported to the extension's maintainers).
           required: true
-        - label: Uso l'**[ultima versione di AniTenshi](https://github.com/Borelli99/AniTenshi/releases/latest)**.
+        - label: I am using the **[latest version of AniTenshi](https://github.com/Borelli99/AniTenshi/releases/latest)**.
           required: true
-        - label: Ho compilato tutte le informazioni richieste, compresi i numeri di versione.
+        - label: I have filled out all of the requested information in this form, including specific version numbers.
           required: true

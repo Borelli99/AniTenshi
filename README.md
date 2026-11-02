@@ -1,79 +1,87 @@
 <div align="center">
 
 <a href="https://github.com/Borelli99/AniTenshi">
-    <img src="./.github/assets/icon.png" alt="Logo di AniTenshi" title="AniTenshi" width="96"/>
+    <img src="./.github/assets/icon.png" alt="AniTenshi logo" title="AniTenshi" width="96"/>
 </a>
 
 # AniTenshi
 
-### Il lettore di anime e manga per Android, basato su Animetail.
-Cerca, guarda e leggi anime, serie, film e manga dalle estensioni che preferisci, con un lettore video completo e la libreria sempre sincronizzata con i tuoi tracker.
+### An anime and manga app for Android, based on Animetail.
+Find, watch and read anime, series, movies and manga from the extensions you choose, with a full-featured video player and a library that stays in sync with your trackers.
 
-[![Ultima versione](https://img.shields.io/github/v/release/Borelli99/AniTenshi?label=Ultima%20versione&labelColor=14163A&color=F2C14E)](https://github.com/Borelli99/AniTenshi/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/Borelli99/AniTenshi?label=Latest%20release&labelColor=14163A&color=F2C14E)](https://github.com/Borelli99/AniTenshi/releases/latest)
 [![Build](https://github.com/Borelli99/AniTenshi/actions/workflows/build_fork.yml/badge.svg)](https://github.com/Borelli99/AniTenshi/actions/workflows/build_fork.yml)
-[![Licenza: Apache-2.0](https://img.shields.io/github/license/Borelli99/AniTenshi?label=Licenza&labelColor=14163A&color=818cf8)](/LICENSE)
+[![License: Apache-2.0](https://img.shields.io/github/license/Borelli99/AniTenshi?label=License&labelColor=14163A&color=818cf8)](/LICENSE)
 
 </div>
 
-## Scarica
+## Download
 
-Scarica l'ultima versione dalla pagina **[Releases](https://github.com/Borelli99/AniTenshi/releases/latest)**:
+Get the latest version from the **[Releases](https://github.com/Borelli99/AniTenshi/releases/latest)** page:
 
-- **`anitenshi-arm64-v8a.apk`**: quello giusto per quasi tutti i telefoni.
-- **`anitenshi-universal.apk`**: se il primo non si installa (funziona su qualsiasi dispositivo, ma pesa di più).
-- **`anitenshi-armeabi-v7a.apk`**: per telefoni Android a 32 bit, più vecchi.
+- **`anitenshi-arm64-v8a.apk`**: the right one for almost every phone.
+- **`anitenshi-universal.apk`**: if the first one doesn't install (works on any device, but it's bigger).
+- **`anitenshi-armeabi-v7a.apk`**: for older 32-bit Android phones.
 
-*Serve Android 8.0 o superiore.* Ogni nuova versione si installa sopra la precedente senza perdere i dati.
+*Requires Android 8.0 or higher.*
 
-## Cosa cambia rispetto ad Animetail
+### Updates
 
-AniTenshi è una fork di [Animetail](https://github.com/Animetailapp/Animetail) e ne segue gli aggiornamenti. In più:
+AniTenshi checks for new versions by itself every time it starts, and you can check manually in *More → About → Check for updates*. Updates install over the previous version and keep all your data.
 
-- **Le repository anime moderne funzionano.** Animetail leggeva l'indice delle repository anime nel formato dei manga di Mihon, quindi le repository che includono estensioni torrent (come Yūzōnō) non si potevano aggiungere ("Error while decoding … NetworkExtensionStore"), e nelle altre le estensioni perdevano la lingua. AniTenshi legge il formato di Aniyomi usato dalle repository anime e resta compatibile con quello di Mihon.
-- **Si installa accanto ad Animetail.** Ha un nome di pacchetto suo (`com.borelli99.anitenshi`), quindi puoi tenere entrambe le app.
-- **Versioni firmate e pubblicate in automatico.** A ogni modifica GitHub compila l'app, esegue i test e pubblica l'APK nelle Releases.
+## What's different from Animetail
 
-## Primi passi
+AniTenshi is a fork of [Animetail](https://github.com/Animetailapp/Animetail) and follows its updates. On top of that:
 
-1. Installa l'APK (se Android lo chiede, consenti l'installazione di app dal browser).
-2. **Vieni da Animetail?** In Animetail crea un backup (*Impostazioni → Dati e archiviazione → Crea backup*) e ripristinalo in AniTenshi dallo stesso menu.
-3. Aggiungi una repository di estensioni: *Impostazioni → Sfoglia → Repo delle estensioni anime → Aggiungi*, e incolla l'indirizzo `index.min.json` della repository.
-4. Installa le estensioni da *Sfoglia → Estensioni* e conferma di fidarti di quelle che hai scelto.
+- **Modern anime extension repositories work.** Animetail decoded anime repository indexes with Mihon's manga format, so repositories listing torrent extensions (such as Yūzōnō) failed to add with "Error while decoding … NetworkExtensionStore", and in the others extensions lost their language. AniTenshi reads the Aniyomi format used by anime repositories and stays compatible with Mihon's.
+- **Installs next to Animetail.** It has its own package name (`com.borelli99.anitenshi`), so you can keep both apps.
+- **Signed releases, published automatically.** Every change is built, tested and published to the Releases page, and the app updates itself from there.
 
-## Funzionalità
+## Getting started
 
-Tutto quello che offre Animetail, che a sua volta unisce il meglio di Aniyomi, Mihon e altre fork:
+1. Install the APK (if Android asks, allow your browser to install apps).
+2. **Coming from Animetail?** In Animetail, create a backup (*More → Settings → Data and storage → Create backup*) and restore it in AniTenshi from the same screen.
+3. Add an extension repository: *More → Settings → Browse → Anime extension repos → Add*, and paste the repository's `index.min.json` URL.
+4. Install extensions from *Browse → Extensions* and trust the ones you picked.
 
-- Lettore video basato su mpv con sottotitoli, tracce audio, anteprime durante la ricerca e streaming torrent
-- Lettore manga configurabile, con più modalità di lettura
-- Home con consigli su film, serie, anime e manga, e "Continua a guardare e leggere"
-- Tracker: MyAnimeList, AniList, Kitsu, MangaUpdates, Shikimori, Bangumi e Hikka
-- Categorie, raggruppamenti e ricerca avanzata nella libreria
-- Download per guardare e leggere offline, backup locali o sul cloud
-- Cast, temi Material You, Discord Rich Presence
+## Features
 
-L'elenco completo è nel [README di Animetail](https://github.com/Animetailapp/Animetail#features).
+Everything Animetail offers, which in turn brings together the best of Aniyomi, Mihon and other forks:
 
-## Segnalare problemi e contribuire
+- mpv-based video player with subtitles, audio tracks, seek previews and torrent streaming
+- Configurable manga reader with multiple reading modes
+- Home feed with movie, series, anime and manga recommendations, and "Continue watching & reading"
+- Trackers: MyAnimeList, AniList, Kitsu, MangaUpdates, Shikimori, Bangumi, Simkl, Trakt and more
+- Library categories, grouping and advanced search
+- Downloads for offline watching and reading, local or cloud backups
+- Cast, Material You themes, Discord Rich Presence
 
-Hai trovato un bug o hai un'idea? Apri una [issue](https://github.com/Borelli99/AniTenshi/issues) su questa repository, non su quella di Animetail.
-I problemi di una singola estensione (un sito che non carica, un episodio che non parte) vanno segnalati a chi mantiene quella estensione.
+See the [Animetail README](https://github.com/Animetailapp/Animetail#features) for the full list.
 
-Prima di contribuire leggi la [guida per contribuire](./CONTRIBUTING.md) e il [codice di condotta](./CODE_OF_CONDUCT.md).
+## Reporting issues and contributing
 
-## Crediti
+Found a bug or have an idea? Open an [issue](https://github.com/Borelli99/AniTenshi/issues) in this repository, not in Animetail's.
+Problems with a single extension (a site that doesn't load, an episode that won't play) should be reported to whoever maintains that extension.
 
-AniTenshi esiste grazie al lavoro di chi ha creato e mantiene:
+Before contributing, read the [contributing guide](./CONTRIBUTING.md) and the [code of conduct](./CODE_OF_CONDUCT.md).
 
-- [Animetail](https://github.com/Animetailapp/Animetail), su cui si basa direttamente
-- [Aniyomi](https://github.com/aniyomiorg/aniyomi) e [Mihon](https://github.com/mihonapp/mihon), e prima ancora Tachiyomi
-- le fork da cui Animetail prende alcune funzioni: Kuukiyomi, TachiyomiSY, Animiru, TachiyomiJ2K e Komikku
+## Privacy
+
+AniTenshi has no accounts, analytics, ads or crash reporting. See the [privacy policy](./PRIVACY.md).
+
+## Credits
+
+AniTenshi exists thanks to the people who created and maintain:
+
+- [Animetail](https://github.com/Animetailapp/Animetail), which it is directly based on
+- [Aniyomi](https://github.com/aniyomiorg/aniyomi) and [Mihon](https://github.com/mihonapp/mihon), and before them Tachiyomi
+- the forks Animetail takes features from: Kuukiyomi, TachiyomiSY, Animiru, TachiyomiJ2K and Komikku
 
 ## Disclaimer
 
-Chi sviluppa questa applicazione non ha alcun legame con i fornitori dei contenuti disponibili tramite le estensioni, e l'applicazione non ospita alcun contenuto.
+The developer of this application has no affiliation with the content providers available through extensions, and this application hosts no content.
 
-## Licenza
+## License
 
 <pre>
 Copyright © 2015 Javier Tomás

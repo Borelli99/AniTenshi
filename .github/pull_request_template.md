@@ -1,14 +1,14 @@
 <!--
-  Descrivi la modifica e, se c'è, la issue che risolve (es. "Risolve #12").
-  Prima di aprire la pull request:
-  - prova la modifica sul telefono o sull'emulatore;
-  - esegui ./gradlew spotlessApply e ./gradlew testDebugUnitTest;
-  - se la modifica è visiva, controlla tema chiaro, scuro e modalità tablet.
+  Describe the change and, if there is one, the issue it fixes (e.g. "Fixes #12").
+  Before opening the pull request:
+  - test the change on a phone or an emulator;
+  - run ./gradlew spotlessApply and ./gradlew testDebugUnitTest;
+  - for visual changes, check the light and dark themes and tablet mode.
 
-  Se la modifica è visiva, aggiungi gli screenshot qui sotto:
+  If your changes are visual, add screenshots below:
 
-### Screenshot
-| Prima | Dopo |
-| ----- | ---- |
-|       |      |
+### Screenshots
+| Before | After |
+| ------ | ----- |
+|        |       |
 -->

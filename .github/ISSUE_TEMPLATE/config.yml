@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: ❌ Problemi con le estensioni
+  - name: ❌ Help with extensions
     url: https://aniyomi.org/docs/faq/browse/extensions
-    about: Domande e problemi sulle estensioni (vanno segnalati a chi le mantiene)
-  - name: 📖 Guida di AniTenshi
-    url: https://github.com/Borelli99/AniTenshi#primi-passi
-    about: Installazione, backup e come aggiungere le repository di estensioni
-  - name: 🖥️ Sito di Aniyomi
+    about: Extension questions and issues (report them to the extension's maintainers)
+  - name: 📖 AniTenshi guide
+    url: https://github.com/Borelli99/AniTenshi#getting-started
+    about: Installing, backups and adding extension repositories
+  - name: 🖥️ Aniyomi website
     url: https://aniyomi.org/
-    about: Guide, risoluzione dei problemi e risposte alle domande più comuni
+    about: Guides, troubleshooting, and answers to common questions

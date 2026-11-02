@@ -1,36 +1,36 @@
-name: ⭐ Proponi una funzione
-description: Suggerisci un modo per migliorare AniTenshi
+name: ⭐ Feature request
+description: Suggest a feature to improve AniTenshi
 labels: [Feature request]
 body:
   - type: textarea
     id: feature-description
     attributes:
-      label: Descrivi la funzione
-      description: Come potrebbe migliorare AniTenshi?
+      label: Describe your suggested feature
+      description: How can AniTenshi be improved?
       placeholder: |
-        Esempio:
-          "Dovrebbe funzionare così..."
+        Example:
+          "It should work like this..."
     validations:
       required: true
 
   - type: textarea
     id: other-details
     attributes:
-      label: Altri dettagli
+      label: Other details
       placeholder: |
-        Altre informazioni, esempi o allegati.
+        Additional details, examples and attachments.
 
   - type: checkboxes
     id: acknowledgements
     attributes:
-      label: Conferme
-      description: Leggi con attenzione, le richieste incomplete vengono chiuse.
+      label: Acknowledgements
+      description: Read this carefully, incomplete requests will be closed.
       options:
-        - label: Ho cercato tra le issue esistenti e questa è una richiesta nuova, **non** un duplicato.
+        - label: I have searched the existing issues and this is a new ticket, **NOT** a duplicate or related to another open or closed issue.
           required: true
-        - label: Ho scritto un titolo breve ma chiaro.
+        - label: I have written a short but informative title.
           required: true
-        - label: La richiesta non riguarda una singola estensione (in quel caso va fatta a chi la mantiene).
+        - label: This is not a request about a single extension (those should go to the extension's maintainers).
           required: true
-        - label: Uso l'**[ultima versione di AniTenshi](https://github.com/Borelli99/AniTenshi/releases/latest)**.
+        - label: I am using the **[latest version of AniTenshi](https://github.com/Borelli99/AniTenshi/releases/latest)**.
           required: true

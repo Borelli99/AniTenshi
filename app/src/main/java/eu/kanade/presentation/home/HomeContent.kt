@@ -1,5 +1,6 @@
 package eu.kanade.presentation.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,10 +31,12 @@ import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -119,17 +123,37 @@ fun HomeContent(
                                 icon = Icons.Outlined.Refresh,
                                 onClick = onClickRefresh,
                             ),
-                            // AniTenshi: "More" lives up here, so nothing covers the covers at the bottom
-                            AppBar.Action(
-                                title = stringResource(MR.strings.label_more),
-                                icon = Icons.Outlined.MoreHoriz,
-                                onClick = onClickMore,
-                            ),
                         ),
                     )
+                    // AniTenshi: on phones "More" is a labelled pill up here, so nothing covers the covers
+                    if (!isTabletUi()) {
+                        MorePill(onClick = onClickMore)
+                    }
                 },
                 scrollBehavior = scrollBehavior,
             )
+        },
+        floatingActionButton = {
+            // On tablets there is room: "More" stays the floating button at the bottom right
+            if (isTabletUi()) {
+                // Gold in the dark theme, night blue (with gold dots) in the light one
+                val colors = MaterialTheme.colorScheme
+                ExtendedFloatingActionButton(
+                    // Above the round buttons of the main screens
+                    modifier = Modifier.padding(bottom = LocalBottomNavPadding.current),
+                    text = { Text(text = stringResource(MR.strings.label_more), fontWeight = FontWeight.Bold) },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.MoreHoriz,
+                            contentDescription = null,
+                            tint = if (colors.primary == AniTenshiPalette.Navy) AniTenshiPalette.Gold else colors.onPrimary,
+                        )
+                    },
+                    onClick = onClickMore,
+                    containerColor = colors.primary,
+                    contentColor = colors.onPrimary,
+                )
+            }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
@@ -325,6 +349,40 @@ private fun SectionTitle(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+/** AniTenshi: "More" in the Home top bar on phones, as an outlined pill with its name. */
+@Composable
+private fun MorePill(onClick: () -> Unit) {
+    // Gold in the dark theme, night blue in the light one
+    val color = MaterialTheme.colorScheme.primary
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Color.Transparent,
+        contentColor = color,
+        border = BorderStroke(1.5.dp, color),
+        modifier = Modifier.padding(start = 4.dp, end = 8.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .heightIn(min = 40.dp)
+                .padding(start = 10.dp, end = 14.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.MoreHoriz,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = stringResource(MR.strings.label_more),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+            )
         }
     }
 }

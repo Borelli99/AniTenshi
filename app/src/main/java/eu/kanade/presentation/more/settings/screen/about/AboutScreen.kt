@@ -262,8 +262,8 @@ object AboutScreen : Screen() {
             }
 
             else -> {
-                // Same number as the GitHub release tag (r<commit count>)
-                "AniTenshi r${BuildConfig.COMMIT_COUNT}".let {
+                // Version name plus the GitHub release tag (r<commit count>), e.g. "AniTenshi 1.0.1 (r9969)"
+                "AniTenshi ${BuildConfig.VERSION_NAME} (r${BuildConfig.COMMIT_COUNT})".let {
                     if (withBuildDate) {
                         "$it (${getFormattedBuildTime(dateFormat)})"
                     } else {

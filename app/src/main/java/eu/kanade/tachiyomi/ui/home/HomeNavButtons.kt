@@ -22,6 +22,7 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -39,6 +40,12 @@ import eu.kanade.tachiyomi.ui.library.manga.MangaLibraryTab
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.presentation.core.i18n.stringResource
+
+/**
+ * Room taken by the round buttons floating at the bottom of the main screens (0 when they are hidden).
+ * Main screens lift their floating buttons by this much, so nothing ends up under the round buttons.
+ */
+val LocalBottomNavPadding = compositionLocalOf { 0.dp }
 
 private val RingWidth = 3.dp
 private val RingGap = 4.dp

@@ -54,11 +54,14 @@ import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.entries.components.ItemCover
 import eu.kanade.presentation.theme.AniTenshiPalette
+import eu.kanade.presentation.util.formatChapterNumber
+import eu.kanade.presentation.util.formatEpisodeNumber
 import eu.kanade.presentation.util.isTabletUi
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.home.ContinueEntry
 import eu.kanade.tachiyomi.ui.home.HomeState
 import eu.kanade.tachiyomi.ui.home.LatestRow
+import eu.kanade.tachiyomi.ui.home.LocalBottomNavPadding
 import kotlinx.collections.immutable.persistentListOf
 import tachiyomi.domain.entries.anime.model.Anime
 import tachiyomi.domain.entries.anime.model.asAnimeCover
@@ -124,6 +127,8 @@ fun HomeContent(
             // The main action of Home: gold in the dark theme, night blue (with gold dots) in the light one
             val colors = MaterialTheme.colorScheme
             ExtendedFloatingActionButton(
+                // Above the round buttons of the main screens
+                modifier = Modifier.padding(bottom = LocalBottomNavPadding.current),
                 text = { Text(text = stringResource(MR.strings.label_more), fontWeight = FontWeight.Bold) },
                 icon = {
                     Icon(
@@ -399,20 +404,34 @@ private fun ContinueCard(
                 modifier = Modifier.width(ContinueCoverWidth),
                 shape = RoundedCornerShape(12.dp),
             )
-            Box(
-                contentAlignment = Alignment.Center,
+            // Gold pill: play (or book) and the episode / chapter that a tap opens
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(8.dp)
-                    .size(32.dp)
-                    .background(AniTenshiPalette.Gold, CircleShape),
+                    .padding(6.dp)
+                    .heightIn(min = 30.dp)
+                    .background(AniTenshiPalette.Gold, CircleShape)
+                    .padding(horizontal = 9.dp, vertical = 6.dp),
             ) {
                 Icon(
                     painter = painterResource(if (isAnime) R.drawable.ic_nav_anime else R.drawable.ic_nav_manga),
                     contentDescription = null,
                     tint = AniTenshiPalette.Navy,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(15.dp),
                 )
+                entry.nextNumber?.let { number ->
+                    Text(
+                        text = stringResource(
+                            if (isAnime) TLMR.strings.anitenshi_episode_short else TLMR.strings.anitenshi_chapter_short,
+                            if (isAnime) formatEpisodeNumber(number) else formatChapterNumber(number),
+                        ),
+                        color = AniTenshiPalette.Navy,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 1,
+                    )
+                }
             }
         }
         Text(

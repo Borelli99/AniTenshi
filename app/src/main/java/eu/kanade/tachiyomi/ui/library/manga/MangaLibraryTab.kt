@@ -48,6 +48,7 @@ import eu.kanade.tachiyomi.ui.browse.MangaBrowseScreen
 import eu.kanade.tachiyomi.ui.category.CategoriesTab
 import eu.kanade.tachiyomi.ui.entries.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
+import eu.kanade.tachiyomi.ui.home.LocalBottomNavPadding
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import eu.kanade.tachiyomi.ui.updates.MangaUpdatesScreen
@@ -215,6 +216,8 @@ data object MangaLibraryTab : Tab {
                     visible = !state.selectionMode,
                     extensionUpdates = extensionUpdates,
                     onClick = { navigator.push(MangaBrowseScreen()) },
+                    // Above the round buttons of the main screens
+                    modifier = Modifier.padding(bottom = LocalBottomNavPadding.current),
                 )
             },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },

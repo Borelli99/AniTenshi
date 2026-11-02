@@ -99,7 +99,7 @@ class HomeViewModel(
                     .filter { it.unseenCount > 0 && it.id.toString() !in hidden }
                     .sortedByDescending { max(it.lastSeen, it.episodeFetchedAt) }
                     .take(MAX_CONTINUE_ITEMS)
-                    .map { it.toContinueEntry() }
+                    .map { it.toContinueEntry(withNext = true) }
                 val hiddenEntries = entries
                     .filter { it.id.toString() in hidden }
                     .sortedBy { it.anime.title.lowercase() }
@@ -121,7 +121,7 @@ class HomeViewModel(
                     .filter { it.unreadCount > 0 && it.id.toString() !in hidden }
                     .sortedByDescending { max(it.lastRead, it.chapterFetchedAt) }
                     .take(MAX_CONTINUE_ITEMS)
-                    .map { it.toContinueEntry() }
+                    .map { it.toContinueEntry(withNext = true) }
                 val hiddenEntries = entries
                     .filter { it.id.toString() in hidden }
                     .sortedBy { it.manga.title.lowercase() }
@@ -313,18 +313,22 @@ class HomeViewModel(
         uiPreferences.homeHiddenContinueManga.getAndSet { it - mangaId.toString() }
     }
 
-    private fun LibraryAnime.toContinueEntry() = ContinueEntry(
+    /** [withNext]: also look up the number of the episode to watch next (only for the visible row). */
+    private suspend fun LibraryAnime.toContinueEntry(withNext: Boolean = false) = ContinueEntry(
         id = id,
         title = anime.title,
         cover = anime.asAnimeCover(),
         remaining = unseenCount,
+        nextNumber = if (withNext) nextEpisode(id)?.episodeNumber else null,
     )
 
-    private fun LibraryManga.toContinueEntry() = ContinueEntry(
+    /** [withNext]: also look up the number of the chapter to read next (only for the visible row). */
+    private suspend fun LibraryManga.toContinueEntry(withNext: Boolean = false) = ContinueEntry(
         id = id,
         title = manga.title,
         cover = manga.asMangaCover(),
         remaining = unreadCount,
+        nextNumber = if (withNext) nextChapter(id)?.chapterNumber else null,
     )
 
     companion object {
@@ -365,4 +369,6 @@ data class ContinueEntry(
     val cover: EntryCover,
     /** Episodes left to watch or chapters left to read. */
     val remaining: Long,
+    /** Number of the next episode or chapter (as the source numbers it), when known. */
+    val nextNumber: Double? = null,
 )

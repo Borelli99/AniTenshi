@@ -49,6 +49,7 @@ import eu.kanade.tachiyomi.ui.browse.AnimeBrowseScreen
 import eu.kanade.tachiyomi.ui.category.CategoriesTab
 import eu.kanade.tachiyomi.ui.entries.anime.AnimeScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
+import eu.kanade.tachiyomi.ui.home.LocalBottomNavPadding
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
 import eu.kanade.tachiyomi.ui.updates.AnimeUpdatesScreen
@@ -228,6 +229,8 @@ data object AnimeLibraryTab : Tab {
                     visible = !state.selectionMode,
                     extensionUpdates = extensionUpdates,
                     onClick = { navigator.push(AnimeBrowseScreen()) },
+                    // Above the round buttons of the main screens
+                    modifier = Modifier.padding(bottom = LocalBottomNavPadding.current),
                 )
             },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },

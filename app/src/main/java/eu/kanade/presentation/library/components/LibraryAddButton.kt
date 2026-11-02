@@ -8,6 +8,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.i18n.stringResource
 
@@ -20,9 +21,10 @@ fun LibraryAddButton(
     visible: Boolean,
     extensionUpdates: Int,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     if (!visible) return
-    FloatingActionButton(onClick = onClick) {
+    FloatingActionButton(onClick = onClick, modifier = modifier) {
         BadgedBox(
             badge = {
                 if (extensionUpdates > 0) {

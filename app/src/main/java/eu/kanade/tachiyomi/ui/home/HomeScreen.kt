@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
@@ -30,15 +32,21 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.coerceAtLeast
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -109,76 +117,78 @@ object HomeScreen : Screen() {
         ) { tabNavigator ->
             // Provide usable navigator to content screen
             CompositionLocalProvider(LocalNavigator provides navigator) {
-                Row(modifier = Modifier.fillMaxSize()) {
-                    // AniTenshi: the same three round buttons on phones and tablets
-                    Scaffold(
-                        bottomBar = {
-                            Column {
-                                val isConnected =
-                                    castManager.castState.collectAsState().value == CastManager.CastState.CONNECTED
-                                AnimatedVisibility(
-                                    visible = isConnected,
-                                    enter = expandVertically(),
-                                    exit = shrinkVertically(),
-                                ) {
-                                    CastMiniController(
-                                        castManager = castManager,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                                    )
-                                }
-
-                                val bottomNavVisible by produceState(initialValue = true) {
-                                    showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
-                                }
-
-                                AnimatedVisibility(
-                                    visible = bottomNavVisible,
-                                    enter = expandVertically(),
-                                    exit = shrinkVertically(),
-                                ) {
-                                    HomeNavButtons(
-                                        current = tabNavigator.current,
-                                        animeBadge = if (showUpdatesCount) newAnimeUpdates else 0,
-                                        mangaBadge = if (showUpdatesCount) newMangaUpdates else 0,
-                                        onClick = { tab ->
-                                            if (tabNavigator.current::class == tab::class) {
-                                                scope.launch { tab.onReselect(navigator) }
-                                            } else {
-                                                tabNavigator.current = tab
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .navigationBarsPadding()
-                                            .padding(top = 4.dp, bottom = 8.dp),
-                                    )
-                                }
-                            }
-                        },
-                        contentWindowInsets = WindowInsets(0),
-                    ) { contentPadding ->
-                        Box(
-                            modifier = Modifier
-                                .padding(contentPadding)
-                                .consumeWindowInsets(contentPadding),
+                // AniTenshi: the three round buttons float over the content, with nothing behind them.
+                // The screens get the room they take through LocalBottomNavPadding.
+                var navAreaHeight by remember { mutableStateOf(0.dp) }
+                val density = LocalDensity.current
+                val navBarInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                Box(modifier = Modifier.fillMaxSize()) {
+                    CompositionLocalProvider(
+                        LocalBottomNavPadding provides (navAreaHeight - navBarInset).coerceAtLeast(0.dp),
+                    ) {
+                        AnimatedContent(
+                            targetState = tabNavigator.current,
+                            transitionSpec = {
+                                materialFadeThroughIn(
+                                    initialScale = 1f,
+                                    durationMillis = TAB_FADE_DURATION,
+                                ) togetherWith
+                                    materialFadeThroughOut(durationMillis = TAB_FADE_DURATION)
+                            },
+                            label = "tabContent",
                         ) {
-                            AnimatedContent(
-                                targetState = tabNavigator.current,
-                                transitionSpec = {
-                                    materialFadeThroughIn(
-                                        initialScale = 1f,
-                                        durationMillis = TAB_FADE_DURATION,
-                                    ) togetherWith
-                                        materialFadeThroughOut(durationMillis = TAB_FADE_DURATION)
-                                },
-                                label = "tabContent",
-                            ) {
-                                tabNavigator.saveableState(key = "currentTab", it) {
-                                    it.Content()
-                                }
+                            tabNavigator.saveableState(key = "currentTab", it) {
+                                it.Content()
                             }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .onSizeChanged { navAreaHeight = with(density) { it.height.toDp() } },
+                    ) {
+                        val isConnected =
+                            castManager.castState.collectAsState().value == CastManager.CastState.CONNECTED
+                        AnimatedVisibility(
+                            visible = isConnected,
+                            enter = expandVertically(),
+                            exit = shrinkVertically(),
+                        ) {
+                            CastMiniController(
+                                castManager = castManager,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                            )
+                        }
+
+                        val bottomNavVisible by produceState(initialValue = true) {
+                            showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
+                        }
+
+                        AnimatedVisibility(
+                            visible = bottomNavVisible,
+                            enter = expandVertically(),
+                            exit = shrinkVertically(),
+                        ) {
+                            HomeNavButtons(
+                                current = tabNavigator.current,
+                                animeBadge = if (showUpdatesCount) newAnimeUpdates else 0,
+                                mangaBadge = if (showUpdatesCount) newMangaUpdates else 0,
+                                onClick = { tab ->
+                                    if (tabNavigator.current::class == tab::class) {
+                                        scope.launch { tab.onReselect(navigator) }
+                                    } else {
+                                        tabNavigator.current = tab
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding()
+                                    .padding(top = 4.dp, bottom = 8.dp),
+                            )
                         }
                     }
                 }

@@ -6,11 +6,11 @@
         <item quantity="other">Retrying %1$d failed pages…</item>
     </plurals>
     <plurals name="anitenshi_episodes_left">
-        <item quantity="one">%d episode to watch</item>
-        <item quantity="other">%d episodes to watch</item>
+        <item quantity="one">%d left</item>
+        <item quantity="other">%d left</item>
     </plurals>
     <plurals name="anitenshi_chapters_left">
-        <item quantity="one">%d chapter to read</item>
-        <item quantity="other">%d chapters to read</item>
+        <item quantity="one">%d left</item>
+        <item quantity="other">%d left</item>
     </plurals>
 </resources>

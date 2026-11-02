@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.ui.player.controls
 
+import `is`.xyz.mpv.Utils
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -7,6 +8,7 @@ import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -27,17 +29,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import eu.kanade.presentation.theme.AniTenshiPalette
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.player.controls.components.ControlsButton
-import `is`.xyz.mpv.Utils
+import eu.kanade.tachiyomi.ui.player.controls.components.playerCircle
+import kotlin.math.abs
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
-import kotlin.math.abs
 
 @Composable
 fun MiddlePlayerControls(
@@ -77,8 +81,9 @@ fun MiddlePlayerControls(
                 ControlsButton(
                     Icons.Filled.SkipPrevious,
                     onClick = onSkipPrevious,
-                    iconSize = 48.dp,
+                    iconSize = 32.dp,
                     enabled = hasPrevious,
+                    modifier = Modifier.playerCircle(),
                 )
             }
         }
@@ -110,17 +115,20 @@ fun MiddlePlayerControls(
                     enter = enter,
                     exit = exit,
                 ) {
+                    // AniTenshi: gold play/pause button
                     Image(
                         painter = rememberAnimatedVectorPainter(icon, !paused),
                         modifier = Modifier
-                            .size(96.dp)
+                            .size(84.dp)
                             .clip(CircleShape)
+                            .background(AniTenshiPalette.Gold)
                             .clickable(
                                 interaction,
                                 ripple(),
                                 onClick = onPlayPauseClick,
                             )
-                            .padding(MaterialTheme.padding.medium),
+                            .padding(18.dp),
+                        colorFilter = ColorFilter.tint(AniTenshiPalette.Navy),
                         contentDescription = null,
                     )
                 }
@@ -136,8 +144,9 @@ fun MiddlePlayerControls(
                 ControlsButton(
                     Icons.Filled.SkipNext,
                     onClick = onSkipNext,
-                    iconSize = 48.dp,
+                    iconSize = 32.dp,
                     enabled = hasNext,
+                    modifier = Modifier.playerCircle(),
                 )
             }
         }

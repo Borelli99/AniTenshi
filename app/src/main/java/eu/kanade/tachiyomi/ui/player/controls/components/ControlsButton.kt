@@ -17,6 +17,7 @@
 
 package eu.kanade.tachiyomi.ui.player.controls.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -36,11 +37,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import eu.kanade.presentation.theme.AniTenshiPalette
 import eu.kanade.tachiyomi.ui.player.controls.LocalPlayerButtonsClickEvent
-import tachiyomi.presentation.core.components.material.Button
 import tachiyomi.presentation.core.components.material.DISABLED_ALPHA
 import tachiyomi.presentation.core.components.material.padding
 
@@ -135,6 +137,8 @@ fun FilledControlsButton(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /** AniTenshi: gold when it skips a known opening/ending, night blue for the "+85 s" button. */
+    highlighted: Boolean = true,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val clickEvent = LocalPlayerButtonsClickEvent.current
@@ -142,8 +146,23 @@ fun FilledControlsButton(
     Box(
         modifier = modifier.padding(end = MaterialTheme.padding.small),
     ) {
-        Button(onClick = {}) {
-            Text(text = text)
+        Box(
+            modifier = Modifier
+                .then(
+                    if (highlighted) {
+                        Modifier.background(AniTenshiPalette.Gold, CircleShape)
+                    } else {
+                        Modifier.playerCircle()
+                    },
+                )
+                .padding(horizontal = 18.dp, vertical = 11.dp),
+        ) {
+            Text(
+                text = text,
+                color = if (highlighted) AniTenshiPalette.Navy else AniTenshiPalette.Gold,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelLarge,
+            )
         }
         Box(
             modifier = Modifier

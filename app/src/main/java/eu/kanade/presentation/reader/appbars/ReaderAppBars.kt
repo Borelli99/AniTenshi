@@ -10,7 +10,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +26,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -106,9 +104,8 @@ fun ReaderAppBars(
     onClickShiftPage: () -> Unit,
     // SY <--
 ) {
-    val backgroundColor = MaterialTheme.colorScheme
-        .surfaceColorAtElevation(3.dp)
-        .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+    // AniTenshi: night blue bars in the dark theme (ivory in the light one)
+    val backgroundColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f)
 
     Column(
         modifier = Modifier.fillMaxHeight(),
@@ -287,13 +284,14 @@ fun ReaderAppBars(
                     onClickPageLayout = onClickPageLayout,
                     onClickShiftPage = onClickShiftPage,
                 )
+                // The tools float in a pill: leave a gap under it instead of a filled band
+                Spacer(Modifier.height(MaterialTheme.padding.small))
                 if (fullscreen) {
                     Column {
                         Spacer(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .windowInsetsBottomHeight(WindowInsets.navigationBars)
-                                .background(backgroundColor),
+                                .windowInsetsBottomHeight(WindowInsets.navigationBars),
                         )
                     }
                 }

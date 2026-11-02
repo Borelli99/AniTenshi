@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -35,10 +36,12 @@ fun AniTenshiMark(
     modifier: Modifier = Modifier,
     isError: Boolean = false,
     size: Dp = 88.dp,
+    /** The A's color; by default a quiet tint for empty screens. Pass e.g. onBackground for the full logo. */
+    letterColor: Color = Color.Unspecified,
 ) {
     val colors = MaterialTheme.colorScheme
     val isDark = colors.background.luminance() < 0.5f
-    val letterColor = lerp(colors.secondaryContainer, colors.onSurfaceVariant, 0.12f)
+    val letterTint = letterColor.takeOrElse { lerp(colors.secondaryContainer, colors.onSurfaceVariant, 0.12f) }
     val hornColor = if (isDark) HornRedDark else HornRedLight
 
     Spacer(
@@ -80,11 +83,11 @@ fun AniTenshiMark(
                     if (isError) {
                         drawPath(hornLeft, hornColor)
                         drawPath(hornRight, hornColor)
-                        drawPath(letter, letterColor, style = letterStroke)
+                        drawPath(letter, letterTint, style = letterStroke)
                     } else {
                         // Back half of the halo, then the A, then the front half on top.
                         drawArc(HaloGold, 180f, 180f, false, haloTopLeft, haloSize, style = haloStroke)
-                        drawPath(letter, letterColor, style = letterStroke)
+                        drawPath(letter, letterTint, style = letterStroke)
                         drawArc(HaloGold, 0f, 180f, false, haloTopLeft, haloSize, style = haloStroke)
                     }
                 }

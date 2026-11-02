@@ -13,6 +13,9 @@ Find, watch and read anime, series, movies and manga from the extensions you cho
 [![Build](https://github.com/Borelli99/AniTenshi/actions/workflows/build_fork.yml/badge.svg)](https://github.com/Borelli99/AniTenshi/actions/workflows/build_fork.yml)
 [![License: Apache-2.0](https://img.shields.io/github/license/Borelli99/AniTenshi?label=License&labelColor=14163A&color=818cf8)](/LICENSE)
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-anitenshi-F2C14E?labelColor=14163A)](https://buymeacoffee.com/anitenshi)
+[![PayPal](https://img.shields.io/badge/PayPal-Borelli99-F2C14E?labelColor=14163A)](https://paypal.me/Borelli99)
+
 </div>
 
 ## Download
@@ -57,6 +60,15 @@ Everything Animetail offers, which in turn brings together the best of Aniyomi, 
 - Cast, Material You themes, Discord Rich Presence
 
 See the [Animetail README](https://github.com/Animetailapp/Animetail#features) for the full list.
+
+## Support AniTenshi
+
+AniTenshi is free and has no ads. If you enjoy it, you can support its development:
+
+- **[Buy Me a Coffee](https://buymeacoffee.com/anitenshi)**
+- **[PayPal](https://paypal.me/Borelli99)**
+
+A ⭐ on this repository helps too. In the app, the same links are in *More → Support AniTenshi*.
 
 ## Reporting issues and contributing
 

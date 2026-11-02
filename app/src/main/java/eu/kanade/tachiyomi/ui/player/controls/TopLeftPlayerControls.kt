@@ -28,12 +28,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import eu.kanade.presentation.theme.AniTenshiPalette
+import eu.kanade.presentation.theme.AniTenshiTitleFont
 import eu.kanade.tachiyomi.ui.player.controls.components.ControlsButton
+import eu.kanade.tachiyomi.ui.player.controls.components.playerCircle
 import tachiyomi.presentation.core.components.material.padding
 
 @Composable
@@ -52,6 +53,7 @@ fun TopLeftPlayerControls(
         ControlsButton(
             icon = Icons.AutoMirrored.Default.ArrowBack,
             onClick = onBackClick,
+            modifier = Modifier.playerCircle(),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(-MaterialTheme.padding.extraSmall),
@@ -60,20 +62,20 @@ fun TopLeftPlayerControls(
         ) {
             Text(
                 animeTitle,
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = Color.White,
+                color = AniTenshiPalette.Ivory,
                 style = MaterialTheme.typography.bodyLarge,
+                fontFamily = AniTenshiTitleFont,
             )
             Text(
                 mediaTitle,
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = Color.White.copy(alpha = 0.5f),
+                color = AniTenshiPalette.Lavender,
                 style = MaterialTheme.typography.bodyLarge,
-                fontStyle = FontStyle.Italic,
             )
         }
     }

@@ -126,6 +126,9 @@ jobs:
             echo "- \`anitenshi-arm64-v8a.apk\`: most phones"
             echo "- \`anitenshi-universal.apk\`: any device, larger download"
             echo "- \`anitenshi-armeabi-v7a.apk\`: older 32-bit phones"
+            echo
+            echo "### Support AniTenshi"
+            echo "[Buy Me a Coffee](https://buymeacoffee.com/anitenshi) · [PayPal](https://paypal.me/Borelli99)"
           } > "${RUNNER_TEMP}/notes.md"
 
           if gh release view "${TAG}" > /dev/null 2>&1; then

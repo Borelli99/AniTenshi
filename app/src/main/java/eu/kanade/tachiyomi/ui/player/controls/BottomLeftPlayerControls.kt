@@ -21,10 +21,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -33,8 +36,10 @@ import dev.vivvvek.seeker.Segment
 import eu.kanade.tachiyomi.ui.player.Sheets
 import eu.kanade.tachiyomi.ui.player.controls.components.ControlsButton
 import eu.kanade.tachiyomi.ui.player.controls.components.CurrentChapter
+import eu.kanade.tachiyomi.ui.player.controls.components.playerPill
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
 import tachiyomi.i18n.aniyomi.AYMR
+import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -55,23 +60,29 @@ fun BottomLeftPlayerControls(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ControlsButton(
-            Icons.Default.LockOpen,
-            onClick = onLockControls,
-        )
-        ControlsButton(
-            icon = Icons.Default.ScreenRotation,
-            onClick = onCycleRotation,
-        )
-        ControlsButton(
-            text = stringResource(AYMR.strings.player_speed, playbackSpeed),
-            onClick = {
-                val newSpeed = if (playbackSpeed >= 2) 0.25f else playbackSpeed + 0.25f
-                onPlaybackSpeedChange(newSpeed)
-                playerPreferences.playerSpeed().set(newSpeed)
-            },
-            onLongClick = { onOpenSheet(Sheets.PlaybackSpeed) },
-        )
+        Row(
+            modifier = Modifier.playerPill(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ControlsButton(
+                Icons.Default.LockOpen,
+                onClick = onLockControls,
+            )
+            ControlsButton(
+                icon = Icons.Default.ScreenRotation,
+                onClick = onCycleRotation,
+            )
+            ControlsButton(
+                text = stringResource(AYMR.strings.player_speed, playbackSpeed),
+                onClick = {
+                    val newSpeed = if (playbackSpeed >= 2) 0.25f else playbackSpeed + 0.25f
+                    onPlaybackSpeedChange(newSpeed)
+                    playerPreferences.playerSpeed().set(newSpeed)
+                },
+                onLongClick = { onOpenSheet(Sheets.PlaybackSpeed) },
+            )
+        }
+        Spacer(modifier = Modifier.width(MaterialTheme.padding.small))
         AnimatedVisibility(
             currentChapter != null && playerPreferences.showCurrentChapter().get(),
             enter = fadeIn(),

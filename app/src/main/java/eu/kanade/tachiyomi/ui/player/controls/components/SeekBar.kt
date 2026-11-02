@@ -17,6 +17,7 @@
 
 package eu.kanade.tachiyomi.ui.player.controls.components
 
+import `is`.xyz.mpv.Utils
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -43,9 +44,9 @@ import androidx.compose.ui.unit.dp
 import dev.vivvvek.seeker.Seeker
 import dev.vivvvek.seeker.SeekerDefaults
 import dev.vivvvek.seeker.Segment
+import eu.kanade.presentation.theme.AniTenshiPalette
 import eu.kanade.tachiyomi.animesource.model.ChapterType
 import eu.kanade.tachiyomi.ui.player.controls.LocalPlayerButtonsClickEvent
-import `is`.xyz.mpv.Utils
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import tachiyomi.presentation.core.components.material.padding
@@ -128,11 +129,12 @@ fun SeekbarWithTimers(
                         it
                 },
             modifier = Modifier.weight(1f),
+            // AniTenshi: gold progress on a see-through track
             colors = SeekerDefaults.seekerColors(
-                progressColor = MaterialTheme.colorScheme.primary,
-                thumbColor = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.background,
-                readAheadColor = MaterialTheme.colorScheme.inversePrimary,
+                progressColor = AniTenshiPalette.Gold,
+                thumbColor = AniTenshiPalette.Gold,
+                trackColor = Color.White.copy(alpha = 0.22f),
+                readAheadColor = Color.White.copy(alpha = 0.4f),
             ),
         )
         VideoTimer(

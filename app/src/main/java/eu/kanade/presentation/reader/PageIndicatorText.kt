@@ -1,17 +1,22 @@
 package eu.kanade.presentation.reader
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
+import eu.kanade.presentation.theme.AniTenshiPalette
 import eu.kanade.presentation.theme.TachiyomiPreviewTheme
 
 @Composable
@@ -23,30 +28,37 @@ fun PageIndicatorText(
 ) {
     if (currentPage.isEmpty() || totalPages <= 0) return
 
-    val text = "$currentPage / $totalPages"
-
-    val style = TextStyle(
-        color = Color(235, 235, 235),
+    // AniTenshi: the page number in a small night blue pill
+    Text(
+        text = "$currentPage / $totalPages",
+        color = AniTenshiPalette.Ivory,
         fontSize = MaterialTheme.typography.bodySmall.fontSize,
         fontWeight = FontWeight.Bold,
-        letterSpacing = 1.sp,
+        modifier = Modifier
+            .padding(bottom = 10.dp)
+            .clip(CircleShape)
+            .background(AniTenshiPalette.Navy.copy(alpha = 0.85f))
+            .padding(horizontal = 12.dp, vertical = 4.dp),
     )
-    val strokeStyle = style.copy(
-        color = Color(45, 45, 45),
-        drawStyle = Stroke(width = 4f),
-    )
+}
 
+/** AniTenshi: thin gold line along the bottom with how far into the chapter you are. */
+@Composable
+fun ReaderProgressLine(
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
     Box(
-        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(3.dp)
+            .background(AniTenshiPalette.Navy.copy(alpha = 0.25f)),
     ) {
-        Text(
-            text = text,
-            style = strokeStyle,
-        )
-
-        Text(
-            text = text,
-            style = style,
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(progress.coerceIn(0f, 1f))
+                .fillMaxHeight()
+                .background(AniTenshiPalette.Gold),
         )
     }
 }

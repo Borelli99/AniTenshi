@@ -17,17 +17,19 @@
 
 package eu.kanade.tachiyomi.ui.player.controls
 
+import `is`.xyz.mpv.MPV
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import eu.kanade.tachiyomi.ui.player.controls.components.ControlsButton
 import eu.kanade.tachiyomi.ui.player.controls.components.FilledControlsButton
+import eu.kanade.tachiyomi.ui.player.controls.components.playerPill
 import eu.kanade.tachiyomi.ui.player.execute
 import eu.kanade.tachiyomi.ui.player.executeLongPress
-import `is`.xyz.mpv.MPV
 import tachiyomi.domain.custombuttons.model.CustomButton
 
 @Composable
@@ -42,7 +44,7 @@ fun BottomRightPlayerControls(
     onPipClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         if (skipIntroButton != null) {
             FilledControlsButton(
                 text = skipIntroButton,
@@ -54,19 +56,22 @@ fun BottomRightPlayerControls(
                 text = customButtonTitle,
                 onClick = { customButton.execute(mpv) },
                 onLongClick = { customButton.executeLongPress(mpv) },
+                highlighted = false,
             )
         }
 
-        if (isPipAvailable) {
+        Row(modifier = Modifier.playerPill()) {
+            if (isPipAvailable) {
+                ControlsButton(
+                    Icons.Default.PictureInPictureAlt,
+                    onClick = onPipClick,
+                )
+            }
+
             ControlsButton(
-                Icons.Default.PictureInPictureAlt,
-                onClick = onPipClick,
+                Icons.Default.AspectRatio,
+                onClick = onAspectClick,
             )
         }
-
-        ControlsButton(
-            Icons.Default.AspectRatio,
-            onClick = onAspectClick,
-        )
     }
 }

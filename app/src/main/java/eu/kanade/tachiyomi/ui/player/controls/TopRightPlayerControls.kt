@@ -38,6 +38,7 @@ import eu.kanade.tachiyomi.ui.player.CastManager
 import eu.kanade.tachiyomi.ui.player.cast.CustomCastThemeFactory
 import eu.kanade.tachiyomi.ui.player.controls.components.AutoPlaySwitch
 import eu.kanade.tachiyomi.ui.player.controls.components.ControlsButton
+import eu.kanade.tachiyomi.ui.player.controls.components.playerPill
 import tachiyomi.presentation.core.components.material.padding
 
 @Composable
@@ -70,7 +71,7 @@ fun TopRightPlayerControls(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier,
+        modifier.playerPill(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Absolute.SpaceEvenly,
     ) {

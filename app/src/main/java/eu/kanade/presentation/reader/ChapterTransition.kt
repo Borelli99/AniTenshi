@@ -1,5 +1,6 @@
 package eu.kanade.presentation.reader
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,11 +9,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ProvideTextStyle
@@ -21,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
@@ -29,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import eu.kanade.presentation.theme.AniTenshiPalette
 import eu.kanade.presentation.theme.TachiyomiPreviewTheme
 import eu.kanade.tachiyomi.data.database.models.manga.toDomainChapter
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
@@ -40,6 +45,7 @@ import mihon.icons.materialsymbols.roundedfilled.CheckCircle
 import tachiyomi.domain.items.chapter.model.Chapter
 import tachiyomi.domain.items.chapter.service.calculateChapterGap
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.AniTenshiMark
 import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.secondaryItemAlpha
@@ -65,6 +71,7 @@ fun ChapterTransition(
                     bottomChapterDownloaded = currChapterDownloaded,
                     fallbackLabel = stringResource(MR.strings.transition_no_previous),
                     chapterGap = calculateChapterGap(currChapter, goingToChapter),
+                    highlightTop = true,
                 )
             }
 
@@ -94,18 +101,27 @@ private fun TransitionText(
     bottomChapterDownloaded: Boolean,
     fallbackLabel: String,
     chapterGap: Int,
+    /** AniTenshi: the chapter you are going to gets a gold frame (the top one when going back). */
+    highlightTop: Boolean = false,
 ) {
     Column(
         modifier = Modifier
             .widthIn(max = 460.dp)
             .fillMaxWidth(),
     ) {
+        AniTenshiMark(
+            size = 72.dp,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 16.dp),
+        )
         if (topChapter != null) {
             ChapterText(
                 header = topLabel,
                 name = topChapter.name,
                 scanlator = topChapter.scanlator,
                 downloaded = topChapterDownloaded,
+                highlighted = highlightTop,
             )
 
             Spacer(Modifier.height(VerticalSpacerSize))
@@ -131,6 +147,7 @@ private fun TransitionText(
                 name = bottomChapter.name,
                 scanlator = bottomChapter.scanlator,
                 downloaded = bottomChapterDownloaded,
+                highlighted = !highlightTop,
             )
         } else {
             NoChapterNotification(
@@ -220,8 +237,21 @@ private fun ChapterText(
     name: String,
     scanlator: String?,
     downloaded: Boolean,
+    highlighted: Boolean = false,
 ) {
-    Column {
+    // AniTenshi: each chapter in a rounded frame, gold for the one you are going to
+    val frameShape = RoundedCornerShape(18.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(frameShape)
+            .border(
+                width = if (highlighted) 1.5.dp else 1.dp,
+                color = if (highlighted) AniTenshiPalette.Gold else LocalContentColor.current.copy(alpha = 0.25f),
+                shape = frameShape,
+            )
+            .padding(16.dp),
+    ) {
         ChapterHeaderText(
             text = header,
             modifier = Modifier.padding(bottom = 4.dp),

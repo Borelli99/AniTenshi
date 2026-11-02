@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AniTenshi: launch animation (Android 12+). The halo drops onto the A and settles.
+     Older Android versions use the still icon in drawable/ic_tachi_splash.xml. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <group
+                android:pivotX="54"
+                android:pivotY="54"
+                android:scaleX="0.8"
+                android:scaleY="0.8"
+                android:translateY="-0.7">
+                <group
+                    android:name="haloBack"
+                    android:translateY="-16">
+                    <path
+                        android:name="haloBackPath"
+                        android:pathData="M39,52 A15,4.6 0,0 1,69 52"
+                        android:strokeAlpha="0"
+                        android:strokeColor="#FFF2C14E"
+                        android:strokeWidth="3.6" />
+                </group>
+                <path
+                    android:pathData="M38,77 L54,33 L70,77"
+                    android:strokeColor="#FFF6F2EA"
+                    android:strokeLineCap="round"
+                    android:strokeLineJoin="round"
+                    android:strokeWidth="7.5" />
+                <group
+                    android:name="haloFront"
+                    android:translateY="-16">
+                    <path
+                        android:name="haloFrontPath"
+                        android:pathData="M39,52 A15,4.6 0,0 0,69 52"
+                        android:strokeAlpha="0"
+                        android:strokeColor="#FFF2C14E"
+                        android:strokeLineCap="round"
+                        android:strokeWidth="3.6" />
+                </group>
+            </group>
+        </vector>
+    </aapt:attr>
+
+    <target android:name="haloBack">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="650"
+                android:interpolator="@android:anim/overshoot_interpolator"
+                android:propertyName="translateY"
+                android:startOffset="120"
+                android:valueFrom="-16"
+                android:valueTo="0"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+    <target android:name="haloFront">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="650"
+                android:interpolator="@android:anim/overshoot_interpolator"
+                android:propertyName="translateY"
+                android:startOffset="120"
+                android:valueFrom="-16"
+                android:valueTo="0"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+    <target android:name="haloBackPath">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="260"
+                android:propertyName="strokeAlpha"
+                android:startOffset="120"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+    <target android:name="haloFrontPath">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="260"
+                android:propertyName="strokeAlpha"
+                android:startOffset="120"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+</animated-vector>

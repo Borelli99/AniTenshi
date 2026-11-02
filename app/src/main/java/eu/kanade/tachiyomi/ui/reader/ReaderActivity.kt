@@ -81,6 +81,7 @@ import eu.kanade.presentation.reader.ReaderContentOverlay
 import eu.kanade.presentation.reader.ReaderNavigationOverlay
 import eu.kanade.presentation.reader.ReaderNavigationOverlayState
 import eu.kanade.presentation.reader.ReaderPageActionsDialog
+import eu.kanade.presentation.reader.ReaderProgressLine
 import eu.kanade.presentation.reader.ReadingModeSelectDialog
 import eu.kanade.presentation.reader.appbars.ReaderAppBars
 import eu.kanade.presentation.reader.components.ChapterNavigatorType
@@ -125,6 +126,7 @@ import eu.kanade.tachiyomi.util.system.readerBackgroundColor
 import eu.kanade.tachiyomi.util.system.toShareIntent
 import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.view.setComposeContent
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.Dispatchers
@@ -153,7 +155,6 @@ import tachiyomi.i18n.MR
 import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.screens.LoadingScreen
 import tachiyomi.presentation.core.util.collectAsState
-import kotlin.time.Duration.Companion.seconds
 
 @Suppress("LargeClass")
 class ReaderActivity : BaseActivity() {
@@ -287,6 +288,12 @@ class ReaderActivity : BaseActivity() {
                 if (!state.menuVisible && showPageNumber) {
                     Box(modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding()) {
                         PageIndicatorText(currentPage = state.currentPageText, totalPages = state.totalPages)
+                    }
+                    if (state.totalPages > 0 && state.currentPage > 0) {
+                        ReaderProgressLine(
+                            progress = state.currentPage.toFloat() / state.totalPages,
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                        )
                     }
                 }
 

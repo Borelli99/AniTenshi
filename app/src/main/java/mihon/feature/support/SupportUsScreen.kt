@@ -2,24 +2,26 @@ package mihon.feature.support
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -29,14 +31,22 @@ import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.core.common.Constants
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.OpenInNew
-import mihon.icons.simpleicons.Discord
-import mihon.icons.simpleicons.OpenCollective
-import mihon.icons.simpleicons.Patreon
-import mihon.icons.simpleicons.SimpleIcons
-import tachiyomi.i18n.MR
+import tachiyomi.i18n.tail.TLMR
+import tachiyomi.presentation.core.components.AniTenshiMark
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
 
+/**
+ * AniTenshi's donation pages, as (name shown in the app, link).
+ * While the list is empty the "Support AniTenshi" entry stays hidden in More.
+ */
+object AniTenshiDonations {
+    val links: List<Pair<String, String>> = emptyList()
+}
+
+/**
+ * AniTenshi: a short thank-you page with the donation links and a GitHub star.
+ */
 class SupportUsScreen : Screen() {
 
     @Composable
@@ -47,75 +57,47 @@ class SupportUsScreen : Screen() {
         Scaffold(
             topBar = {
                 AppBar(
-                    title = stringResource(MR.strings.label_support_us),
+                    title = stringResource(TLMR.strings.anitenshi_support_title),
                     navigateUp = navigator::pop,
                 )
             },
         ) { paddingValues ->
             Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-                modifier = Modifier.verticalScroll(rememberScrollState()).padding(
-                    remember(paddingValues) {
-                        object : PaddingValues {
-                            override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp {
-                                return paddingValues.calculateLeftPadding(layoutDirection) +
-                                    MaterialTheme.padding.medium
-                            }
-
-                            override fun calculateTopPadding(): Dp {
-                                return 0.dp
-                            }
-
-                            override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp {
-                                return paddingValues.calculateRightPadding(layoutDirection) +
-                                    MaterialTheme.padding.medium
-                            }
-
-                            override fun calculateBottomPadding(): Dp {
-                                return 0.dp
-                            }
-                        }
-                    },
-                ),
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(paddingValues)
+                    .padding(horizontal = MaterialTheme.padding.medium),
             ) {
-                Spacer(modifier = Modifier.height(paddingValues.calculateTopPadding()))
-
+                Spacer(modifier = Modifier.height(MaterialTheme.padding.medium))
+                AniTenshiMark()
                 Text(
-                    text = stringResource(MR.strings.supportUsScreen_perks),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
+                    text = stringResource(TLMR.strings.anitenshi_support_body),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(
+                        horizontal = MaterialTheme.padding.medium,
+                        vertical = MaterialTheme.padding.small,
+                    ),
                 )
+
+                AniTenshiDonations.links.forEach { (name, url) ->
+                    SupportItem(
+                        icon = Icons.Outlined.FavoriteBorder,
+                        title = name,
+                        onClick = { uriHandler.openUri(url) },
+                    )
+                }
 
                 SupportItem(
-                    icon = SimpleIcons.Patreon,
-                    title = stringResource(MR.strings.supportUsScreen_donationPlatform_patreon),
-                    onClick = { uriHandler.openUri(Constants.URL_DONATE_PATREON) },
-                )
-                SupportItem(
-                    icon = SimpleIcons.OpenCollective,
-                    title = stringResource(MR.strings.supportUsScreen_donationPlatform_opencollective),
-                    onClick = { uriHandler.openUri(Constants.URL_DONATE_OPENCOLLECTIVE) },
+                    icon = Icons.Outlined.StarBorder,
+                    title = stringResource(TLMR.strings.anitenshi_support_star),
+                    onClick = { uriHandler.openUri(Constants.URL_GITHUB) },
                 )
 
-                Text(
-                    text = stringResource(MR.strings.supportUsScreen_currentlySupportedBy, 200),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
-                )
-
-                Text(
-                    text = stringResource(MR.strings.supportUsScreen_contactForDetailsMessage),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
-                )
-
-                SupportItem(
-                    icon = SimpleIcons.Discord,
-                    title = stringResource(MR.strings.supportUsScreen_contactPlatform),
-                    onClick = { uriHandler.openUri(Constants.URL_DISCORD) },
-                )
-
-                Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding()))
+                Spacer(modifier = Modifier.height(MaterialTheme.padding.medium))
             }
         }
     }
@@ -126,7 +108,7 @@ class SupportUsScreen : Screen() {
         title: String,
         onClick: () -> Unit,
     ) {
-        Card {
+        Card(modifier = Modifier.fillMaxWidth()) {
             TextPreferenceWidget(
                 title = title,
                 icon = icon,
@@ -134,6 +116,7 @@ class SupportUsScreen : Screen() {
                     Icon(
                         imageVector = MaterialSymbols.AutoMirroredRounded.OpenInNew,
                         contentDescription = null,
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 },
                 onPreferenceClick = onClick,

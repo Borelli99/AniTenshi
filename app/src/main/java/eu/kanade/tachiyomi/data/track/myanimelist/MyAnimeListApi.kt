@@ -493,7 +493,8 @@ class MyAnimeListApi(
     }
 
     companion object {
-        private const val CLIENT_ID = "18e5087eaeef557833a075a4d30d2afe"
+        // AniTenshi's own MyAnimeList client (android type, redirect: anitenshi://myanimelist-auth)
+        private const val CLIENT_ID = "864f9403a1e7b7ab9f193546c4849d44"
 
         private const val BASE_OAUTH_URL = "https://myanimelist.net/v1/oauth2"
         private const val BASE_API_URL = "https://api.myanimelist.net/v2"

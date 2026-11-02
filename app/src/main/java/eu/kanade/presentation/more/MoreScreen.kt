@@ -2,6 +2,7 @@ package eu.kanade.presentation.more
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.VideoSettings
@@ -52,6 +53,8 @@ fun MoreScreen(
     onClickSettings: () -> Unit,
     onClickAbout: () -> Unit,
     navigateUp: (() -> Unit)? = null,
+    /** AniTenshi: donation page; hidden while there are no donation links. */
+    onClickSupport: (() -> Unit)? = null,
 ) {
     val uriHandler = LocalUriHandler.current
 
@@ -189,6 +192,15 @@ fun MoreScreen(
                     icon = MaterialSymbols.Rounded.Info,
                     onPreferenceClick = onClickAbout,
                 )
+            }
+            if (onClickSupport != null) {
+                item {
+                    TextPreferenceWidget(
+                        title = stringResource(TLMR.strings.anitenshi_support_title),
+                        icon = Icons.Outlined.FavoriteBorder,
+                        onPreferenceClick = onClickSupport,
+                    )
+                }
             }
             item {
                 TextPreferenceWidget(

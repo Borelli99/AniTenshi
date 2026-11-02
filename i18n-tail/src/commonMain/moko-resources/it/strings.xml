@@ -404,4 +404,7 @@
   <string name="anitenshi_installed_sources">Fonti installate</string>
   <string name="anitenshi_to_install">Da installare</string>
   <string name="anitenshi_extension_languages">Lingue delle estensioni</string>
+  <string name="anitenshi_support_title">Supporta AniTenshi</string>
+  <string name="anitenshi_support_body">AniTenshi è gratis e senza pubblicità. Se ti piace, una donazione mi aiuta a dedicarci più tempo. Grazie!</string>
+  <string name="anitenshi_support_star">Lascia una stella su GitHub</string>
 </resources>

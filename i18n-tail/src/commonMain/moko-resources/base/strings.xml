@@ -487,4 +487,7 @@
     <string name="anitenshi_installed_sources">Installed sources</string>
     <string name="anitenshi_to_install">To install</string>
     <string name="anitenshi_extension_languages">Extension languages</string>
+    <string name="anitenshi_support_title">Support AniTenshi</string>
+    <string name="anitenshi_support_body">AniTenshi is free and has no ads. If you enjoy it, a donation helps me spend more time on it. Thank you!</string>
+    <string name="anitenshi_support_star">Star it on GitHub</string>
 </resources>

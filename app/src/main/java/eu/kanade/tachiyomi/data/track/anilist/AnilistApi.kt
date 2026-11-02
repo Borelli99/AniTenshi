@@ -509,7 +509,8 @@ class AnilistApi(
     }
 
     companion object {
-        private const val CLIENT_ID = "18376"
+        // AniTenshi's own AniList client (redirect: anitenshi://anilist-auth)
+        private const val CLIENT_ID = "55769"
         private const val API_URL = "https://graphql.anilist.co/"
         private const val BASE_URL = "https://anilist.co/api/v2/"
         private const val BASE_MANGA_URL = "https://anilist.co/manga/"

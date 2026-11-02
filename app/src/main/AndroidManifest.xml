@@ -275,6 +275,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="animetail" />
+                <!-- AniTenshi: AniList and MyAnimeList come back here -->
+                <data android:scheme="anitenshi" />
 
                 <data android:host="anilist-auth" />
                 <data android:host="bangumi-auth" />

@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brush
@@ -48,7 +50,7 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -87,6 +89,9 @@ import eu.kanade.tachiyomi.animesource.AnimeSource
 import eu.kanade.tachiyomi.animesource.model.SAnime
 import eu.kanade.tachiyomi.source.anime.getNameForAnimeInfo
 import eu.kanade.tachiyomi.util.system.copyToClipboard
+import kotlin.math.roundToInt
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import mihon.app.di.appGraph
@@ -105,9 +110,6 @@ import tachiyomi.presentation.core.util.collectAsState
 import tachiyomi.presentation.core.util.secondaryItemAlpha
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import kotlin.math.roundToInt
-import kotlin.time.Clock
-import kotlin.time.Instant
 
 private val whitespaceLineRegex = Regex("[\\r\\n]{2,}", setOf(RegexOption.MULTILINE))
 
@@ -143,8 +145,8 @@ fun AnimeInfoBox(
                         brush = Brush.verticalGradient(colors = backdropGradientColors),
                     )
                 }
-                .blur(4.dp)
-                .alpha(0.2f),
+                .blur(12.dp)
+                .alpha(0.34f),
         )
 
         // Anime & source info
@@ -423,6 +425,7 @@ private fun AnimeAndSourceTitlesLarge(
             // KMK <--
             ItemCover.Book(
                 modifier = Modifier.fillMaxWidth(0.65f),
+                shape = RoundedCornerShape(14.dp),
                 data = ImageRequest.Builder(LocalContext.current)
                     .data(anime)
                     .crossfade(true)
@@ -493,8 +496,9 @@ private fun AnimeAndSourceTitlesSmall(
                 // KMK <--
                 ItemCover.Book(
                     modifier = Modifier
-                        .sizeIn(maxWidth = 100.dp)
+                        .sizeIn(maxWidth = 118.dp)
                         .align(if (topAlignCover) Alignment.Top else Alignment.CenterVertically),
+                    shape = RoundedCornerShape(14.dp),
                     data = ImageRequest.Builder(LocalContext.current)
                         .data(anime)
                         .crossfade(true)
@@ -799,12 +803,21 @@ private fun TagsChip(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    // AniTenshi: filled pills instead of outlined chips
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-        SuggestionChip(
-            modifier = modifier,
+        Surface(
             onClick = onClick,
-            label = { Text(text = text, style = MaterialTheme.typography.bodySmall) },
-        )
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            modifier = modifier,
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
     }
 }
 

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Extension
@@ -72,38 +73,12 @@ fun MangaSourcesScreen(
             ScrollbarLazyColumn(
                 contentPadding = contentPadding + topSmallPaddingValues,
             ) {
-                items(
-                    items = state.items,
-                    contentType = {
-                        when (it) {
-                            is MangaSourceUiModel.Header -> "header"
-                            is MangaSourceUiModel.Item -> "item"
-                        }
-                    },
-                    key = {
-                        when (it) {
-                            is MangaSourceUiModel.Header -> it.hashCode()
-                            is MangaSourceUiModel.Item -> "source-${it.source.key()}"
-                        }
-                    },
-                ) { model ->
-                    when (model) {
-                        is MangaSourceUiModel.Header -> {
-                            SourceHeader(
-                                modifier = Modifier.animateItem(),
-                                language = model.language,
-                            )
-                        }
-
-                        is MangaSourceUiModel.Item -> SourceItem(
-                            modifier = Modifier.animateItem(),
-                            source = model.source,
-                            onClickItem = onClickItem,
-                            onLongClickItem = onLongClickItem,
-                            onClickPin = onClickPin,
-                        )
-                    }
-                }
+                mangaSourceItems(
+                    sourceItems = state.items,
+                    onClickItem = onClickItem,
+                    onClickPin = onClickPin,
+                    onLongClickItem = onLongClickItem,
+                )
             }
         }
     }
@@ -239,4 +214,45 @@ fun MangaSourceOptionsDialog(
 sealed interface MangaSourceUiModel {
     data class Item(val source: Source) : MangaSourceUiModel
     data class Header(val language: String) : MangaSourceUiModel
+}
+
+/** The installed sources: pinned, last used, then by language. */
+fun LazyListScope.mangaSourceItems(
+    sourceItems: List<MangaSourceUiModel>,
+    onClickItem: (Source, Listing) -> Unit,
+    onClickPin: (Source) -> Unit,
+    onLongClickItem: (Source) -> Unit,
+) {
+    items(
+        items = sourceItems,
+        contentType = {
+            when (it) {
+                is MangaSourceUiModel.Header -> "header"
+                is MangaSourceUiModel.Item -> "item"
+            }
+        },
+        key = {
+            when (it) {
+                is MangaSourceUiModel.Header -> it.hashCode()
+                is MangaSourceUiModel.Item -> "source-${it.source.key()}"
+            }
+        },
+    ) { model ->
+        when (model) {
+            is MangaSourceUiModel.Header -> {
+                SourceHeader(
+                    modifier = Modifier.animateItem(),
+                    language = model.language,
+                )
+            }
+
+            is MangaSourceUiModel.Item -> SourceItem(
+                modifier = Modifier.animateItem(),
+                source = model.source,
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem,
+                onClickPin = onClickPin,
+            )
+        }
+    }
 }

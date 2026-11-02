@@ -1,6 +1,7 @@
 package eu.kanade.presentation.library.components
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Notifications
@@ -87,18 +88,31 @@ private fun LibraryRegularToolbar(
     val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
     SearchToolbar(
         titleContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = title.text,
-                    maxLines = 1,
-                    modifier = Modifier.weight(1f, false),
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (title.numberOfEntries != null) {
-                    Pill(
-                        text = "${title.numberOfEntries}",
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = pillAlpha),
-                        fontSize = 14.sp,
+            // AniTenshi: big title, with a line saying how many titles and what is left to watch / read
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title.text,
+                        style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, false),
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (title.numberOfEntries != null && title.subtitle == null) {
+                        Pill(
+                            text = "${title.numberOfEntries}",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = pillAlpha),
+                            fontSize = 14.sp,
+                        )
+                    }
+                }
+                if (title.subtitle != null) {
+                    Text(
+                        text = title.subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -109,6 +123,12 @@ private fun LibraryRegularToolbar(
             val filterTint = if (hasFilters) MaterialTheme.colorScheme.active else LocalContentColor.current
             AppBarActions(
                 listOfNotNull(
+                    AppBar.Action(
+                        title = stringResource(MR.strings.action_filter),
+                        icon = MaterialSymbols.Rounded.FilterList,
+                        iconTint = filterTint,
+                        onClick = onClickFilter,
+                    ),
                     // AniTenshi: new episodes / chapters of this library
                     onClickUpdates?.let {
                         AppBar.Action(
@@ -117,12 +137,6 @@ private fun LibraryRegularToolbar(
                             onClick = it,
                         )
                     },
-                    AppBar.Action(
-                        title = stringResource(MR.strings.action_filter),
-                        icon = MaterialSymbols.Rounded.FilterList,
-                        iconTint = filterTint,
-                        onClick = onClickFilter,
-                    ),
                     AppBar.OverflowAction(
                         title = stringResource(MR.strings.action_update_library),
                         onClick = onClickGlobalUpdate,
@@ -181,4 +195,6 @@ private fun LibrarySelectionToolbar(
 data class LibraryToolbarTitle(
     val text: String,
     val numberOfEntries: Int? = null,
+    /** AniTenshi: e.g. "42 titles · 22 episodes to watch", shown under the title. */
+    val subtitle: String? = null,
 )

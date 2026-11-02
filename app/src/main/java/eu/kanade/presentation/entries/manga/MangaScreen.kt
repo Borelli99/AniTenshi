@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -56,7 +58,9 @@ import eu.kanade.presentation.components.relativeDateTimeText
 import eu.kanade.presentation.entries.DownloadAction
 import eu.kanade.presentation.entries.EntryScreenItem
 import eu.kanade.presentation.entries.anime.components.OutlinedButtonWithArrow
+import eu.kanade.presentation.entries.components.ENTRY_RESUME_BUTTON_KEY
 import eu.kanade.presentation.entries.components.EntryBottomActionMenu
+import eu.kanade.presentation.entries.components.EntryResumeButton
 import eu.kanade.presentation.entries.components.EntryToolbar
 import eu.kanade.presentation.entries.components.ItemHeader
 import eu.kanade.presentation.entries.components.MissingItemCountListItem
@@ -73,7 +77,9 @@ import eu.kanade.tachiyomi.source.manga.getNameForMangaInfo
 import eu.kanade.tachiyomi.ui.browse.manga.extension.details.MangaSourcePreferencesScreen
 import eu.kanade.tachiyomi.ui.entries.manga.ChapterList
 import eu.kanade.tachiyomi.ui.entries.manga.MangaViewModel
+import eu.kanade.tachiyomi.util.chapter.getNextUnread
 import eu.kanade.tachiyomi.util.system.copyToClipboard
+import kotlin.time.Instant
 import mihon.app.di.appGraph
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.roundedfilled.PlayArrow
@@ -93,7 +99,6 @@ import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
 import tachiyomi.presentation.core.util.shouldExpandFAB
 import tachiyomi.source.local.entries.manga.isLocal
-import kotlin.time.Instant
 
 @Composable
 @Suppress("ParameterNaming", "LongMethod")
@@ -344,6 +349,12 @@ private fun MangaScreenSmallImpl(
         )
     }
 
+    // AniTenshi: gold "Resume ch. N" button under the actions; the FAB only shows once it scrolls away
+    val resumeInfo = rememberResumeInfo(state)
+    val hideFab by remember {
+        derivedStateOf { chapterListState.layoutInfo.visibleItemsInfo.any { it.key == ENTRY_RESUME_BUTTON_KEY } }
+    }
+
     // KMK -->
     val context = LocalContext.current
     val uiPreferences = remember { context.appGraph.uiPreferences }
@@ -425,7 +436,7 @@ private fun MangaScreenSmallImpl(
         floatingActionButton = {
             val isFABVisible = remember(chapters) {
                 chapters.fastAny { !it.chapter.read } && !isAnySelected
-            }
+            } && !hideFab
             SmallExtendedFloatingActionButton(
                 text = {
                     val isReading = remember(state.chapters) {
@@ -499,6 +510,21 @@ private fun MangaScreenSmallImpl(
                             onEditIntervalClicked = onEditIntervalClicked,
                             onEditCategory = onEditCategoryClicked,
                         )
+                    }
+
+                    if (resumeInfo != null && !isAnySelected) {
+                        item(
+                            key = ENTRY_RESUME_BUTTON_KEY,
+                            contentType = ENTRY_RESUME_BUTTON_KEY,
+                        ) {
+                            EntryResumeButton(
+                                title = resumeInfo.title,
+                                detail = resumeInfo.detail,
+                                progress = resumeInfo.progress,
+                                icon = Icons.AutoMirrored.Outlined.MenuBook,
+                                onClick = onContinueReading,
+                            )
+                        }
                     }
 
                     item(
@@ -675,6 +701,10 @@ fun MangaScreenLargeImpl(
         )
     }
 
+    // AniTenshi: gold "Resume ch. N" button in the side panel, which is always in view
+    val resumeInfo = rememberResumeInfo(state)
+    val hideFab = resumeInfo != null && !isAnySelected
+
     // KMK -->
     val context = LocalContext.current
     val uiPreferences = remember { context.appGraph.uiPreferences }
@@ -753,7 +783,7 @@ fun MangaScreenLargeImpl(
         floatingActionButton = {
             val isFABVisible = remember(chapters) {
                 chapters.fastAny { !it.chapter.read } && !isAnySelected
-            }
+            } && !hideFab
             SmallExtendedFloatingActionButton(
                 text = {
                     val isReading = remember(state.chapters) {
@@ -817,6 +847,15 @@ fun MangaScreenLargeImpl(
                             onEditIntervalClicked = onEditIntervalClicked,
                             onEditCategory = onEditCategoryClicked,
                         )
+                        if (resumeInfo != null && !isAnySelected) {
+                            EntryResumeButton(
+                                title = resumeInfo.title,
+                                detail = resumeInfo.detail,
+                                progress = resumeInfo.progress,
+                                icon = Icons.AutoMirrored.Outlined.MenuBook,
+                                onClick = onContinueReading,
+                            )
+                        }
                         ExpandableMangaDescription(
                             defaultExpandState = true,
                             description = state.manga.description,
@@ -1053,4 +1092,31 @@ private fun onChapterItemClick(
         isAnyChapterSelected -> onToggleSelection(true)
         else -> onChapterClicked(chapterItem.chapter)
     }
+}
+
+/** AniTenshi: what the gold resume button says. */
+private class ResumeInfo(val title: String, val detail: String?, val progress: Float?)
+
+/** The next chapter to read as a [ResumeInfo], or null when everything is read. */
+@Composable
+private fun rememberResumeInfo(state: MangaViewModel.State.Success): ResumeInfo? {
+    val next = remember(state.chapters, state.manga) {
+        state.chapters.getNextUnread(state.manga)
+    } ?: return null
+    val started = next.lastPageRead > 0L || state.chapters.fastAny { it.chapter.read }
+    val title = if (next.chapterNumber >= 0) {
+        stringResource(
+            if (started) TLMR.strings.anitenshi_resume_chapter else TLMR.strings.anitenshi_start_chapter,
+            formatChapterNumber(next.chapterNumber),
+        )
+    } else {
+        stringResource(if (started) MR.strings.action_resume else MR.strings.action_start)
+    }
+    // Pages are counted from 0
+    val detail = if (next.lastPageRead > 0L) {
+        stringResource(TLMR.strings.anitenshi_read_page, (next.lastPageRead + 1).toInt())
+    } else {
+        null
+    }
+    return ResumeInfo(title, detail, null)
 }

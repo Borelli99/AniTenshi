@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -192,139 +193,27 @@ private fun AnimeExtensionContent(
             }
         }
 
-        state.items.forEach { (header, items) ->
-            item(
-                contentType = "header",
-                key = "extensionHeader-${header.hashCode()}",
-            ) {
-                when (header) {
-                    is AnimeExtensionUiModel.Header.Resource -> {
-                        val action: @Composable RowScope.() -> Unit =
-                            if (header.textRes == MR.strings.ext_updates_pending) {
-                                {
-                                    Button(onClick = { onClickUpdateAll() }) {
-                                        Text(
-                                            text = stringResource(MR.strings.ext_update_all),
-                                            style = LocalTextStyle.current.copy(
-                                                color = MaterialTheme.colorScheme.onPrimary,
-                                            ),
-                                        )
-                                    }
-                                }
-                            } else {
-                                {}
-                            }
-                        ExtensionHeader(
-                            textRes = header.textRes,
-                            modifier = Modifier.animateItem(),
-                            action = action,
-                        )
-                    }
-
-                    is AnimeExtensionUiModel.Header.Text -> {
-                        ExtensionHeader(
-                            text = header.text,
-                            modifier = Modifier.animateItem(),
-                        )
-                    }
-                }
-            }
-
-            items(
-                items = items,
-                contentType = { "item" },
-                key = { item ->
-                    when (item.extension) {
-                        is AnimeExtension.NotLoaded -> "extension-not-loaded-${item.hashCode()}"
-                        is AnimeExtension.Loaded -> "extension-loaded-${item.hashCode()}"
-                        is AnimeExtension.Available -> "extension-available-${item.hashCode()}"
-                    }
-                },
-            ) { item ->
-                AnimeExtensionItem(
-                    item = item,
-                    modifier = Modifier.animateItem(),
-                    onClickItem = {
-                        when (it) {
-                            is AnimeExtension.Available -> onInstallExtension(it)
-
-                            is AnimeExtension.Loaded -> onOpenExtension(it)
-
-                            is AnimeExtension.NotLoaded -> {
-                                notLoadedState = it
-                            }
-                        }
-                    },
-                    onLongClickItem = onLongClickItem,
-                    onClickItemSecondaryAction = {
-                        when (it) {
-                            is AnimeExtension.Available -> onOpenWebView(it)
-
-                            is AnimeExtension.Loaded -> onOpenExtension(it)
-
-                            is AnimeExtension.NotLoaded -> {
-                                notLoadedState = it
-                            }
-                        }
-                    },
-                    onClickItemCancel = onClickItemCancel,
-                    onClickItemError = { installErrorState = it },
-                    onClickItemAction = {
-                        when (it) {
-                            is AnimeExtension.Available -> onInstallExtension(it)
-
-                            is AnimeExtension.Loaded -> {
-                                if (it.hasUpdate) {
-                                    onUpdateExtension(it)
-                                } else {
-                                    onOpenExtension(it)
-                                }
-                            }
-
-                            is AnimeExtension.NotLoaded -> {
-                                if (it.hasUpdate) {
-                                    onUpdateExtension(it)
-                                } else {
-                                    notLoadedState = it
-                                }
-                            }
-                        }
-                    },
-                )
-            }
-        }
-    }
-    notLoadedState?.let { extension ->
-        val dismiss = { notLoadedState = null }
-        if (extension.reason is AnimeExtension.NotLoaded.Reason.Untrusted) {
-            ExtensionTrustDialog(
-                onClickConfirm = {
-                    onTrustExtension(extension)
-                    dismiss()
-                },
-                onClickDismiss = {
-                    onUninstallExtension(extension)
-                    dismiss()
-                },
-                onDismissRequest = dismiss,
-            )
-        } else {
-            AnimeExtensionNotLoadedDialog(
-                reason = extension.reason,
-                onClickUninstall = {
-                    onUninstallExtension(extension)
-                    dismiss()
-                },
-                onDismissRequest = dismiss,
-            )
-        }
-    }
-    installErrorState?.let { error ->
-        ExtensionInstallErrorDialog(
-            error = error,
-            onDismissRequest = { installErrorState = null },
+        animeExtensionGroups(
+            groups = state.items,
+            onLongClickItem = onLongClickItem,
+            onOpenWebView = onOpenWebView,
+            onClickItemCancel = onClickItemCancel,
+            onInstallExtension = onInstallExtension,
+            onUpdateExtension = onUpdateExtension,
+            onOpenExtension = onOpenExtension,
+            onClickUpdateAll = onClickUpdateAll,
+            onShowNotLoaded = { notLoadedState = it },
+            onShowInstallError = { installErrorState = it },
         )
     }
+    AnimeExtensionDialogs(
+        notLoaded = notLoadedState,
+        installError = installErrorState,
+        onDismissNotLoaded = { notLoadedState = null },
+        onDismissInstallError = { installErrorState = null },
+        onTrustExtension = onTrustExtension,
+        onUninstallExtension = onUninstallExtension,
+    )
 }
 
 @Composable
@@ -665,4 +554,163 @@ private fun AnimeExtensionNotLoadedDialog(
         },
         onDismissRequest = onDismissRequest,
     )
+}
+
+/** The extension list grouped by header (updates, not loaded, installed, then by language). */
+internal fun LazyListScope.animeExtensionGroups(
+    groups: Map<AnimeExtensionUiModel.Header, List<AnimeExtensionUiModel.Item>>,
+    onLongClickItem: (AnimeExtension) -> Unit,
+    onOpenWebView: (AnimeExtension.Available) -> Unit,
+    onClickItemCancel: (AnimeExtension) -> Unit,
+    onInstallExtension: (AnimeExtension.Available) -> Unit,
+    onUpdateExtension: (AnimeExtension.Installed) -> Unit,
+    onOpenExtension: (AnimeExtension.Loaded) -> Unit,
+    onClickUpdateAll: () -> Unit,
+    onShowNotLoaded: (AnimeExtension.NotLoaded) -> Unit,
+    onShowInstallError: (InstallStep.Error) -> Unit,
+) {
+    groups.forEach { (header, items) ->
+        item(
+            contentType = "header",
+            key = "extensionHeader-${header.hashCode()}",
+        ) {
+            when (header) {
+                is AnimeExtensionUiModel.Header.Resource -> {
+                    val action: @Composable RowScope.() -> Unit =
+                        if (header.textRes == MR.strings.ext_updates_pending) {
+                            {
+                                Button(onClick = { onClickUpdateAll() }) {
+                                    Text(
+                                        text = stringResource(MR.strings.ext_update_all),
+                                        style = LocalTextStyle.current.copy(
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                        ),
+                                    )
+                                }
+                            }
+                        } else {
+                            {}
+                        }
+                    ExtensionHeader(
+                        textRes = header.textRes,
+                        modifier = Modifier.animateItem(),
+                        action = action,
+                    )
+                }
+
+                is AnimeExtensionUiModel.Header.Text -> {
+                    ExtensionHeader(
+                        text = header.text,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+        }
+
+        items(
+            items = items,
+            contentType = { "item" },
+            key = { item ->
+                when (item.extension) {
+                    is AnimeExtension.NotLoaded -> "extension-not-loaded-${item.hashCode()}"
+                    is AnimeExtension.Loaded -> "extension-loaded-${item.hashCode()}"
+                    is AnimeExtension.Available -> "extension-available-${item.hashCode()}"
+                }
+            },
+        ) { item ->
+            AnimeExtensionItem(
+                item = item,
+                modifier = Modifier.animateItem(),
+                onClickItem = {
+                    when (it) {
+                        is AnimeExtension.Available -> onInstallExtension(it)
+
+                        is AnimeExtension.Loaded -> onOpenExtension(it)
+
+                        is AnimeExtension.NotLoaded -> {
+                            onShowNotLoaded(it)
+                        }
+                    }
+                },
+                onLongClickItem = onLongClickItem,
+                onClickItemSecondaryAction = {
+                    when (it) {
+                        is AnimeExtension.Available -> onOpenWebView(it)
+
+                        is AnimeExtension.Loaded -> onOpenExtension(it)
+
+                        is AnimeExtension.NotLoaded -> {
+                            onShowNotLoaded(it)
+                        }
+                    }
+                },
+                onClickItemCancel = onClickItemCancel,
+                onClickItemError = onShowInstallError,
+                onClickItemAction = {
+                    when (it) {
+                        is AnimeExtension.Available -> onInstallExtension(it)
+
+                        is AnimeExtension.Loaded -> {
+                            if (it.hasUpdate) {
+                                onUpdateExtension(it)
+                            } else {
+                                onOpenExtension(it)
+                            }
+                        }
+
+                        is AnimeExtension.NotLoaded -> {
+                            if (it.hasUpdate) {
+                                onUpdateExtension(it)
+                            } else {
+                                onShowNotLoaded(it)
+                            }
+                        }
+                    }
+                },
+            )
+        }
+    }
+}
+
+/** Dialogs opened from the extension rows: why an extension did not load, or why it failed to install. */
+@Composable
+internal fun AnimeExtensionDialogs(
+    notLoaded: AnimeExtension.NotLoaded?,
+    installError: InstallStep.Error?,
+    onDismissNotLoaded: () -> Unit,
+    onDismissInstallError: () -> Unit,
+    onTrustExtension: (AnimeExtension.NotLoaded) -> Unit,
+    onUninstallExtension: (AnimeExtension.Installed) -> Unit,
+) {
+    notLoaded?.let { extension ->
+        val dismiss = onDismissNotLoaded
+        if (extension.reason is AnimeExtension.NotLoaded.Reason.Untrusted) {
+            ExtensionTrustDialog(
+                onClickConfirm = {
+                    onTrustExtension(extension)
+                    dismiss()
+                },
+                onClickDismiss = {
+                    onUninstallExtension(extension)
+                    dismiss()
+                },
+                onDismissRequest = dismiss,
+            )
+        } else {
+            AnimeExtensionNotLoadedDialog(
+                reason = extension.reason,
+                onClickUninstall = {
+                    onUninstallExtension(extension)
+                    dismiss()
+                },
+                onDismissRequest = dismiss,
+            )
+        }
+    }
+    installError?.let { error ->
+        ExtensionInstallErrorDialog(
+            error = error,
+            onDismissRequest = onDismissInstallError,
+        )
+    }
 }

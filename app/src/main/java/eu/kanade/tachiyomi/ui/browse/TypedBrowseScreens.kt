@@ -4,7 +4,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -14,22 +13,19 @@ import eu.kanade.presentation.components.TabbedScreen
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.data.connections.discord.DiscordRPCService
 import eu.kanade.tachiyomi.data.connections.discord.DiscordScreen
+import eu.kanade.tachiyomi.ui.browse.anime.animeSourcesAndExtensionsTab
 import eu.kanade.tachiyomi.ui.browse.anime.extension.AnimeExtensionsViewModel
-import eu.kanade.tachiyomi.ui.browse.anime.extension.animeExtensionsTab
 import eu.kanade.tachiyomi.ui.browse.anime.migration.sources.migrateAnimeSourceTab
-import eu.kanade.tachiyomi.ui.browse.anime.source.animeSourcesTab
 import eu.kanade.tachiyomi.ui.browse.manga.extension.MangaExtensionsViewModel
-import eu.kanade.tachiyomi.ui.browse.manga.extension.mangaExtensionsTab
+import eu.kanade.tachiyomi.ui.browse.manga.mangaSourcesAndExtensionsTab
 import eu.kanade.tachiyomi.ui.browse.manga.migration.sources.migrateMangaSourceTab
-import eu.kanade.tachiyomi.ui.browse.manga.source.mangaSourcesTab
 import eu.kanade.tachiyomi.ui.main.MainActivity
-import kotlinx.coroutines.launch
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.tail.TLMR
 
+// AniTenshi: sources and extensions share the first page; the second is migration
 private const val TAB_SOURCES = 0
-private const val TAB_EXTENSIONS = 1
-private const val TAB_COUNT = 3
+private const val TAB_COUNT = 2
 
 /**
  * Browse for anime only: sources, extensions and migration.
@@ -46,16 +42,11 @@ class AnimeBrowseScreen(private val toExtensions: Boolean = false) : Screen() {
         val extensionsViewModel = metroViewModel<AnimeExtensionsViewModel>()
         val extensionsSearchQuery by extensionsViewModel.searchQuery.collectAsStateWithLifecycle()
 
-        val state = rememberPagerState(initialPage = if (toExtensions) TAB_EXTENSIONS else TAB_SOURCES) {
-            TAB_COUNT
-        }
-        val scope = rememberCoroutineScope()
+        // Extensions now live on the sources page, so [toExtensions] opens it as well
+        val state = rememberPagerState(initialPage = TAB_SOURCES) { TAB_COUNT }
 
         val tabs = listOf(
-            animeSourcesTab(
-                onGoToExtensions = { scope.launch { state.animateScrollToPage(TAB_EXTENSIONS) } },
-            ).copy(titleRes = MR.strings.label_sources),
-            animeExtensionsTab(extensionsViewModel).copy(titleRes = MR.strings.label_extensions),
+            animeSourcesAndExtensionsTab(extensionsViewModel),
             migrateAnimeSourceTab().copy(titleRes = MR.strings.label_migration),
         ).map { it.copy(navigateUp = { navigator.pop() }) }
 
@@ -65,7 +56,7 @@ class AnimeBrowseScreen(private val toExtensions: Boolean = false) : Screen() {
             state = state,
             animeSearchQuery = extensionsSearchQuery,
             onChangeAnimeSearchQuery = extensionsViewModel::search,
-            animeExtensionsTabIndex = TAB_EXTENSIONS,
+            animeExtensionsTabIndex = TAB_SOURCES,
         )
 
         LaunchedEffect(Unit) {
@@ -92,16 +83,11 @@ class MangaBrowseScreen(private val toExtensions: Boolean = false) : Screen() {
         val extensionsViewModel = metroViewModel<MangaExtensionsViewModel>()
         val extensionsSearchQuery by extensionsViewModel.searchQuery.collectAsStateWithLifecycle()
 
-        val state = rememberPagerState(initialPage = if (toExtensions) TAB_EXTENSIONS else TAB_SOURCES) {
-            TAB_COUNT
-        }
-        val scope = rememberCoroutineScope()
+        // Extensions now live on the sources page, so [toExtensions] opens it as well
+        val state = rememberPagerState(initialPage = TAB_SOURCES) { TAB_COUNT }
 
         val tabs = listOf(
-            mangaSourcesTab(
-                onGoToExtensions = { scope.launch { state.animateScrollToPage(TAB_EXTENSIONS) } },
-            ).copy(titleRes = MR.strings.label_sources),
-            mangaExtensionsTab(extensionsViewModel).copy(titleRes = MR.strings.label_extensions),
+            mangaSourcesAndExtensionsTab(extensionsViewModel),
             migrateMangaSourceTab().copy(titleRes = MR.strings.label_migration),
         ).map { it.copy(navigateUp = { navigator.pop() }) }
 
@@ -111,7 +97,7 @@ class MangaBrowseScreen(private val toExtensions: Boolean = false) : Screen() {
             state = state,
             mangaSearchQuery = extensionsSearchQuery,
             onChangeMangaSearchQuery = extensionsViewModel::search,
-            mangaExtensionsTabIndex = TAB_EXTENSIONS,
+            mangaExtensionsTabIndex = TAB_SOURCES,
         )
 
         LaunchedEffect(Unit) {

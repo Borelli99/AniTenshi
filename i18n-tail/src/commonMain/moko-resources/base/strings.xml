@@ -475,4 +475,16 @@
     <string name="anitenshi_no_repos_title">No repos</string>
     <string name="anitenshi_no_repos_body">Extensions come from repos. Add the address of a repo to see the extensions it offers and install them.</string>
     <string name="anitenshi_add_repo">Add a repo</string>
+    <string name="anitenshi_resume_episode">Resume ep. %1$s</string>
+    <string name="anitenshi_start_episode">Start ep. %1$s</string>
+    <string name="anitenshi_resume_chapter">Resume ch. %1$s</string>
+    <string name="anitenshi_start_chapter">Start ch. %1$s</string>
+    <string name="anitenshi_watch_position">%1$s of %2$s</string>
+    <string name="anitenshi_read_page">Page %1$d</string>
+    <string name="anitenshi_filter_all">All</string>
+    <string name="anitenshi_filter_installed">Installed · %1$d</string>
+    <string name="anitenshi_filter_available">To install · %1$d</string>
+    <string name="anitenshi_installed_sources">Installed sources</string>
+    <string name="anitenshi_to_install">To install</string>
+    <string name="anitenshi_extension_languages">Extension languages</string>
 </resources>

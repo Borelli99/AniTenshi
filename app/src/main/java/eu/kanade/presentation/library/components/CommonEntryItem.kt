@@ -65,6 +65,10 @@ private val ContinueViewingButtonListSpacing = 8.dp
 
 private const val GRID_SELECTED_COVER_ALPHA = 0.76f
 
+// AniTenshi: rounder covers, as on Home
+private val GridCoverRadius = 12.dp
+private val GridCoverShape = RoundedCornerShape(GridCoverRadius)
+
 /**
  * Layout of grid list item with title overlaying the cover.
  * Accepts null [title] for a cover-only view.
@@ -93,6 +97,7 @@ fun EntryCompactGridItem(
                         .fillMaxWidth()
                         .alpha(if (isSelected) GRID_SELECTED_COVER_ALPHA else coverAlpha),
                     data = coverData,
+                    shape = GridCoverShape,
                 )
             },
             badgesStart = coverBadgeStart,
@@ -128,7 +133,7 @@ private fun BoxScope.CoverTextOverlay(
 ) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp))
+            .clip(RoundedCornerShape(bottomStart = GridCoverRadius, bottomEnd = GridCoverRadius))
             .background(
                 Brush.verticalGradient(
                     0f to Color.Transparent,
@@ -200,6 +205,7 @@ fun EntryComfortableGridItem(
                             .fillMaxWidth()
                             .alpha(if (isSelected) GRID_SELECTED_COVER_ALPHA else coverAlpha),
                         data = coverData,
+                        shape = GridCoverShape,
                     )
                 },
                 badgesStart = coverBadgeStart,
@@ -249,7 +255,7 @@ private fun EntryGridCover(
         if (badgesStart != null) {
             BadgeGroup(
                 modifier = Modifier
-                    .padding(4.dp)
+                    .padding(6.dp)
                     .align(Alignment.TopStart),
                 content = badgesStart,
             )
@@ -258,7 +264,7 @@ private fun EntryGridCover(
         if (badgesEnd != null) {
             BadgeGroup(
                 modifier = Modifier
-                    .padding(4.dp)
+                    .padding(6.dp)
                     .align(Alignment.TopEnd),
                 content = badgesEnd,
             )
@@ -299,7 +305,7 @@ private fun GridItemSelectable(
 ) {
     Box(
         modifier = modifier
-            .clip(MaterialTheme.shapes.small)
+            .clip(RoundedCornerShape(GridCoverRadius + 4.dp))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,

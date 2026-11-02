@@ -81,7 +81,9 @@ import eu.kanade.presentation.entries.anime.components.ExpandableAnimeDescriptio
 import eu.kanade.presentation.entries.anime.components.NextEpisodeAiringListItem
 import eu.kanade.presentation.entries.anime.components.OutlinedButtonWithArrow
 import eu.kanade.presentation.entries.anime.components.RelatedAnimesRow
+import eu.kanade.presentation.entries.components.ENTRY_RESUME_BUTTON_KEY
 import eu.kanade.presentation.entries.components.EntryBottomActionMenu
+import eu.kanade.presentation.entries.components.EntryResumeButton
 import eu.kanade.presentation.entries.components.EntryToolbar
 import eu.kanade.presentation.entries.components.ItemHeader
 import eu.kanade.presentation.entries.components.MissingItemCountListItem
@@ -97,7 +99,10 @@ import eu.kanade.tachiyomi.ui.browse.anime.extension.details.AnimeSourcePreferen
 import eu.kanade.tachiyomi.ui.entries.anime.AnimeSeasonItem
 import eu.kanade.tachiyomi.ui.entries.anime.AnimeViewModel
 import eu.kanade.tachiyomi.ui.entries.anime.EpisodeList
+import eu.kanade.tachiyomi.util.episode.getNextUnseen
 import eu.kanade.tachiyomi.util.system.copyToClipboard
+import java.util.concurrent.TimeUnit
+import kotlin.time.Instant
 import kotlinx.coroutines.delay
 import mihon.app.di.appGraph
 import tachiyomi.core.common.util.lang.withIOContext
@@ -123,8 +128,6 @@ import tachiyomi.source.local.entries.anime.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
-import java.util.concurrent.TimeUnit
-import kotlin.time.Instant
 
 @Composable
 @Suppress("ParameterNaming", "LongMethod")
@@ -439,6 +442,12 @@ private fun AnimeScreenSmallImpl(
         }
     }
 
+    // AniTenshi: gold "Resume ep. N" button under the actions; the FAB only shows once it scrolls away
+    val resumeInfo = rememberResumeInfo(state)
+    val hideFab by remember {
+        derivedStateOf { itemListState.layoutInfo.visibleItemsInfo.any { it.key == ENTRY_RESUME_BUTTON_KEY } }
+    }
+
     BackHandler(onBack = {
         if (isAnySelected) {
             onAllEpisodeSelected(false)
@@ -534,7 +543,7 @@ private fun AnimeScreenSmallImpl(
             floatingActionButton = {
                 val isFABVisible = remember(episodes) {
                     episodes.fastAny { !it.episode.seen } && !isAnySelected
-                }
+                } && !hideFab
                 AnimatedVisibility(
                     visible = isFABVisible,
                     enter = fadeIn(),
@@ -621,6 +630,23 @@ private fun AnimeScreenSmallImpl(
                             onEditCategory = onEditCategoryClicked,
                             modifier = Modifier.ignorePadding(offsetGridPaddingPx),
                         )
+                    }
+
+                    if (resumeInfo != null && !isAnySelected) {
+                        item(
+                            key = ENTRY_RESUME_BUTTON_KEY,
+                            contentType = ENTRY_RESUME_BUTTON_KEY,
+                            span = { GridItemSpan(maxLineSpan) },
+                        ) {
+                            EntryResumeButton(
+                                title = resumeInfo.title,
+                                detail = resumeInfo.detail,
+                                progress = resumeInfo.progress,
+                                icon = Icons.Filled.PlayArrow,
+                                onClick = onContinueWatching,
+                                modifier = Modifier.ignorePadding(offsetGridPaddingPx),
+                            )
+                        }
                     }
 
                     item(
@@ -912,6 +938,10 @@ fun AnimeScreenLargeImpl(
         }
     }
 
+    // AniTenshi: gold "Resume ep. N" button in the side panel, which is always in view
+    val resumeInfo = rememberResumeInfo(state)
+    val hideFab = resumeInfo != null && !isAnySelected
+
     val insetPadding = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal).asPaddingValues()
     var topBarHeight by remember { mutableIntStateOf(0) }
     val offsetGridPaddingPx = with(density) { GRID_PADDING.roundToPx() }
@@ -1010,7 +1040,7 @@ fun AnimeScreenLargeImpl(
             floatingActionButton = {
                 val isFABVisible = remember(episodes) {
                     episodes.fastAny { !it.episode.seen } && !isAnySelected
-                }
+                } && !hideFab
                 AnimatedVisibility(
                     visible = isFABVisible,
                     enter = fadeIn(),
@@ -1079,6 +1109,15 @@ fun AnimeScreenLargeImpl(
                                 onEditIntervalClicked = onEditIntervalClicked,
                                 onEditCategory = onEditCategoryClicked,
                             )
+                            if (resumeInfo != null && !isAnySelected) {
+                                EntryResumeButton(
+                                    title = resumeInfo.title,
+                                    detail = resumeInfo.detail,
+                                    progress = resumeInfo.progress,
+                                    icon = Icons.Filled.PlayArrow,
+                                    onClick = onContinueWatching,
+                                )
+                            }
                             ExpandableAnimeDescription(
                                 defaultExpandState = true,
                                 description = state.anime.description,
@@ -1452,6 +1491,9 @@ private fun LazyGridScope.sharedEpisodeItems(
                                 formatTime(episodeItem.episode.totalSeconds),
                             )
                         },
+                    watchFraction = episodeItem.episode
+                        .takeIf { !it.seen && it.lastSecondSeen > 0L && it.totalSeconds > 0L }
+                        ?.let { (it.lastSecondSeen.toFloat() / it.totalSeconds).coerceIn(0f, 1f) },
                     scanlator = episodeItem.episode.scanlator.takeIf { !it.isNullOrBlank() },
                     summary = episodeItem.episode.summary.takeIf { !it.isNullOrBlank() && showSummaries },
                     previewUrl = episodeItem.episode.previewUrl.takeIf { !it.isNullOrBlank() && showPreviews },
@@ -1552,3 +1594,35 @@ private fun Modifier.ignorePadding(gridPadding: Int) = layout { measurable, cons
 // AM (FILE_SIZE) -->
 private val animeDownloadProvider: AnimeDownloadProvider by injectLazy()
 // <-- AM (FILE_SIZE)
+
+/** AniTenshi: what the gold resume button says. */
+private class ResumeInfo(val title: String, val detail: String?, val progress: Float?)
+
+/** The next episode to watch as a [ResumeInfo], or null when there is nothing left (or the anime has seasons). */
+@Composable
+private fun rememberResumeInfo(state: AnimeViewModel.State.Success): ResumeInfo? {
+    val next = remember(state.episodes, state.anime) {
+        if (state.anime.fetchType == FetchType.Episodes) state.episodes.getNextUnseen(state.anime) else null
+    } ?: return null
+    val started = next.lastSecondSeen > 0L || state.episodes.fastAny { it.episode.seen }
+    val title = if (next.episodeNumber >= 0) {
+        stringResource(
+            if (started) TLMR.strings.anitenshi_resume_episode else TLMR.strings.anitenshi_start_episode,
+            formatEpisodeNumber(next.episodeNumber),
+        )
+    } else {
+        stringResource(if (started) MR.strings.action_resume else MR.strings.action_start)
+    }
+    val hasPosition = next.lastSecondSeen > 0L && next.totalSeconds > 0L
+    val detail = if (hasPosition) {
+        stringResource(
+            TLMR.strings.anitenshi_watch_position,
+            formatTime(next.lastSecondSeen),
+            formatTime(next.totalSeconds),
+        )
+    } else {
+        null
+    }
+    val progress = if (hasPosition) (next.lastSecondSeen.toFloat() / next.totalSeconds).coerceIn(0f, 1f) else null
+    return ResumeInfo(title, detail, progress)
+}

@@ -1,16 +1,20 @@
 package eu.kanade.presentation.entries.anime.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.automirrored.outlined.LabelOff
@@ -37,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -88,6 +93,8 @@ fun AnimeEpisodeListItem(
     fileSize: Long?,
     // <-- AM (FILE_SIZE)
     modifier: Modifier = Modifier,
+    /** AniTenshi: how far into the episode the user got (0..1), drawn as a gold line. */
+    watchFraction: Float? = null,
 ) {
     val start = getSwipeAction(
         action = episodeSwipeStartAction,
@@ -139,7 +146,7 @@ fun AnimeEpisodeListItem(
                     downloadProgressProvider = downloadProgressProvider,
                     onDownloadClick = onDownloadClick,
                     fileSize = fileSize ?: 0L, // AM (FILE_SIZE
-
+                    watchFraction = watchFraction,
                 )
                 return@Row
             }
@@ -193,13 +200,18 @@ fun AnimeEpisodeListItem(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    EpisodeInformation(
-                        seen = seen,
-                        date = date,
-                        watchProgress = watchProgress,
-                        fillermark = fillermark,
-                        scanlator = scanlator,
-                    )
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
+                        EpisodeInformation(
+                            seen = seen,
+                            date = date,
+                            watchProgress = watchProgress,
+                            fillermark = fillermark,
+                            scanlator = scanlator,
+                        )
+                        if (watchFraction != null) {
+                            WatchProgressLine(watchFraction, Modifier.padding(top = 6.dp))
+                        }
+                    }
 
                     if (previewUrl != null) {
                         BookmarkDownloadIcons(
@@ -232,6 +244,7 @@ private fun RowScope.SimpleEpisodeListItemImpl(
     onDownloadClick: ((EpisodeDownloadAction) -> Unit)?,
     fileSize: Long?, // AM (FILE_SIZE
     modifier: Modifier = Modifier,
+    watchFraction: Float? = null,
 ) {
     Column(
         modifier = modifier.weight(1f),
@@ -252,6 +265,9 @@ private fun RowScope.SimpleEpisodeListItemImpl(
             fillermark = fillermark,
             scanlator = scanlator,
         )
+        if (watchFraction != null) {
+            WatchProgressLine(watchFraction)
+        }
     }
 
     BookmarkDownloadIcons(
@@ -536,4 +552,23 @@ fun AnimeEpisodeListItemPreview() {
         onEpisodeSwipe = {},
         fileSize = 0L, // AM (FILE_SIZE
     )
+}
+
+/** AniTenshi: thin gold line with how much of the episode was watched. */
+@Composable
+private fun WatchProgressLine(fraction: Float, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(3.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(fraction.coerceIn(0f, 1f))
+                .fillMaxHeight()
+                .background(MaterialTheme.colorScheme.secondary),
+        )
+    }
 }

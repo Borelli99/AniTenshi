@@ -54,7 +54,7 @@ fun ItemHeader(
                 }
                 pluralStringResource(pluralCount, count = itemCount, itemCount)
             },
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
 

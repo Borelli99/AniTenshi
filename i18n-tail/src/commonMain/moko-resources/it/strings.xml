@@ -392,4 +392,16 @@
   <string name="pref_theme_cover_based_style_vibrant">Vivace</string>
   <string name="pref_top_align_cover">Allinea la copertina in alto</string>
   <string name="pref_top_align_cover_summary">Allinea l\'immagine di copertina in alto invece che al centro</string>
+  <string name="anitenshi_resume_episode">Riprendi Ep. %1$s</string>
+  <string name="anitenshi_start_episode">Inizia Ep. %1$s</string>
+  <string name="anitenshi_resume_chapter">Riprendi Cap. %1$s</string>
+  <string name="anitenshi_start_chapter">Inizia Cap. %1$s</string>
+  <string name="anitenshi_watch_position">%1$s di %2$s</string>
+  <string name="anitenshi_read_page">Pagina %1$d</string>
+  <string name="anitenshi_filter_all">Tutte</string>
+  <string name="anitenshi_filter_installed">Installate · %1$d</string>
+  <string name="anitenshi_filter_available">Da installare · %1$d</string>
+  <string name="anitenshi_installed_sources">Fonti installate</string>
+  <string name="anitenshi_to_install">Da installare</string>
+  <string name="anitenshi_extension_languages">Lingue delle estensioni</string>
 </resources>

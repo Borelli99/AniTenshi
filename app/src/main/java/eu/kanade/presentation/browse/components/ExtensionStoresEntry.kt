@@ -120,11 +120,27 @@ fun NoExtensionStoresScreen(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(contentPadding)
+            .padding(contentPadding),
+    ) {
+        NoExtensionStoresBlock(onAddRepo = onAddRepo)
+    }
+}
+
+/** The logo, "No repos", a short explanation and the gold "Add a repo" button (no scrolling of its own). */
+@Composable
+fun NoExtensionStoresBlock(
+    onAddRepo: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier
+            .fillMaxWidth()
             .padding(horizontal = 36.dp, vertical = 24.dp),
     ) {
         AniTenshiMark()

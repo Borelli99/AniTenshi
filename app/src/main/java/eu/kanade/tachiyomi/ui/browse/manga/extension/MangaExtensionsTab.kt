@@ -115,7 +115,7 @@ fun mangaExtensionsTab(
 }
 
 @Composable
-private fun MangaExtensionUninstallConfirmation(
+internal fun MangaExtensionUninstallConfirmation(
     extensionName: String,
     onClickConfirm: () -> Unit,
     onDismissRequest: () -> Unit,

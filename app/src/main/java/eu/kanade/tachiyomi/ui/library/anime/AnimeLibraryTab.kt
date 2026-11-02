@@ -7,8 +7,8 @@ import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -44,8 +44,8 @@ import eu.kanade.tachiyomi.data.connections.discord.DiscordRPCService
 import eu.kanade.tachiyomi.data.connections.discord.DiscordScreen
 import eu.kanade.tachiyomi.data.library.anime.AnimeLibraryUpdateJob
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
-import eu.kanade.tachiyomi.ui.browse.anime.source.globalsearch.GlobalAnimeSearchScreen
 import eu.kanade.tachiyomi.ui.browse.AnimeBrowseScreen
+import eu.kanade.tachiyomi.ui.browse.anime.source.globalsearch.GlobalAnimeSearchScreen
 import eu.kanade.tachiyomi.ui.category.CategoriesTab
 import eu.kanade.tachiyomi.ui.entries.anime.AnimeScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
@@ -72,6 +72,7 @@ import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.material.Scaffold
+import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.EmptyScreenAction
@@ -158,11 +159,23 @@ data object AnimeLibraryTab : Tab {
 
         Scaffold(
             topBar = { scrollBehavior ->
+                // AniTenshi: "42 titles · 22 episodes to watch" under the title
+                val librarySummary = remember(state.library) {
+                    val entries = state.library.values.flatten().distinctBy { it.libraryAnime.anime.id }
+                    entries.size to entries.sumOf { it.libraryAnime.unseenCount }
+                }
+                val librarySubtitle = librarySummary.let { (titleCount, leftCount) ->
+                    if (titleCount == 0) return@let null
+                    val titles = pluralStringResource(TLMR.plurals.anitenshi_library_titles, titleCount, titleCount)
+                    if (leftCount <= 0) return@let titles
+                    val left = leftCount.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                    titles + " · " + pluralStringResource(TLMR.plurals.anitenshi_library_episodes_to_watch, left, left)
+                }
                 val title = state.getToolbarTitle(
                     defaultTitle = defaultTitle,
                     defaultCategoryTitle = stringResource(MR.strings.label_default),
                     page = viewModel.activeCategoryIndex,
-                )
+                ).copy(subtitle = librarySubtitle)
                 val tabVisible = state.showCategoryTabs && state.categories.size > 1
                 LibraryToolbar(
                     hasActiveFilters = state.hasActiveFilters,

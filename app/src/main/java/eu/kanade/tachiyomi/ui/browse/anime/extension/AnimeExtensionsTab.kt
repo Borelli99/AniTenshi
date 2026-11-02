@@ -120,7 +120,7 @@ fun animeExtensionsTab(
 }
 
 @Composable
-private fun AnimeExtensionUninstallConfirmation(
+internal fun AnimeExtensionUninstallConfirmation(
     extensionName: String,
     onClickConfirm: () -> Unit,
     onDismissRequest: () -> Unit,

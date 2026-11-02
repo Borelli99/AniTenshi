@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -76,46 +77,14 @@ fun AnimeSourcesScreen(
             ScrollbarLazyColumn(
                 contentPadding = contentPadding + topSmallPaddingValues,
             ) {
-                items(
-                    items = state.items,
-                    contentType = {
-                        when (it) {
-                            is AnimeSourceUiModel.Header -> "header"
-                            is AnimeSourceUiModel.Item -> "item"
-                        }
-                    },
-                    key = {
-                        when (it) {
-                            is AnimeSourceUiModel.Header -> "header-${it.hashCode()}"
-                            is AnimeSourceUiModel.Item -> "source-${it.source.key()}"
-                        }
-                    },
-                ) { model ->
-                    when (model) {
-                        is AnimeSourceUiModel.Header -> {
-                            AnimeSourceHeader(
-                                modifier = Modifier.animateItem(),
-                                language = model.language,
-                                // SY -->
-                                isCategory = model.isCategory,
-                                // SY <--
-
-                            )
-                        }
-
-                        is AnimeSourceUiModel.Item -> AnimeSourceItem(
-                            modifier = Modifier.animateItem(),
-                            source = model.source,
-                            // SY -->
-                            showLatest = state.showLatest,
-                            showPin = state.showPin,
-                            // SY <--
-                            onClickItem = onClickItem,
-                            onLongClickItem = onLongClickItem,
-                            onClickPin = onClickPin,
-                        )
-                    }
-                }
+                animeSourceItems(
+                    sourceItems = state.items,
+                    showLatest = state.showLatest,
+                    showPin = state.showPin,
+                    onClickItem = onClickItem,
+                    onClickPin = onClickPin,
+                    onLongClickItem = onLongClickItem,
+                )
             }
         }
     }
@@ -293,3 +262,54 @@ fun SourceCategoriesDialog(
     )
 }
 // SY <--
+
+/** The installed sources: pinned, last used, then by language. */
+fun LazyListScope.animeSourceItems(
+    sourceItems: List<AnimeSourceUiModel>,
+    showLatest: Boolean,
+    showPin: Boolean,
+    onClickItem: (AnimeSource, Listing) -> Unit,
+    onClickPin: (AnimeSource) -> Unit,
+    onLongClickItem: (AnimeSource) -> Unit,
+) {
+    items(
+        items = sourceItems,
+        contentType = {
+            when (it) {
+                is AnimeSourceUiModel.Header -> "header"
+                is AnimeSourceUiModel.Item -> "item"
+            }
+        },
+        key = {
+            when (it) {
+                is AnimeSourceUiModel.Header -> "header-${it.hashCode()}"
+                is AnimeSourceUiModel.Item -> "source-${it.source.key()}"
+            }
+        },
+    ) { model ->
+        when (model) {
+            is AnimeSourceUiModel.Header -> {
+                AnimeSourceHeader(
+                    modifier = Modifier.animateItem(),
+                    language = model.language,
+                    // SY -->
+                    isCategory = model.isCategory,
+                    // SY <--
+
+                )
+            }
+
+            is AnimeSourceUiModel.Item -> AnimeSourceItem(
+                modifier = Modifier.animateItem(),
+                source = model.source,
+                // SY -->
+                showLatest = showLatest,
+                showPin = showPin,
+                // SY <--
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem,
+                onClickPin = onClickPin,
+            )
+        }
+    }
+}

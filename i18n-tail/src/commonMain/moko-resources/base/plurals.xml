@@ -17,4 +17,16 @@
         <item quantity="one">%d repo</item>
         <item quantity="other">%d repos</item>
     </plurals>
+    <plurals name="anitenshi_library_titles">
+        <item quantity="one">%d title</item>
+        <item quantity="other">%d titles</item>
+    </plurals>
+    <plurals name="anitenshi_library_episodes_to_watch">
+        <item quantity="one">%d episode to watch</item>
+        <item quantity="other">%d episodes to watch</item>
+    </plurals>
+    <plurals name="anitenshi_library_chapters_to_read">
+        <item quantity="one">%d chapter to read</item>
+        <item quantity="other">%d chapters to read</item>
+    </plurals>
 </resources>

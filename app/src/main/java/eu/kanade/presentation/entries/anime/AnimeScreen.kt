@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastAll
@@ -102,6 +103,10 @@ import eu.kanade.tachiyomi.ui.entries.anime.AnimeViewModel
 import eu.kanade.tachiyomi.ui.entries.anime.EpisodeList
 import eu.kanade.tachiyomi.util.episode.getNextUnseen
 import eu.kanade.tachiyomi.util.system.copyToClipboard
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
 import kotlin.time.Instant
 import kotlinx.coroutines.delay
@@ -795,12 +800,12 @@ private fun AnimeScreenSmallImpl(
                                     contentType = EntryScreenItem.AIRING_TIME,
                                     span = { GridItemSpan(maxLineSpan) },
                                 ) {
-                                    // Handles the second by second countdown
+                                    // AniTenshi: the row shows a date now; the timer only hides it once the episode is out
                                     var timer by remember { mutableLongStateOf(state.airingTime) }
                                     LaunchedEffect(key1 = timer) {
                                         if (timer > 0L) {
-                                            delay(1000L)
-                                            timer -= 1000L
+                                            delay(AIRING_CHECK_INTERVAL_MS)
+                                            timer -= AIRING_CHECK_INTERVAL_MS
                                         }
                                     }
                                     if (timer > 0L &&
@@ -812,10 +817,7 @@ private fun AnimeScreenSmallImpl(
                                                 AYMR.strings.display_mode_episode,
                                                 formatEpisodeNumber(state.airingEpisodeNumber),
                                             ),
-                                            date = formatTime(
-                                                state.airingTime,
-                                                dayFormat = stringResource(TLMR.strings.anitenshi_airing_in),
-                                            ),
+                                            date = nextEpisodeAiringText(state.nextAiringEpisode.second * 1000L),
                                             modifier = Modifier.ignorePadding(offsetGridPaddingPx),
                                         )
                                     }
@@ -1263,12 +1265,12 @@ fun AnimeScreenLargeImpl(
                                             key = EntryScreenItem.AIRING_TIME,
                                             contentType = EntryScreenItem.AIRING_TIME,
                                         ) {
-                                            // Handles the second by second countdown reseting
+                                            // AniTenshi: the row shows a date now; the timer only hides it once the episode is out
                                             var timer by remember { mutableLongStateOf(state.airingTime) }
                                             LaunchedEffect(key1 = timer) {
                                                 if (timer > 0L) {
-                                                    delay(1000L)
-                                                    timer -= 1000L
+                                                    delay(AIRING_CHECK_INTERVAL_MS)
+                                                    timer -= AIRING_CHECK_INTERVAL_MS
                                                 }
                                             }
                                             if (timer > 0L &&
@@ -1280,10 +1282,7 @@ fun AnimeScreenLargeImpl(
                                                         AYMR.strings.display_mode_episode,
                                                         formatEpisodeNumber(state.airingEpisodeNumber),
                                                     ),
-                                                    date = formatTime(
-                                                        state.airingTime,
-                                                        dayFormat = stringResource(TLMR.strings.anitenshi_airing_in),
-                                                    ),
+                                                    date = nextEpisodeAiringText(state.nextAiringEpisode.second * 1000L),
                                                     modifier = Modifier.ignorePadding(offsetGridPaddingPx),
                                                 )
                                             }
@@ -1559,20 +1558,32 @@ private fun onEpisodeItemClick(
     }
 }
 
-// AniTenshi: dayFormat is the translated "Airing in …" countdown (days, hours, minutes, seconds)
-private fun formatTime(milliseconds: Long, dayFormat: String? = null): String {
-    return if (dayFormat != null) {
-        String.format(
-            dayFormat,
-            TimeUnit.MILLISECONDS.toDays(milliseconds),
-            TimeUnit.MILLISECONDS.toHours(milliseconds) -
-                TimeUnit.DAYS.toHours(TimeUnit.MILLISECONDS.toDays(milliseconds)),
-            TimeUnit.MILLISECONDS.toMinutes(milliseconds) -
-                TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(milliseconds)),
-            TimeUnit.MILLISECONDS.toSeconds(milliseconds) -
-                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(milliseconds)),
-        )
-    } else if (milliseconds > 3600000L) {
+/** How often the next-episode row checks whether the episode is out (and hides itself). */
+private const val AIRING_CHECK_INTERVAL_MS = 30_000L
+
+/**
+ * AniTenshi: day and time of the next episode instead of a countdown: "Airs today at 16:30",
+ * "Airs tomorrow at 16:30", "Airs Thursday 5 November at 16:30" (the year only when it isn't this one).
+ */
+@Composable
+private fun nextEpisodeAiringText(airingAtMillis: Long): String {
+    val locale = LocalLocale.current.platformLocale
+    val zone = ZoneId.systemDefault()
+    val airing = java.time.Instant.ofEpochMilli(airingAtMillis).atZone(zone)
+    val today = LocalDate.now(zone)
+    val day = when (airing.toLocalDate()) {
+        today -> stringResource(TLMR.strings.anitenshi_airing_today)
+        today.plusDays(1) -> stringResource(TLMR.strings.anitenshi_airing_tomorrow)
+        else -> DateTimeFormatter
+            .ofPattern(if (airing.year == today.year) "EEEE d MMMM" else "EEEE d MMMM yyyy", locale)
+            .format(airing)
+    }
+    val time = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale).format(airing)
+    return stringResource(TLMR.strings.anitenshi_airing_on, day, time)
+}
+
+private fun formatTime(milliseconds: Long): String {
+    return if (milliseconds > 3600000L) {
         String.format(
             "%d:%02d:%02d",
             TimeUnit.MILLISECONDS.toHours(milliseconds),

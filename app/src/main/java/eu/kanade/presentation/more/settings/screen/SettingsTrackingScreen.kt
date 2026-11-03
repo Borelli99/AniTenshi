@@ -169,10 +169,6 @@ object SettingsTrackingScreen : SearchableSettings {
                 title = stringResource(TLMR.strings.anitenshi_pref_track_on_add),
                 subtitle = stringResource(TLMR.strings.anitenshi_pref_track_on_add_summary),
             ),
-            Preference.PreferenceItem.SwitchPreference(
-                preference = trackPreferences.showNextEpisodeAiringTime,
-                title = stringResource(AYMR.strings.pref_show_next_episode_airing_time),
-            ),
             Preference.PreferenceItem.ListPreference(
                 preference = trackPreferences.autoUpdateTrackOnMarkRead,
                 entries = AutoTrackState.entries
@@ -191,6 +187,27 @@ object SettingsTrackingScreen : SearchableSettings {
                 subtitle = stringResource(TLMR.strings.pref_smart_sync_tracker_summary),
             ),
             // <-- AM
+            // AniTenshi: everything about episode dates and the next episode, in one place
+            Preference.PreferenceGroup(
+                title = stringResource(TLMR.strings.anitenshi_pref_group_dates),
+                preferenceItems = listOf(
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = trackPreferences.anitenshiEpisodeAirDates,
+                        title = stringResource(TLMR.strings.anitenshi_pref_air_dates),
+                        subtitle = stringResource(TLMR.strings.anitenshi_pref_air_dates_summary),
+                    ),
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = trackPreferences.anitenshiTitleSearch,
+                        title = stringResource(TLMR.strings.anitenshi_pref_title_search),
+                        subtitle = stringResource(TLMR.strings.anitenshi_pref_title_search_summary),
+                    ),
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = trackPreferences.showNextEpisodeAiringTime,
+                        title = stringResource(AYMR.strings.pref_show_next_episode_airing_time),
+                        subtitle = stringResource(TLMR.strings.anitenshi_pref_next_episode_summary),
+                    ),
+                ),
+            ),
             Preference.PreferenceGroup(
                 title = stringResource(MR.strings.services),
                 preferenceItems = listOf(

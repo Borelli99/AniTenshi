@@ -2,6 +2,7 @@ package eu.kanade.domain.track.anime.interactor
 
 import dev.zacsweers.metro.Inject
 import eu.kanade.domain.items.episode.interactor.FindAnilistAnime
+import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import kotlinx.coroutines.CancellationException
@@ -23,6 +24,7 @@ class AutoLinkAnimeTrackers(
     private val getAnimeTracks: GetAnimeTracks,
     private val addTracks: AddAnimeTracks,
     private val findAnilistAnime: FindAnilistAnime,
+    private val trackPreferences: TrackPreferences,
 ) {
 
     /**
@@ -36,6 +38,8 @@ class AutoLinkAnimeTrackers(
         val toLink = listOf<Tracker>(trackerManager.aniList, trackerManager.myAnimeList)
             .filter { tracker -> tracker.isLoggedIn && tracks.none { it.trackerId == tracker.id } }
         if (toLink.isEmpty()) return@withIOContext Result(emptyList(), incomplete = false)
+        // Title search turned off in the settings: the tracking menu opens as before
+        if (!trackPreferences.anitenshiTitleSearch.get()) return@withIOContext Result(emptyList(), incomplete = true)
 
         val match = findAnilistAnime.await(anime) ?: return@withIOContext Result(emptyList(), incomplete = true)
 

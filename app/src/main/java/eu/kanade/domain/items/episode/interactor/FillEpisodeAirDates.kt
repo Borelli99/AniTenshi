@@ -2,6 +2,7 @@ package eu.kanade.domain.items.episode.interactor
 
 import dev.zacsweers.metro.Inject
 import eu.kanade.domain.items.isUnknownUploadDate
+import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.util.EpisodeAirDatesApi
 import kotlinx.coroutines.CancellationException
@@ -29,6 +30,7 @@ class FillEpisodeAirDates(
     private val getEpisodesByAnimeId: GetEpisodesByAnimeId,
     private val getAnimeTracks: GetAnimeTracks,
     private val updateEpisode: UpdateEpisode,
+    private val trackPreferences: TrackPreferences,
 ) {
 
     suspend fun await(animeId: Long) = withIOContext {
@@ -44,6 +46,7 @@ class FillEpisodeAirDates(
     }
 
     private suspend fun fill(animeId: Long) {
+        if (!trackPreferences.anitenshiEpisodeAirDates.get()) return
         val episodes = getEpisodesByAnimeId.await(animeId)
         val missing = episodes.filter {
             it.dateUploadOverride <= 0L && isUnknownUploadDate(it.dateUpload, it.dateFetch) && it.wholeEpisodeNumber() != null
@@ -56,6 +59,7 @@ class FillEpisodeAirDates(
 
         if (anilistId == null && malId == null) {
             // Not linked in Tracking: the AniList entry found by the anime's titles
+            if (!trackPreferences.anitenshiTitleSearch.get()) return
             val anime = getAnime.await(animeId) ?: return
             val match = findAnilistAnime.await(anime) ?: return
             anilistId = match.id

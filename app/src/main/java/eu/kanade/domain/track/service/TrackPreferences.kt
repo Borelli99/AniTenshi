@@ -70,6 +70,12 @@ class TrackPreferences(
         true,
     )
 
+    // AniTenshi: Japanese air dates (AniList / MyAnimeList) for episodes whose extension gives no date
+    val anitenshiEpisodeAirDates: Preference<Boolean> = preferenceStore.getBoolean("anitenshi_episode_air_dates", true)
+
+    // AniTenshi: look anime that aren't linked in Tracking up on AniList by title (dates, next episode, auto links)
+    val anitenshiTitleSearch: Preference<Boolean> = preferenceStore.getBoolean("anitenshi_title_search", true)
+
     // AM -->
     fun syncEnhancedTrackers() = preferenceStore.getBoolean("sync_enhanced_trackers", true)
 

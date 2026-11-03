@@ -1938,7 +1938,10 @@ class AnimeViewModel(
         val airingEpisodeData = AniChartApi().loadAiringTime(anime, trackItems, manualFetch) {
             // AniTenshi: not linked in Tracking, so the AniList entry found by title. Not for dubs: they
             // come out on their own schedule, later than the Japanese one shown here.
-            if (isDubTitle(anime.title) || isDubTitle(anime.ogTitle)) null else findAnilistAnime.await(anime)?.id
+            val search = trackPreferences.showNextEpisodeAiringTime.get() &&
+                trackPreferences.anitenshiTitleSearch.get() &&
+                !isDubTitle(anime.title) && !isDubTitle(anime.ogTitle)
+            if (search) findAnilistAnime.await(anime)?.id else null
         }
         setAnimeViewerFlags.awaitSetNextEpisodeAiring(anime.id, airingEpisodeData)
         updateSuccessState { it.copy(nextAiringEpisode = airingEpisodeData) }

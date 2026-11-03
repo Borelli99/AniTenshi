@@ -517,7 +517,15 @@
     <string name="anitenshi_onboarding_step">Step %1$d of %2$d</string>
     <string name="anitenshi_manage_trackers">Manage tracking sites</string>
     <string name="anitenshi_auto_tracked">Linked automatically: %1$s</string>
-    <string name="anitenshi_airing_in">Airing in %1$02dd %2$02dh %3$02dm %4$02ds</string>
     <string name="anitenshi_pref_track_on_add">Track on adding to library</string>
     <string name="anitenshi_pref_track_on_add_summary">Links AniList and MyAnimeList by itself. If the anime can\'t be found for sure, the tracking menu opens</string>
+    <string name="anitenshi_pref_group_dates">Dates and releases</string>
+    <string name="anitenshi_pref_air_dates">Episode dates from AniList and MyAnimeList</string>
+    <string name="anitenshi_pref_air_dates_summary">When an extension gives no date, shows the Japanese air date. Dates already taken stay</string>
+    <string name="anitenshi_pref_title_search">Find anime by title</string>
+    <string name="anitenshi_pref_title_search_summary">Looks anime up on AniList by title, for dates, next episode and automatic tracking. When off, only anime you link by hand</string>
+    <string name="anitenshi_pref_next_episode_summary">Day and time of the next episode in Japan. Not for dubs</string>
+    <string name="anitenshi_airing_on">Airs %1$s at %2$s</string>
+    <string name="anitenshi_airing_today">today</string>
+    <string name="anitenshi_airing_tomorrow">tomorrow</string>
 </resources>

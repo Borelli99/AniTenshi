@@ -516,4 +516,8 @@
     <string name="anitenshi_onboarding_skip">Skip for now</string>
     <string name="anitenshi_onboarding_step">Step %1$d of %2$d</string>
     <string name="anitenshi_manage_trackers">Manage tracking sites</string>
+    <string name="anitenshi_auto_tracked">Linked automatically: %1$s</string>
+    <string name="anitenshi_airing_in">Airing in %1$02dd %2$02dh %3$02dm %4$02ds</string>
+    <string name="anitenshi_pref_track_on_add">Track on adding to library</string>
+    <string name="anitenshi_pref_track_on_add_summary">Links AniList and MyAnimeList by itself. If the anime can\'t be found for sure, the tracking menu opens</string>
 </resources>

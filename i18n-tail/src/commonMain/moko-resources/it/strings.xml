@@ -433,4 +433,8 @@
   <string name="anitenshi_onboarding_skip">Salta per ora</string>
   <string name="anitenshi_onboarding_step">Passo %1$d di %2$d</string>
   <string name="anitenshi_manage_trackers">Gestisci siti di tracking</string>
+  <string name="anitenshi_auto_tracked">Collegato in automatico: %1$s</string>
+  <string name="anitenshi_airing_in">In onda tra %1$02dg %2$02dh %3$02dm %4$02ds</string>
+  <string name="anitenshi_pref_track_on_add">Traccia quando aggiungi alla libreria</string>
+  <string name="anitenshi_pref_track_on_add_summary">Collega da solo AniList e MyAnimeList. Se l\'anime non si trova con sicurezza, apre il menu del tracciamento</string>
 </resources>

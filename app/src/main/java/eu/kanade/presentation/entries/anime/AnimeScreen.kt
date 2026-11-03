@@ -812,7 +812,10 @@ private fun AnimeScreenSmallImpl(
                                                 AYMR.strings.display_mode_episode,
                                                 formatEpisodeNumber(state.airingEpisodeNumber),
                                             ),
-                                            date = formatTime(state.airingTime, useDayFormat = true),
+                                            date = formatTime(
+                                                state.airingTime,
+                                                dayFormat = stringResource(TLMR.strings.anitenshi_airing_in),
+                                            ),
                                             modifier = Modifier.ignorePadding(offsetGridPaddingPx),
                                         )
                                     }
@@ -1277,7 +1280,10 @@ fun AnimeScreenLargeImpl(
                                                         AYMR.strings.display_mode_episode,
                                                         formatEpisodeNumber(state.airingEpisodeNumber),
                                                     ),
-                                                    date = formatTime(state.airingTime, useDayFormat = true),
+                                                    date = formatTime(
+                                                        state.airingTime,
+                                                        dayFormat = stringResource(TLMR.strings.anitenshi_airing_in),
+                                                    ),
                                                     modifier = Modifier.ignorePadding(offsetGridPaddingPx),
                                                 )
                                             }
@@ -1553,10 +1559,11 @@ private fun onEpisodeItemClick(
     }
 }
 
-private fun formatTime(milliseconds: Long, useDayFormat: Boolean = false): String {
-    return if (useDayFormat) {
+// AniTenshi: dayFormat is the translated "Airing in …" countdown (days, hours, minutes, seconds)
+private fun formatTime(milliseconds: Long, dayFormat: String? = null): String {
+    return if (dayFormat != null) {
         String.format(
-            "Airing in %02dd %02dh %02dm %02ds",
+            dayFormat,
             TimeUnit.MILLISECONDS.toDays(milliseconds),
             TimeUnit.MILLISECONDS.toHours(milliseconds) -
                 TimeUnit.DAYS.toHours(TimeUnit.MILLISECONDS.toDays(milliseconds)),

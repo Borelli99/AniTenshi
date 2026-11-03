@@ -40,10 +40,12 @@ import eu.kanade.domain.entries.anime.model.seasonDownloadedFilter
 import eu.kanade.domain.entries.anime.model.toDomainAnime
 import eu.kanade.domain.entries.anime.model.toSAnime
 import eu.kanade.domain.items.episode.interactor.FillEpisodeAirDates
+import eu.kanade.domain.items.episode.interactor.FindAnilistAnime
 import eu.kanade.domain.items.episode.interactor.SetSeenStatus
 import eu.kanade.domain.items.episode.interactor.SyncEpisodesWithSource
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.track.anime.interactor.AddAnimeTracks
+import eu.kanade.domain.track.anime.interactor.AutoLinkAnimeTrackers
 import eu.kanade.domain.track.anime.interactor.RefreshAnimeTracks
 import eu.kanade.domain.track.anime.interactor.RefreshResult
 import eu.kanade.domain.track.anime.interactor.TrackEpisode
@@ -77,6 +79,7 @@ import eu.kanade.tachiyomi.ui.player.settings.GesturePreferences
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
 import eu.kanade.tachiyomi.util.AniChartApi
 import eu.kanade.tachiyomi.util.episode.getNextUnseen
+import eu.kanade.tachiyomi.util.isDubTitle
 import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
@@ -146,6 +149,7 @@ import tachiyomi.domain.storage.service.StoragePreferences
 import tachiyomi.domain.track.anime.interactor.GetAnimeTracks
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.source.local.entries.anime.LocalAnimeSource
 import tachiyomi.source.local.entries.anime.isLocal
 import java.util.Calendar
@@ -206,6 +210,9 @@ class AnimeViewModel(
     // <-- AM (FILE_SIZE)
     // AniTenshi: Japanese air dates for episodes whose extension gives no release date
     private val fillEpisodeAirDates: FillEpisodeAirDates,
+    // AniTenshi: AniList entry found by title, and automatic AniList / MyAnimeList links
+    private val findAnilistAnime: FindAnilistAnime,
+    private val autoLinkAnimeTrackers: AutoLinkAnimeTrackers,
 ) : ViewModel() {
 
     val state: StateFlow<State>
@@ -664,8 +671,25 @@ class AnimeViewModel(
 
                 // Finally match with enhanced tracking when available
                 addTracks.bindEnhancedTrackers(anime, state.source)
+                // AniTenshi: link AniList / MyAnimeList by title by itself; the sheet opens only for what
+                // couldn't be linked (no clear match)
                 if (autoOpenTrack) {
-                    showTrackDialog()
+                    val autoLink = autoLinkAnimeTrackers.await(anime)
+                    if (autoLink.linked.isNotEmpty()) {
+                        viewModelScope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = context.stringResource(
+                                    TLMR.strings.anitenshi_auto_tracked,
+                                    autoLink.linked.joinToString(),
+                                ),
+                            )
+                        }
+                    }
+                    if (autoLink.linked.isNotEmpty() && !autoLink.incomplete) {
+                        isFromChangeCategory = false
+                    } else {
+                        showTrackDialog()
+                    }
                 }
             }
         }
@@ -1911,7 +1935,11 @@ class AnimeViewModel(
         trackItems: List<AnimeTrackItem>,
         manualFetch: Boolean,
     ) {
-        val airingEpisodeData = AniChartApi().loadAiringTime(anime, trackItems, manualFetch)
+        val airingEpisodeData = AniChartApi().loadAiringTime(anime, trackItems, manualFetch) {
+            // AniTenshi: not linked in Tracking, so the AniList entry found by title. Not for dubs: they
+            // come out on their own schedule, later than the Japanese one shown here.
+            if (isDubTitle(anime.title) || isDubTitle(anime.ogTitle)) null else findAnilistAnime.await(anime)?.id
+        }
         setAnimeViewerFlags.awaitSetNextEpisodeAiring(anime.id, airingEpisodeData)
         updateSuccessState { it.copy(nextAiringEpisode = airingEpisodeData) }
     }

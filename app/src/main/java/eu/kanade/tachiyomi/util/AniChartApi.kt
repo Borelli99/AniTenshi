@@ -23,6 +23,8 @@ class AniChartApi {
         anime: Anime,
         trackItems: List<AnimeTrackItem>,
         manualFetch: Boolean,
+        // AniTenshi: AniList id to use when the anime isn't linked in Tracking (found by title)
+        findAnilistId: (suspend () -> Long?)? = null,
     ): Pair<Int, Long> {
         var airingEpisodeData = Pair(anime.nextEpisodeToAir, anime.nextEpisodeAiringAt)
         if (anime.status == SAnime.COMPLETED.toLong() && !manualFetch) return airingEpisodeData
@@ -32,7 +34,9 @@ class AniChartApi {
                 (it.tracker is Anilist && it.track != null) ||
                     (it.tracker is MyAnimeList && it.track != null) ||
                     (it.tracker is Simkl && it.track != null)
-            } ?: return@withIOContext Pair(1, 0L)
+            } ?: return@withIOContext findAnilistId?.invoke()
+                ?.let { getAnilistAiringEpisodeData(it) }
+                ?: Pair(1, 0L)
 
             matchingTrackItem.let { item ->
                 item.track!!.let {

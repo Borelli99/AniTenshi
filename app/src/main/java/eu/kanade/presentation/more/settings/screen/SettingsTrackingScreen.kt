@@ -99,6 +99,9 @@ object SettingsTrackingScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
         val trackPreferences = remember { context.appGraph.trackPreferences }
         val trackerManager = remember { context.appGraph.trackerManager }
+        val anitenshiTrackers = remember {
+            listOf(trackerManager.myAnimeList, trackerManager.aniList, trackerManager.kitsu, trackerManager.mangaUpdates)
+        }
         val mangaSourceManager = remember { context.appGraph.mangaSourceManager }
         val animeSourceManager = remember { context.appGraph.animeSourceManager }
 
@@ -162,7 +165,9 @@ object SettingsTrackingScreen : SearchableSettings {
             ),
             Preference.PreferenceItem.SwitchPreference(
                 preference = trackPreferences.trackOnAddingToLibrary,
-                title = stringResource(AYMR.strings.pref_track_on_add_library),
+                // AniTenshi: adding an anime links AniList / MyAnimeList by itself, the menu is the fallback
+                title = stringResource(TLMR.strings.anitenshi_pref_track_on_add),
+                subtitle = stringResource(TLMR.strings.anitenshi_pref_track_on_add_summary),
             ),
             Preference.PreferenceItem.SwitchPreference(
                 preference = trackPreferences.showNextEpisodeAiringTime,
@@ -287,7 +292,13 @@ object SettingsTrackingScreen : SearchableSettings {
                         logout = { dialog = LogoutDialog(trackerManager.comick) },
                     ),
                     Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.tracking_info)),
-                ),
+                )
+                    // AniTenshi: only the services set up for AniTenshi, plus any you're already signed in to
+                    .filter { item ->
+                        item !is Preference.PreferenceItem.TrackerPreference ||
+                            item.tracker.isLoggedIn ||
+                            item.tracker in anitenshiTrackers
+                    },
             ),
             Preference.PreferenceGroup(
                 title = stringResource(MR.strings.enhanced_services),

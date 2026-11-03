@@ -64,7 +64,7 @@ class EpisodeAirDatesApi(
     /**
      * Finds the AniList entry of an anime from its titles on the source, for anime not linked in Tracking.
      * Returns null unless one entry clearly matches (see [pickAnilistMatch]), so a doubtful match gives
-     * no date rather than a wrong one.
+     * no date rather than a wrong one. Throws when AniList can't be reached.
      */
     suspend fun findAnime(titles: List<String>, episodeCount: Int): AnilistCandidate? = withIOContext {
         titles.map(::cleanSourceTitle)
@@ -76,7 +76,7 @@ class EpisodeAirDatesApi(
                     put("query", ANILIST_SEARCH_QUERY)
                     put("variables", buildJsonObject { put("search", title) })
                 }.toString().toRequestBody(jsonMime)
-                val candidates = runCatching { parseAnilistSearch(postAnilist(body)) }.getOrNull().orEmpty()
+                val candidates = parseAnilistSearch(postAnilist(body))
                 pickAnilistMatch(title, episodeCount, candidates)?.let { return@withIOContext it }
             }
         null
@@ -188,6 +188,11 @@ private val VERSION_TAG = Regex(
         """|[\s\-–:|]*[(\[]?\s*\b(?:sub|dub|dubbed|subbed|uncensored)\b\s*[)\]]?\s*$""",
     RegexOption.IGNORE_CASE,
 )
+
+private val DUB_WORD = Regex("""\b(?:dub|dubbed|doppiato|doppiaggio)\b""", RegexOption.IGNORE_CASE)
+
+/** True for a dubbed version ("Dub ITA"…): it airs on its own schedule, later than in Japan. */
+fun isDubTitle(title: String): Boolean = DUB_WORD.containsMatchIn(title)
 
 /** The title without version tags at its end, e.g. "Io sono Teppei! Dub ITA" → "Io sono Teppei!". */
 internal fun cleanSourceTitle(title: String): String {

@@ -61,6 +61,7 @@ import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.AnimeTrackSearch
 import eu.kanade.tachiyomi.data.track.trakt.Trakt
+import eu.kanade.tachiyomi.ui.setting.SettingsScreen
 import eu.kanade.tachiyomi.util.lang.convertEpochMillisZone
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import eu.kanade.tachiyomi.util.system.openInBrowser
@@ -191,6 +192,10 @@ data class AnimeTrackInfoDialogHomeScreen(
             },
             onCopyLink = { context.copyTrackerLink(it) },
             onTogglePrivate = screenModel::togglePrivate,
+            // AniTenshi: the sheet lists only signed-in sites; this leaves the sheet for the tracking settings
+            onManageTrackers = {
+                navigator.parent?.push(SettingsScreen(SettingsScreen.Destination.Tracking))
+            },
         )
     }
 

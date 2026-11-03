@@ -41,6 +41,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.theme.TachiyomiPreviewTheme
+import eu.kanade.presentation.track.components.ManageTrackersRow
 import eu.kanade.presentation.track.components.TrackLogoIcon
 import eu.kanade.presentation.track.manga.TrackDetailsItem
 import eu.kanade.presentation.track.manga.TrackInfoItemMenu
@@ -70,6 +71,8 @@ fun AnimeTrackInfoDialogHome(
     onRemoved: (AnimeTrackItem) -> Unit,
     onCopyLink: (AnimeTrackItem) -> Unit,
     onTogglePrivate: (AnimeTrackItem) -> Unit,
+    // AniTenshi: opens the tracking settings, to sign in to another site
+    onManageTrackers: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
@@ -134,6 +137,7 @@ fun AnimeTrackInfoDialogHome(
                 )
             }
         }
+        onManageTrackers?.let { ManageTrackersRow(onClick = it) }
     }
 }
 

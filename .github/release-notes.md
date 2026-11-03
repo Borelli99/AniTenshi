@@ -1,3 +1,3 @@
-## Novità di AniTenshi 1.0.13
+## Novità di AniTenshi 1.0.14
 
-- **Home più pulita sul telefono**: il pulsante grande "Altro" non copre più le copertine in basso. Ora è una pillola dorata con la scritta "Altro" nella barra in alto, accanto ad Aggiorna. Sul tablet resta in basso a destra, dove c'è spazio.
+- **Date degli episodi**: alcune estensioni non dicono quando è uscito un episodio o un capitolo. In quel caso l'app segnava come data il momento in cui l'aveva trovato, e tutti gli episodi risultavano usciti "Ora". Adesso, quando la data non c'è, non viene mostrata. Le estensioni che indicano la data continuano a mostrarla come prima.

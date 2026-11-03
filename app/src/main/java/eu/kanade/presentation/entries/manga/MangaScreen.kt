@@ -54,6 +54,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.browse.anime.RelatedAnimeTitle
+import eu.kanade.presentation.components.displayedUploadDate
 import eu.kanade.presentation.components.relativeDateTimeText
 import eu.kanade.presentation.entries.DownloadAction
 import eu.kanade.presentation.entries.EntryScreenItem
@@ -1034,10 +1035,12 @@ private fun LazyListScope.sharedChapterItems(
                     } else {
                         item.chapter.name
                     },
-                    date = relativeDateTimeText(
-                        item.chapter.dateUploadOverride.takeIf { it > 0 }
-                            ?: item.chapter.dateUpload,
-                    ),
+                    // AniTenshi: no date when the source didn't give one (it would say "Now")
+                    date = displayedUploadDate(
+                        dateUpload = item.chapter.dateUpload,
+                        dateUploadOverride = item.chapter.dateUploadOverride,
+                        dateFetch = item.chapter.dateFetch,
+                    )?.let { relativeDateTimeText(it) },
                     readProgress = item.chapter.lastPageRead
                         .takeIf { !item.chapter.read && it > 0L }
                         ?.let {

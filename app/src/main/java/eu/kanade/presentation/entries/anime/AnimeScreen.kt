@@ -68,6 +68,7 @@ import eu.kanade.domain.entries.anime.model.episodesFiltered
 import eu.kanade.domain.entries.anime.model.seasonsFiltered
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.presentation.browse.anime.RelatedAnimeTitle
+import eu.kanade.presentation.components.displayedUploadDate
 import eu.kanade.presentation.components.relativeDateTimeText
 import eu.kanade.presentation.entries.DownloadAction
 import eu.kanade.presentation.entries.EntryScreenItem
@@ -1475,10 +1476,12 @@ private fun LazyGridScope.sharedEpisodeItems(
                         episodeItem.episode.name
                     },
                     date = if (showEpisodeTimestamps) {
-                        relativeDateTimeText(
-                            episodeItem.episode.dateUploadOverride.takeIf { it > 0 }
-                                ?: episodeItem.episode.dateUpload,
-                        )
+                        // AniTenshi: no date when the source didn't give one (it would say "Now")
+                        displayedUploadDate(
+                            dateUpload = episodeItem.episode.dateUpload,
+                            dateUploadOverride = episodeItem.episode.dateUploadOverride,
+                            dateFetch = episodeItem.episode.dateFetch,
+                        )?.let { relativeDateTimeText(it) }
                     } else {
                         null
                     },

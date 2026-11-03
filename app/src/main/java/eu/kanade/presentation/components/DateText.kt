@@ -6,6 +6,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.util.lang.toRelativeString
+import kotlin.math.abs
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -13,7 +15,6 @@ import kotlinx.datetime.toLocalDateTime
 import mihon.app.di.appGraph
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
-import kotlin.time.Instant
 
 @Composable
 fun relativeDateText(
@@ -75,4 +76,20 @@ fun relativeDateTimeText(
         dateFormat = dateFormat,
     )
         ?: stringResource(MR.strings.not_applicable)
+}
+
+/** How close (ms) the stored release date must be to the time the item was found to count as made up. */
+private const val UNKNOWN_DATE_TOLERANCE_MS = 60_000L
+
+/**
+ * AniTenshi: the release date to show for an episode or chapter, or null when the source gave none.
+ *
+ * When a source sends no date, the app stores the moment it found the item instead (needed for sorting),
+ * which would read as "Now" for every episode. Such a date is within moments of [dateFetch], so it is hidden.
+ */
+fun displayedUploadDate(dateUpload: Long, dateUploadOverride: Long, dateFetch: Long): Long? = when {
+    dateUploadOverride > 0L -> dateUploadOverride
+    dateUpload <= 0L -> null
+    abs(dateFetch - dateUpload) < UNKNOWN_DATE_TOLERANCE_MS -> null
+    else -> dateUpload
 }

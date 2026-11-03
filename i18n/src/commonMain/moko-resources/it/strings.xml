@@ -939,4 +939,5 @@
     <string name="refresh_tracker_error">Errore nell\'aggiornare %1$s: %2$s</string>
     <string name="refresh_tracker_profile">Aggiorna il profilo del tracker</string>
     <string name="refresh_tracker_success">Profilo di %s aggiornato</string>
+    <string name="notification_update_error">Aggiornamenti non riusciti: %1$d</string>
 </resources>

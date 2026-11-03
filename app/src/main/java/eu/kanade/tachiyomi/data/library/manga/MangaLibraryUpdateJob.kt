@@ -28,6 +28,7 @@ import eu.kanade.domain.items.chapter.model.toSChapter
 import eu.kanade.domain.sync.SyncPreferences
 import eu.kanade.tachiyomi.data.cache.MangaCoverCache
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadManager
+import eu.kanade.tachiyomi.data.library.retryOnceOnTimeout
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.data.track.TrackStatus
@@ -382,7 +383,8 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
                                     manga,
                                 ) {
                                     try {
-                                        val newChapters = updateManga(manga, fetchWindow)
+                                        // AniTenshi: a site that times out gets a second try before the update is reported as failed
+                                        val newChapters = retryOnceOnTimeout { updateManga(manga, fetchWindow) }
                                             .sortedByDescending { it.sourceOrder }
 
                                         if (newChapters.isNotEmpty()) {

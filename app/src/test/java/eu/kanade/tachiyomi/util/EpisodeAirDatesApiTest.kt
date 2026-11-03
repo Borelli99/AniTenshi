@@ -11,10 +11,13 @@ class EpisodeAirDatesApiTest {
 
     private val now = OffsetDateTime.parse("2026-11-03T10:00:00+01:00").toInstant().toEpochMilli()
 
+    private fun noonUtc(day: String) = OffsetDateTime.parse("${day}T12:00:00Z").toInstant().toEpochMilli()
+
     @Test
     fun anilistScheduleKeepsAiredEpisodesAndMalId() {
         val body = """
-            {"data":{"Media":{"idMal":52991,"airingSchedule":{"pageInfo":{"hasNextPage":true},"nodes":[
+            {"data":{"Media":{"idMal":52991,"episodes":28,"startDate":{"year":2023,"month":9,"day":29},
+            "airingSchedule":{"pageInfo":{"hasNextPage":true},"nodes":[
               {"episode":1,"airingAt":1696003200},
               {"episode":2,"airingAt":1696608000},
               {"episode":40,"airingAt":4102444800},
@@ -27,6 +30,16 @@ class EpisodeAirDatesApiTest {
         assertEquals(mapOf(1 to 1_696_003_200_000L, 2 to 1_696_608_000_000L), result.dates)
         assertEquals(52991L, result.malId)
         assertTrue(result.hasNextPage)
+    }
+
+    @Test
+    fun anilistFilmGetsItsReleaseDay() {
+        val body = """
+            {"data":{"Media":{"idMal":32950,"episodes":1,"startDate":{"year":2016,"month":9,"day":3},
+            "airingSchedule":{"pageInfo":{"hasNextPage":false},"nodes":[]}}}}
+        """.trimIndent()
+
+        assertEquals(mapOf(1 to noonUtc("2016-09-03")), parseAnilistAirDates(body, now).dates)
     }
 
     @Test
@@ -52,13 +65,7 @@ class EpisodeAirDatesApiTest {
 
         val (dates, hasNextPage) = parseJikanAirDates(body, now)
 
-        assertEquals(
-            mapOf(
-                1 to OffsetDateTime.parse("1977-09-12T00:00:00Z").toInstant().toEpochMilli(),
-                2 to OffsetDateTime.parse("1977-09-19T00:00:00Z").toInstant().toEpochMilli(),
-            ),
-            dates,
-        )
+        assertEquals(mapOf(1 to noonUtc("1977-09-12"), 2 to noonUtc("1977-09-19")), dates)
         assertFalse(hasNextPage)
     }
 
@@ -68,5 +75,56 @@ class EpisodeAirDatesApiTest {
 
         assertTrue(dates.isEmpty())
         assertFalse(hasNextPage)
+    }
+
+    @Test
+    fun versionTagsAreRemovedFromTitles() {
+        assertEquals("Io sono Teppei!", cleanSourceTitle("Io sono Teppei! Dub ITA"))
+        assertEquals("One Piece", cleanSourceTitle("One Piece Sub ITA"))
+        assertEquals("Naruto", cleanSourceTitle("Naruto (ITA)"))
+        assertEquals("Dragon Ball Super", cleanSourceTitle("Dragon Ball Super [Dub]"))
+        assertEquals("Kami-sama Hajimemashita", cleanSourceTitle("Kami-sama Hajimemashita"))
+        assertEquals("ITA", cleanSourceTitle("ITA"))
+    }
+
+    @Test
+    fun searchResultsAreRead() {
+        val body = """
+            {"data":{"Page":{"media":[
+              {"id":16498,"idMal":16498,"episodes":25,
+               "title":{"romaji":"Shingeki no Kyojin","english":"Attack on Titan","native":"進撃の巨人"},
+               "synonyms":["AoT","SnK"]}
+            ]}}}
+        """.trimIndent()
+
+        val result = parseAnilistSearch(body).single()
+
+        assertEquals(16498L, result.id)
+        assertEquals(16498L, result.malId)
+        assertEquals(25, result.episodes)
+        assertEquals(listOf("Shingeki no Kyojin", "Attack on Titan", "進撃の巨人", "AoT", "SnK"), result.titles)
+    }
+
+    @Test
+    fun matchNeedsCloseTitleAndCompatibleEpisodes() {
+        val first = AnilistCandidate(16498, 16498, 25, listOf("Shingeki no Kyojin", "Attack on Titan"))
+        val second = AnilistCandidate(20958, 25777, 12, listOf("Shingeki no Kyojin Season 2", "Attack on Titan Season 2"))
+
+        assertEquals(first, pickAnilistMatch("Shingeki no Kyojin", 25, listOf(second, first)))
+        assertEquals(second, pickAnilistMatch("Attack on Titan Season 2", 12, listOf(first, second)))
+        // More episodes on the source than the entry has: not the same anime
+        assertNull(pickAnilistMatch("Shingeki no Kyojin", 30, listOf(first)))
+        // Title too different
+        assertNull(pickAnilistMatch("Io sono Teppei!", 28, listOf(first, second)))
+    }
+
+    @Test
+    fun sameTitleTwiceNeedsSameEpisodeCount() {
+        val old = AnilistCandidate(136, 136, 62, listOf("Hunter x Hunter"))
+        val remake = AnilistCandidate(11061, 11061, 148, listOf("Hunter x Hunter (2011)", "Hunter x Hunter"))
+
+        assertEquals(remake, pickAnilistMatch("Hunter x Hunter", 148, listOf(old, remake)))
+        // Both could fit 40 episodes: no guess
+        assertNull(pickAnilistMatch("Hunter x Hunter", 40, listOf(old, remake)))
     }
 }

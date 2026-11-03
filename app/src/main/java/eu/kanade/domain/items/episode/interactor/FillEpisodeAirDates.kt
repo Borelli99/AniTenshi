@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.withLock
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
+import tachiyomi.domain.entries.anime.interactor.GetAnime
 import tachiyomi.domain.items.episode.interactor.GetEpisodesByAnimeId
 import tachiyomi.domain.items.episode.interactor.UpdateEpisode
 import tachiyomi.domain.items.episode.model.Episode
@@ -19,11 +20,13 @@ import kotlin.math.floor
 
 /**
  * AniTenshi: gives the episodes whose extension sends no release date their original (Japanese) air date,
- * taken from AniList / MyAnimeList when the anime is linked to one of them in Tracking.
+ * from AniList / MyAnimeList. The anime's entry there is the one linked in Tracking, or else the one found
+ * by its title (only when it clearly matches). Read-only public data: no login, nothing added to any list.
  * Episodes with a date from the extension, or a date set by the user, are never touched.
  */
 @Inject
 class FillEpisodeAirDates(
+    private val getAnime: GetAnime,
     private val getEpisodesByAnimeId: GetEpisodesByAnimeId,
     private val getAnimeTracks: GetAnimeTracks,
     private val updateEpisode: UpdateEpisode,
@@ -42,19 +45,28 @@ class FillEpisodeAirDates(
     }
 
     private suspend fun fill(animeId: Long) {
-        val tracks = getAnimeTracks.await(animeId)
-        val anilistId = tracks.firstOrNull { it.trackerId == TrackerManager.ANILIST }?.remoteId?.takeIf { it > 0 }
-        val malId = tracks.firstOrNull { it.trackerId == MYANIMELIST_TRACKER_ID }?.remoteId?.takeIf { it > 0 }
-        if (anilistId == null && malId == null) return
-
-        val missing = getEpisodesByAnimeId.await(animeId).filter {
+        val episodes = getEpisodesByAnimeId.await(animeId)
+        val missing = episodes.filter {
             it.dateUploadOverride <= 0L && isUnknownUploadDate(it.dateUpload, it.dateFetch) && it.wholeNumber() != null
         }
         if (missing.isEmpty()) return
 
+        val tracks = getAnimeTracks.await(animeId)
+        var anilistId = tracks.firstOrNull { it.trackerId == TrackerManager.ANILIST }?.remoteId?.takeIf { it > 0 }
+        var malId = tracks.firstOrNull { it.trackerId == MYANIMELIST_TRACKER_ID }?.remoteId?.takeIf { it > 0 }
+
         // Ask the sites once per app session for the same episodes and links
         val key = "$animeId|$anilistId|$malId|${missing.map { it.id }.sorted().hashCode()}"
         if (!attempted.add(key)) return
+
+        if (anilistId == null && malId == null) {
+            // Not linked in Tracking: look the anime up on AniList by its titles
+            val anime = getAnime.await(animeId) ?: return
+            val episodeCount = episodes.mapNotNull { it.wholeNumber() }.maxOrNull() ?: 0
+            val match = api.findAnime(listOf(anime.title, anime.ogTitle), episodeCount) ?: return
+            anilistId = match.id
+            malId = match.malId
+        }
 
         val dates = api.load(anilistId = anilistId, malId = malId)
         if (dates.isEmpty()) return

@@ -21,6 +21,7 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.core.common.util.lang.withIOContext
+import java.io.IOException
 import java.text.Normalizer
 import java.time.LocalDate
 import java.time.LocalTime
@@ -38,52 +39,58 @@ class EpisodeAirDatesApi(
 
     /**
      * Air dates (epoch ms) by episode number for the anime with these AniList / MyAnimeList ids.
-     * AniList has exact times for recent shows, MyAnimeList fills the gaps (older shows). Empty when
-     * neither site knows the dates or they can't be reached.
+     * AniList has exact times for recent shows, MyAnimeList fills the gaps (older shows).
+     * [AirDates.complete] is false when a site couldn't be reached (busy or offline), so it's worth asking again.
      */
-    suspend fun load(anilistId: Long?, malId: Long?): Map<Int, Long> = withIOContext {
+    suspend fun load(anilistId: Long?, malId: Long?): AirDates = withIOContext {
         val nowMillis = System.currentTimeMillis()
         val dates = mutableMapOf<Int, Long>()
+        var complete = true
         var mal = malId?.takeIf { it > 0 }
         val anilist = anilistId?.takeIf { it > 0 }
 
         if (anilist != null || mal != null) {
-            runCatching { loadAnilist(anilist, mal, nowMillis) }.getOrNull()?.let { result ->
-                dates.putAll(result.dates)
-                if (mal == null) mal = result.malId
-            }
+            runCatching { loadAnilist(anilist, mal, nowMillis) }
+                .onFailure { complete = false }
+                .getOrNull()?.let { result ->
+                    dates.putAll(result.dates)
+                    if (mal == null) mal = result.malId
+                }
         }
         mal?.let { id ->
-            runCatching { loadJikan(id, nowMillis) }.getOrNull()?.forEach { (episode, date) ->
-                dates.putIfAbsent(episode, date)
-            }
+            runCatching { loadJikan(id, nowMillis) }
+                .onFailure { complete = false }
+                .getOrNull()?.forEach { (episode, date) -> dates.putIfAbsent(episode, date) }
         }
-        dates
+        AirDates(dates, complete)
     }
 
     /**
-     * Finds the AniList entry of an anime from its titles on the source, for anime not linked in Tracking.
-     * Returns null unless one entry clearly matches (see [pickAnilistMatch]), so a doubtful match gives
-     * no date rather than a wrong one. Throws when AniList can't be reached.
+     * Finds the AniList entry of an anime from its titles (the first ones are searched first), for anime not
+     * linked in Tracking. Returns null unless one entry clearly matches (see [pickAnilistMatch]), so a doubtful
+     * match gives no date rather than a wrong one. Throws when AniList can't be reached or is busy.
      */
     suspend fun findAnime(titles: List<String>, episodeCount: Int): AnilistCandidate? = withIOContext {
-        titles.map(::cleanSourceTitle)
+        val cleaned = titles.map(::cleanSourceTitle)
             .filter { it.isNotBlank() }
             .distinctBy(::normalizeTitle)
-            .take(2)
-            .forEach { title ->
-                val body = buildJsonObject {
-                    put("query", ANILIST_SEARCH_QUERY)
-                    put("variables", buildJsonObject { put("search", title) })
-                }.toString().toRequestBody(jsonMime)
-                val candidates = parseAnilistSearch(postAnilist(body))
-                pickAnilistMatch(title, episodeCount, candidates)?.let { return@withIOContext it }
-            }
+        cleaned.take(MAX_TITLE_SEARCHES).forEach { title ->
+            val body = buildJsonObject {
+                put("query", ANILIST_SEARCH_QUERY)
+                put("variables", buildJsonObject { put("search", title) })
+            }.toString().toRequestBody(jsonMime)
+            val candidates = parseAnilistSearch(postAnilist(body))
+            pickAnilistMatch(cleaned, episodeCount, candidates)?.let { return@withIOContext it }
+        }
         null
     }
 
     private fun postAnilist(body: RequestBody): String =
-        client.newCall(POST(ANILIST_URL, body = body)).execute().use { it.body.string() }
+        client.newCall(POST(ANILIST_URL, body = body)).execute().use { response ->
+            // Too many requests in a minute, or a server error: not an answer, ask again later
+            if (response.code == 429 || response.code >= 500) throw IOException("AniList HTTP ${response.code}")
+            response.body.string()
+        }
 
     private fun loadAnilist(anilistId: Long?, malId: Long?, nowMillis: Long): AnilistAirDates {
         val dates = mutableMapOf<Int, Long>()
@@ -114,6 +121,8 @@ class EpisodeAirDatesApi(
             val response = client.newCall(GET("$JIKAN_URL/anime/$malId/episodes?page=$page")).execute()
             if (!response.isSuccessful) {
                 response.close()
+                // Busy (too many requests) or a server error: ask again later; anything else means no episodes
+                if (response.code == 429 || response.code >= 500) throw IOException("Jikan HTTP ${response.code}")
                 break
             }
             val parsed = parseJikanAirDates(response.use { it.body.string() }, nowMillis)
@@ -129,6 +138,7 @@ class EpisodeAirDatesApi(
         private const val MAX_ANILIST_PAGES = 30 // 50 episodes each
         private const val MAX_JIKAN_PAGES = 15 // 100 episodes each
         private const val JIKAN_PAGE_DELAY_MS = 400L
+        private const val MAX_TITLE_SEARCHES = 3
 
         private val ANILIST_QUERY = """
             query (${'$'}id: Int, ${'$'}idMal: Int, ${'$'}page: Int) {
@@ -159,6 +169,12 @@ class EpisodeAirDatesApi(
         """.trimIndent()
     }
 }
+
+/** Air dates (epoch ms) by episode number; [complete] is false when a site couldn't be reached. */
+data class AirDates(
+    val dates: Map<Int, Long>,
+    val complete: Boolean,
+)
 
 internal data class AnilistAirDates(
     val dates: Map<Int, Long>,
@@ -213,27 +229,74 @@ internal fun normalizeTitle(title: String): String =
         .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
         .trim()
 
+/** Ways of writing a season number, read as the number ("2nd", "II" → "2"). */
+private val ORDINAL_WORDS = mapOf(
+    "1st" to "1", "first" to "1",
+    "2nd" to "2", "second" to "2", "ii" to "2",
+    "3rd" to "3", "third" to "3", "iii" to "3",
+    "4th" to "4", "fourth" to "4", "iv" to "4",
+    "5th" to "5", "fifth" to "5",
+)
+
+/** Words that only say "season": "Season 2", "2nd Season", "S2" and "2" all mean the same. */
+private val SEASON_WORDS = setOf("season", "seasons", "stagione", "saison", "temporada")
+
+private val SHORT_SEASON = Regex("""s(\d+)""")
+
+/** The words of a title for comparing: normalized, with season numbers written the same way. */
+internal fun titleWords(title: String): Set<String> =
+    normalizeTitle(title).split(' ')
+        .filter { it.isNotEmpty() }
+        .map { word -> ORDINAL_WORDS[word] ?: SHORT_SEASON.matchEntire(word)?.groupValues?.get(1) ?: word }
+        .filterNot { it in SEASON_WORDS }
+        .toSet()
+
 /** Share of words two titles have in common (1.0 = same words). */
 internal fun titleSimilarity(a: String, b: String): Double {
-    val wordsA = normalizeTitle(a).split(' ').filter { it.isNotEmpty() }.toSet()
-    val wordsB = normalizeTitle(b).split(' ').filter { it.isNotEmpty() }.toSet()
+    val wordsA = titleWords(a)
+    val wordsB = titleWords(b)
     if (wordsA.isEmpty() || wordsB.isEmpty()) return 0.0
     return (wordsA intersect wordsB).size.toDouble() / (wordsA union wordsB).size
 }
 
 /**
- * The search result that is clearly the source's anime: a title close enough to [sourceTitle], and no fewer
+ * Lines of a description that give other titles, as Italian sites write them:
+ * "Titolo Alternativo: Koori no Jouheki 2", "Titolo originale: …", "Alternative titles: …".
+ */
+private val ALTERNATIVE_TITLE_LINE = Regex(
+    """^\s*(?:titol[oi]\s+(?:alternativ[oi]|original[ei])|nome\s+originale|alternative\s+titles?|""" +
+        """alternative\s+names?|other\s+names?|original\s+title|synonyms?)\s*:\s*(.+?)\s*$""",
+    setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+)
+
+/** Other titles of an anime found in its description (at most 3), e.g. its Japanese title in Latin letters. */
+internal fun alternativeTitles(description: String?): List<String> =
+    ALTERNATIVE_TITLE_LINE.findAll(description.orEmpty())
+        .flatMap { match -> match.groupValues[1].split(';', '|').asSequence() }
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()
+        .take(3)
+        .toList()
+
+/**
+ * The search result that is clearly the source's anime: a title close enough to one of [sourceTitles], and no fewer
  * episodes than the source has. When two results are equally close (e.g. a remake with the same name), only
  * the one with the same episode count is taken; otherwise none.
  */
 internal fun pickAnilistMatch(
-    sourceTitle: String,
+    sourceTitles: List<String>,
     episodeCount: Int,
     candidates: List<AnilistCandidate>,
 ): AnilistCandidate? {
     val scored = candidates
         .filter { it.episodes == null || episodeCount <= 0 || episodeCount <= it.episodes }
-        .map { candidate -> candidate to (candidate.titles.maxOfOrNull { titleSimilarity(sourceTitle, it) } ?: 0.0) }
+        .map { candidate ->
+            val similarity = sourceTitles.maxOfOrNull { source ->
+                candidate.titles.maxOfOrNull { titleSimilarity(source, it) } ?: 0.0
+            } ?: 0.0
+            candidate to similarity
+        }
         .filter { it.second >= MIN_TITLE_SIMILARITY }
         .sortedByDescending { it.second }
     val best = scored.firstOrNull() ?: return null

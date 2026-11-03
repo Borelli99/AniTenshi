@@ -70,8 +70,13 @@ class FillEpisodeAirDates(
         val key = "$animeId|$anilistId|$malId|${missing.map { it.id }.sorted().hashCode()}"
         if (!attempted.add(key)) return
 
-        val dates = api.load(anilistId = anilistId, malId = malId)
-        if (dates.isEmpty()) return
+        val result = api.load(anilistId = anilistId, malId = malId)
+        val dates = result.dates
+        if (dates.isEmpty()) {
+            // A site was busy or offline: try again the next time the anime is opened
+            if (!result.complete) attempted.remove(key)
+            return
+        }
 
         val updates = missing.mapNotNull { episode ->
             dates[episode.wholeEpisodeNumber()]?.let { EpisodeUpdate(id = episode.id, dateUpload = it) }

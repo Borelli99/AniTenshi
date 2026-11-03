@@ -1264,6 +1264,8 @@ fun AnimeScreenLargeImpl(
                                         item(
                                             key = EntryScreenItem.AIRING_TIME,
                                             contentType = EntryScreenItem.AIRING_TIME,
+                                            // AniTenshi: full width, it was cut to one column on tablets
+                                            span = { GridItemSpan(maxLineSpan) },
                                         ) {
                                             // AniTenshi: the row shows a date now; the timer only hides it once the episode is out
                                             var timer by remember { mutableLongStateOf(state.airingTime) }
@@ -1558,6 +1560,9 @@ private fun onEpisodeItemClick(
     }
 }
 
+/** Languages that write day and month names with a capital letter mid-sentence. */
+private val CAPITALIZED_DATE_LANGUAGES = setOf("en", "de", "lb")
+
 /** How often the next-episode row checks whether the episode is out (and hides itself). */
 private const val AIRING_CHECK_INTERVAL_MS = 30_000L
 
@@ -1577,6 +1582,8 @@ private fun nextEpisodeAiringText(airingAtMillis: Long): String {
         else -> DateTimeFormatter
             .ofPattern(if (airing.year == today.year) "EEEE d MMMM" else "EEEE d MMMM yyyy", locale)
             .format(airing)
+            // Mid-sentence: "Esce sabato 7 novembre", lowercase except where days and months are capitalized
+            .let { if (locale.language in CAPITALIZED_DATE_LANGUAGES) it else it.lowercase(locale) }
     }
     val time = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale).format(airing)
     return stringResource(TLMR.strings.anitenshi_airing_on, day, time)

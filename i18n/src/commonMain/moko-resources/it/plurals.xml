@@ -67,8 +67,8 @@
     </plurals>
     <plurals name="download_amount">
         <item quantity="one">Prossimo capitolo</item>
-        <item quantity="many">Prossimo %d capitoli</item>
-        <item quantity="other">Prossimo %d capitoli</item>
+        <item quantity="many">Prossimi %d capitoli</item>
+        <item quantity="other">Prossimi %d capitoli</item>
     </plurals>
     <plurals name="missing_chapters">
         <item quantity="one">Manca %1$s capitolo</item>

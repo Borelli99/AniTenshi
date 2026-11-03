@@ -110,12 +110,12 @@ class EpisodeAirDatesApiTest {
         val first = AnilistCandidate(16498, 16498, 25, listOf("Shingeki no Kyojin", "Attack on Titan"))
         val second = AnilistCandidate(20958, 25777, 12, listOf("Shingeki no Kyojin Season 2", "Attack on Titan Season 2"))
 
-        assertEquals(first, pickAnilistMatch("Shingeki no Kyojin", 25, listOf(second, first)))
-        assertEquals(second, pickAnilistMatch("Attack on Titan Season 2", 12, listOf(first, second)))
+        assertEquals(first, pickAnilistMatch(listOf("Shingeki no Kyojin"), 25, listOf(second, first)))
+        assertEquals(second, pickAnilistMatch(listOf("Attack on Titan Season 2"), 12, listOf(first, second)))
         // More episodes on the source than the entry has: not the same anime
-        assertNull(pickAnilistMatch("Shingeki no Kyojin", 30, listOf(first)))
+        assertNull(pickAnilistMatch(listOf("Shingeki no Kyojin"), 30, listOf(first)))
         // Title too different
-        assertNull(pickAnilistMatch("Io sono Teppei!", 28, listOf(first, second)))
+        assertNull(pickAnilistMatch(listOf("Io sono Teppei!"), 28, listOf(first, second)))
     }
 
     @Test
@@ -123,8 +123,53 @@ class EpisodeAirDatesApiTest {
         val old = AnilistCandidate(136, 136, 62, listOf("Hunter x Hunter"))
         val remake = AnilistCandidate(11061, 11061, 148, listOf("Hunter x Hunter (2011)", "Hunter x Hunter"))
 
-        assertEquals(remake, pickAnilistMatch("Hunter x Hunter", 148, listOf(old, remake)))
+        assertEquals(remake, pickAnilistMatch(listOf("Hunter x Hunter"), 148, listOf(old, remake)))
         // Both could fit 40 episodes: no guess
-        assertNull(pickAnilistMatch("Hunter x Hunter", 40, listOf(old, remake)))
+        assertNull(pickAnilistMatch(listOf("Hunter x Hunter"), 40, listOf(old, remake)))
+    }
+
+    @Test
+    fun seasonNumbersAreWrittenTheSameWay() {
+        assertEquals(titleWords("Black Clover 2"), titleWords("Black Clover Season 2"))
+        assertEquals(titleWords("Black Clover 2"), titleWords("Black Clover 2nd Season"))
+        assertEquals(titleWords("Black Clover 2"), titleWords("Black Clover S2"))
+        assertEquals(titleWords("Black Clover 2"), titleWords("Black Clover II"))
+    }
+
+    @Test
+    fun secondSeasonIsNotTheFirst() {
+        val first = AnilistCandidate(97940, 34572, 170, listOf("Black Clover"))
+        val second = AnilistCandidate(190000, 59000, null, listOf("Black Clover Season 2", "Black Clover 2nd Season"))
+
+        assertEquals(second, pickAnilistMatch(listOf("Black Clover 2"), 5, listOf(first, second)))
+        assertEquals(first, pickAnilistMatch(listOf("Black Clover"), 170, listOf(first, second)))
+    }
+
+    @Test
+    fun alternativeTitlesAreReadFromTheDescription() {
+        val description = """
+            Seguito di Tokyo Revengers: Tenjiku Arc
+
+            Titolo Alternativo: Tokyo Revengers: Santen Sensou-hen
+        """.trimIndent()
+
+        assertEquals(listOf("Tokyo Revengers: Santen Sensou-hen"), alternativeTitles(description))
+        assertEquals(listOf("Koori no Jouheki 2"), alternativeTitles("Seconda stagione\ntitolo alternativo: Koori no Jouheki 2"))
+        assertTrue(alternativeTitles("Satoko appartiene ad una famiglia nobile.").isEmpty())
+        assertTrue(alternativeTitles(null).isEmpty())
+    }
+
+    @Test
+    fun alternativeTitleFindsTheAnimeWhenTheSiteTitleDiffers() {
+        val entry = AnilistCandidate(
+            200000,
+            60000,
+            null,
+            listOf("Tokyo Revengers: Santen Sensou-hen", "Tokyo Revengers: Three Titans War Arc"),
+        )
+        val siteTitle = "Tokyo Revengers: War of the Three Titan Arc"
+
+        assertNull(pickAnilistMatch(listOf(siteTitle), 5, listOf(entry)))
+        assertEquals(entry, pickAnilistMatch(listOf("Tokyo Revengers: Santen Sensou-hen", siteTitle), 5, listOf(entry)))
     }
 }

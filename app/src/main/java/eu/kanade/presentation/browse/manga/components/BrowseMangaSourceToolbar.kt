@@ -1,5 +1,7 @@
 package eu.kanade.presentation.browse.manga.components
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -74,8 +76,10 @@ fun BrowseMangaSourceToolbar(
                         )
                     } else {
                         add(
-                            AppBar.OverflowAction(
+                            // AniTenshi: a globe in the bar instead of an item in the menu, like on the extension's first screen
+                            AppBar.Action(
                                 title = stringResource(MR.strings.action_open_in_web_view),
+                                icon = Icons.Outlined.Public,
                                 onClick = onWebViewClick,
                             ),
                         )

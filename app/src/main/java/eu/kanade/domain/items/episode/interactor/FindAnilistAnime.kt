@@ -3,6 +3,7 @@ package eu.kanade.domain.items.episode.interactor
 import dev.zacsweers.metro.Inject
 import eu.kanade.tachiyomi.util.AnilistCandidate
 import eu.kanade.tachiyomi.util.EpisodeAirDatesApi
+import eu.kanade.tachiyomi.util.alternativeTitles
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -14,8 +15,8 @@ import tachiyomi.domain.items.episode.model.Episode
 import kotlin.math.floor
 
 /**
- * AniTenshi: the AniList entry of an anime that isn't linked in Tracking, found by its titles (the custom one
- * and the source's). Null when no entry clearly matches. Results, including "no match", are kept for the app
+ * AniTenshi: the AniList entry of an anime that isn't linked in Tracking, found by its titles (other titles in
+ * its description, the custom one and the source's). Null when no entry clearly matches. Results, including "no match", are kept for the app
  * session so the same anime isn't searched again; a failed connection is not kept and is retried next time.
  * Read-only public search: no login needed.
  */
@@ -25,12 +26,15 @@ class FindAnilistAnime(
 ) {
 
     suspend fun await(anime: Anime): AnilistCandidate? = mutex.withLock {
-        val key = "${anime.id}|${anime.title}|${anime.ogTitle}"
+        // Other titles from the description first: Italian sites write the Japanese title there
+        // ("Titolo Alternativo: Koori no Jouheki 2"), the one AniList knows best
+        val titles = alternativeTitles(anime.description) + listOf(anime.title, anime.ogTitle)
+        val key = "${anime.id}|${titles.joinToString("|")}"
         if (key in results) return@withLock results[key]
 
         val episodeCount = getEpisodesByAnimeId.await(anime.id).mapNotNull { it.wholeEpisodeNumber() }.maxOrNull() ?: 0
         try {
-            api.findAnime(listOf(anime.title, anime.ogTitle), episodeCount).also { results[key] = it }
+            api.findAnime(titles, episodeCount).also { results[key] = it }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

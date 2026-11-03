@@ -13,7 +13,7 @@
     <plurals name="download_amount_anime">
         <item quantity="one">Prossimo episodio</item>
         <item quantity="many">Prossimi %d episodi</item>
-        <item quantity="other"/>
+        <item quantity="other">Prossimi %d episodi</item>
     </plurals>
     <plurals name="notification_new_episodes_summary">
         <item quantity="one">Per 1 titolo</item>

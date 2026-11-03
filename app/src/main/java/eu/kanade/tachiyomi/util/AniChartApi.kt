@@ -36,13 +36,15 @@ class AniChartApi {
                     (it.tracker is Simkl && it.track != null)
             } ?: return@withIOContext findAnilistId?.invoke()
                 ?.let { getAnilistAiringEpisodeData(it) }
-                ?: Pair(1, 0L)
+                // AniTenshi: not found or AniList busy: keep what was known instead of clearing it
+                ?: airingEpisodeData
 
             matchingTrackItem.let { item ->
                 item.track!!.let {
                     airingEpisodeData = when (item.tracker) {
-                        is Anilist -> getAnilistAiringEpisodeData(it.remoteId)
+                        is Anilist -> getAnilistAiringEpisodeData(it.remoteId) ?: airingEpisodeData
                         is MyAnimeList -> getAnilistAiringEpisodeData(getAlIdFromMal(it.remoteId))
+                            ?: airingEpisodeData
                         is Simkl -> getSimklAiringEpisodeData(it.remoteId)
                         else -> Pair(1, 0L)
                     }
@@ -79,7 +81,8 @@ class AniChartApi {
         }
     }
 
-    private suspend fun getAnilistAiringEpisodeData(id: Long): Pair<Int, Long> {
+    /** Next episode number and airing time (s); null when AniList couldn't answer (busy or offline). */
+    private suspend fun getAnilistAiringEpisodeData(id: Long): Pair<Int, Long>? {
         return withIOContext {
             val query = """
                 query {
@@ -100,7 +103,12 @@ class AniChartApi {
                     ),
                 ).execute()
             } catch (e: Exception) {
-                return@withIOContext Pair(1, 0L)
+                return@withIOContext null
+            }
+            // AniTenshi: too many requests or a server error is not "no next episode"
+            if (response.code == 429 || response.code >= 500) {
+                response.close()
+                return@withIOContext null
             }
             val data = response.body.string()
             val episodeNumber = data.substringAfter("episode\":").substringBefore(",").toIntOrNull() ?: 1
@@ -132,7 +140,7 @@ class AniChartApi {
                 if (malId != 0L) {
                     return@withIOContext getAnilistAiringEpisodeData(
                         getAlIdFromMal(malId),
-                    )
+                    ) ?: Pair(1, 0L)
                 }
 
                 val epNum = data.substringAfter("\"simkl_id\":$id,", "").substringBefore("\"}}").substringAfterLast(

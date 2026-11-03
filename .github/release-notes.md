@@ -1,4 +1,4 @@
 ## Novità di AniTenshi 1.0.14
 
-- **Date degli episodi**: alcune estensioni non dicono quando è uscito un episodio o un capitolo, oppure mandano l'ora attuale al posto della data vera. Per questo tutti gli episodi risultavano usciti "Ora". Adesso in questi casi la data non viene mostrata, e un episodio già presente non torna più a "Ora" a ogni aggiornamento. Le estensioni che indicano la data vera continuano a mostrarla come prima.
+- **Date degli episodi**: alcune estensioni non dicono quando è uscito un episodio, e così tutti risultavano usciti "Ora". Adesso, se l'anime è collegato ad AniList o MyAnimeList nel Tracking, l'app mostra la data di uscita in Giappone presa da lì. Se nemmeno loro la conoscono, la data non viene mostrata. Le estensioni che indicano la data vera continuano a mostrare la loro.
 - **Apri in WebView dalla prima schermata**: aprendo un'estensione, il pulsante del mondo in alto apre subito il sito nella WebView, senza dover entrare prima in "Sfoglia" o "Ultimi".

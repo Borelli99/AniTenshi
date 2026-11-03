@@ -39,6 +39,7 @@ import eu.kanade.domain.entries.anime.model.downloadedFilter
 import eu.kanade.domain.entries.anime.model.seasonDownloadedFilter
 import eu.kanade.domain.entries.anime.model.toDomainAnime
 import eu.kanade.domain.entries.anime.model.toSAnime
+import eu.kanade.domain.items.episode.interactor.FillEpisodeAirDates
 import eu.kanade.domain.items.episode.interactor.SetSeenStatus
 import eu.kanade.domain.items.episode.interactor.SyncEpisodesWithSource
 import eu.kanade.domain.source.service.SourcePreferences
@@ -203,6 +204,8 @@ class AnimeViewModel(
     // AM (FILE_SIZE) -->
     private val storagePreferences: StoragePreferences,
     // <-- AM (FILE_SIZE)
+    // AniTenshi: Japanese air dates for episodes whose extension gives no release date
+    private val fillEpisodeAirDates: FillEpisodeAirDates,
 ) : ViewModel() {
 
     val state: StateFlow<State>
@@ -380,6 +383,7 @@ class AnimeViewModel(
                 // KMK -->
                 launch { fetchRelatedMangasFromSource() }
                 // KMK <--
+                fillMissingAirDates()
             }
 
             // Initial loading finished
@@ -405,7 +409,17 @@ class AnimeViewModel(
             )
             updateSuccessState { it.copy(isRefreshingData = false) }
             successState?.let { updateAiringTime(it.anime, it.trackItems, manualFetch) }
+            // AniTenshi: dates for episodes this refresh found
+            fetchFromSourceTasks.awaitAll()
+            fillMissingAirDates()
         }
+    }
+
+    /** AniTenshi: Japanese air dates (AniList / MyAnimeList) for episodes whose extension gives no date. */
+    private fun fillMissingAirDates() {
+        val anime = successState?.anime ?: return
+        if (anime.fetchType != FetchType.Episodes || anime.isLocal()) return
+        viewModelScope.launchIO { fillEpisodeAirDates.await(anime.id) }
     }
 
     private suspend fun fetchAllFromSource(
@@ -1886,6 +1900,8 @@ class AnimeViewModel(
                 .distinctUntilChanged()
                 .collectLatest { trackItems ->
                     updateAiringTime(anime, trackItems, manualFetch = false)
+                    // AniTenshi: a newly linked AniList / MyAnimeList entry can give episode dates
+                    fillMissingAirDates()
                 }
         }
     }

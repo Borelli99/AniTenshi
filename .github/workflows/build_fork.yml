@@ -51,8 +51,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
-      - name: Test extension store decoding
-        run: ./gradlew :app:testDebugUnitTest --tests "mihon.data.extension.model.AnimeExtensionStoreDecoderTest"
+      - name: Test extension store decoding and episode dates
+        run: >-
+          ./gradlew :app:testDebugUnitTest
+          --tests "mihon.data.extension.model.AnimeExtensionStoreDecoderTest"
+          --tests "eu.kanade.tachiyomi.util.EpisodeAirDatesApiTest"
+          --tests "eu.kanade.domain.items.SourceDateTest"
 
       - name: Build app
         # The in-app updater checks this repository's latest release.

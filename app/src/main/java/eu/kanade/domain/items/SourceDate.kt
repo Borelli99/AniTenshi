@@ -5,6 +5,16 @@ import kotlin.math.abs
 /** A release date this close (ms) to the moment of a refresh is taken as made up by the source. */
 private const val MADE_UP_DATE_WINDOW_MS = 10 * 60_000L
 
+/** How close (ms) a stored release date must be to the moment the item was found to count as made up. */
+private const val UNKNOWN_DATE_TOLERANCE_MS = 60_000L
+
+/**
+ * AniTenshi: true when the stored release date of an episode or chapter was not given by its source.
+ * In that case the app stores the moment it found the item instead (needed for sorting).
+ */
+fun isUnknownUploadDate(dateUpload: Long, dateFetch: Long): Boolean =
+    dateUpload <= 0L || abs(dateFetch - dateUpload) < UNKNOWN_DATE_TOLERANCE_MS
+
 /**
  * AniTenshi: the release date to save for an episode or chapter the app already had, from the date its source
  * sends now. 0 means "keep the stored date".

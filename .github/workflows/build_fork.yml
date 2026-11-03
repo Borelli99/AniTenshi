@@ -2,10 +2,13 @@ name: Build AniTenshi APK
 
 # Builds a signed APK of AniTenshi (fork of Animetail) and publishes it as a GitHub release,
 # so it can be downloaded straight from the phone (Releases page).
+# Pushes to test/** branches build the same signed APK as a private draft release instead
+# (visible only to repo owners/collaborators, never offered to the app's updater).
 on:
   push:
     branches:
       - master
+      - 'test/**'
     paths-ignore:
       - '**.md'
   workflow_dispatch:
@@ -96,6 +99,7 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
+          IS_TEST: ${{ github.ref != 'refs/heads/master' }}
         run: |
           set -euo pipefail
           # Tag = commit count, the same number the app compares against (BuildConfig.COMMIT_COUNT).
@@ -131,7 +135,23 @@ jobs:
             echo "[Buy Me a Coffee](https://buymeacoffee.com/anitenshi) · [PayPal](https://paypal.me/Borelli99)"
           } > "${RUNNER_TEMP}/notes.md"
 
-          if gh release view "${TAG}" > /dev/null 2>&1; then
+          if [ "${IS_TEST}" = "true" ]; then
+            # Private test build: a draft release (no tag is created until it is published).
+            # Older test drafts are removed so only the newest one is listed.
+            gh api "repos/${{ github.repository }}/releases?per_page=100" \
+              --jq '.[] | select(.draft and (.tag_name | startswith("test-"))) | .id' |
+              while read -r OLD_ID; do gh api -X DELETE "repos/${{ github.repository }}/releases/${OLD_ID}"; done
+            {
+              echo "**Build di prova privata** (ramo \`${GITHUB_REF_NAME}\`): la vedi solo tu, l'app non la propone a nessuno."
+              echo
+              cat "${RUNNER_TEMP}/notes.md"
+            } > "${RUNNER_TEMP}/test-notes.md"
+            gh release create "test-${SHORT_SHA}" signed/*.apk \
+              --draft --prerelease \
+              --target "${{ github.sha }}" \
+              --title "TEST AniTenshi ${VERSION_NAME} (${SHORT_SHA})" \
+              --notes-file "${RUNNER_TEMP}/test-notes.md"
+          elif gh release view "${TAG}" > /dev/null 2>&1; then
             gh release upload "${TAG}" signed/*.apk --clobber
           else
             gh release create "${TAG}" signed/*.apk \

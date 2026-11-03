@@ -3,6 +3,7 @@ package eu.kanade.domain.items.episode.interactor
 import dev.zacsweers.metro.Inject
 import eu.kanade.domain.entries.anime.interactor.UpdateAnime
 import eu.kanade.domain.entries.anime.model.toSAnime
+import eu.kanade.domain.items.sanitizedSourceDate
 import eu.kanade.domain.items.episode.model.copyFromSEpisode
 import eu.kanade.domain.items.episode.model.toSEpisode
 import eu.kanade.tachiyomi.animesource.AnimeSource
@@ -113,6 +114,16 @@ class SyncEpisodesWithSource(
                 }
                 newEpisodes.add(toAddEpisode)
             } else {
+                // AniTenshi: a source that sends the current time instead of the release date
+                // must not move an episode the app already had to "Now"
+                episode = episode.copy(
+                    dateUpload = sanitizedSourceDate(
+                        sourceDate = episode.dateUpload,
+                        storedDate = dbEpisode.dateUpload,
+                        storedFetch = dbEpisode.dateFetch,
+                        nowMillis = nowMillis,
+                    ),
+                )
                 if (shouldUpdateDbEpisode.await(dbEpisode, episode)) {
                     val shouldRenameEpisode = downloadProvider.isEpisodeDirNameChanged(
                         dbEpisode,
@@ -139,7 +150,7 @@ class SyncEpisodesWithSource(
                     )
                     if (episode.dateUpload != 0L) {
                         toChangeEpisode = toChangeEpisode.copy(
-                            dateUpload = sourceEpisode.dateUpload,
+                            dateUpload = episode.dateUpload,
                         )
                     }
                     if (!toChangeEpisode.fillermark) {

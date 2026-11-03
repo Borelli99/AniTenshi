@@ -6,6 +6,7 @@ import eu.kanade.domain.entries.manga.interactor.UpdateManga
 import eu.kanade.domain.entries.manga.model.toSManga
 import eu.kanade.domain.items.chapter.model.copyFromSChapter
 import eu.kanade.domain.items.chapter.model.toSChapter
+import eu.kanade.domain.items.sanitizedSourceDate
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadManager
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadProvider
 import eu.kanade.tachiyomi.source.MangaSource
@@ -114,6 +115,16 @@ class SyncChaptersWithSource(
                 }
                 newChapters.add(toAddChapter)
             } else {
+                // AniTenshi: a source that sends the current time instead of the release date
+                // must not move a chapter the app already had to "Now"
+                chapter = chapter.copy(
+                    dateUpload = sanitizedSourceDate(
+                        sourceDate = chapter.dateUpload,
+                        storedDate = dbChapter.dateUpload,
+                        storedFetch = dbChapter.dateFetch,
+                        nowMillis = nowMillis,
+                    ),
+                )
                 if (shouldUpdateDbChapter.await(dbChapter, chapter)) {
                     val shouldRenameChapter = downloadProvider.isChapterDirNameChanged(
                         dbChapter,

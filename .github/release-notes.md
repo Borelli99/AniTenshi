@@ -1,3 +1,3 @@
 ## Novità di AniTenshi 1.0.14
 
-- **Date degli episodi**: alcune estensioni non dicono quando è uscito un episodio o un capitolo. In quel caso l'app segnava come data il momento in cui l'aveva trovato, e tutti gli episodi risultavano usciti "Ora". Adesso, quando la data non c'è, non viene mostrata. Le estensioni che indicano la data continuano a mostrarla come prima.
+- **Date degli episodi**: alcune estensioni non dicono quando è uscito un episodio o un capitolo, oppure mandano l'ora attuale al posto della data vera. Per questo tutti gli episodi risultavano usciti "Ora". Adesso in questi casi la data non viene mostrata, e un episodio già presente non torna più a "Ora" a ogni aggiornamento. Le estensioni che indicano la data vera continuano a mostrarla come prima.

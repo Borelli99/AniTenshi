@@ -28,8 +28,8 @@ import eu.kanade.presentation.browse.components.SourceFeedAddDialog
 import eu.kanade.presentation.browse.components.SourceFeedDeleteDialog
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.animesource.AnimeSource
+import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.source.anime.isLocalOrStub
-import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.browse.anime.extension.details.AnimeExtensionDetailsScreen
 import eu.kanade.tachiyomi.ui.browse.anime.source.browse.BrowseAnimeSourceScreen
 import eu.kanade.tachiyomi.ui.browse.anime.source.browse.SourceFilterAnimeDialog
@@ -130,16 +130,18 @@ class SourceFeedScreen(val sourceId: Long) : Screen() {
                     getMangaState = { screenModel.getManga(initialManga = it) },
                     // KMK -->
                     navigateUp = { navigator.pop() },
+                    // AniTenshi: anime sources are AnimeHttpSource (HttpSource is the manga one), so the
+                    // WebView button never showed up on the first screen of an extension
                     onWebViewClick = {
-                        val source = screenModel.source as HttpSource
+                        val source = screenModel.source as AnimeHttpSource
                         navigator.push(
                             WebViewScreen(
-                                url = source.baseUrl,
+                                url = source.getHomeUrl(),
                                 initialTitle = source.name,
                                 sourceId = source.id,
                             ),
                         )
-                    }.takeIf { screenModel.source is HttpSource },
+                    }.takeIf { screenModel.source is AnimeHttpSource },
                     onSourceSettingClick = {
                         val dummy = ModelSource(
                             sourceId,

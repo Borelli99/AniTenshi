@@ -94,6 +94,8 @@ jobs:
           with open(path, "w") as f:
               json.dump(data, f)
           print("Google Drive key added")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("Google Drive: key added to this build\n")
           PY
 
       - name: Build app

@@ -22,19 +22,23 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.theme.AniTenshiPalette
 import eu.kanade.presentation.theme.TachiyomiPreviewTheme
+import eu.kanade.presentation.util.formatChapterNumber
 import eu.kanade.tachiyomi.data.database.models.manga.toDomainChapter
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
@@ -49,6 +53,9 @@ import tachiyomi.presentation.core.components.AniTenshiMark
 import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.secondaryItemAlpha
+
+/** AniTenshi: the manga's highest chapter number, for "Capitolo 296 / 300"; null when unknown. */
+val LocalLastChapterNumber = compositionLocalOf<Double?> { null }
 
 @Composable
 fun ChapterTransition(
@@ -119,6 +126,7 @@ private fun TransitionText(
             ChapterText(
                 header = topLabel,
                 name = topChapter.name,
+                chapterNumber = topChapter.chapterNumber,
                 scanlator = topChapter.scanlator,
                 downloaded = topChapterDownloaded,
                 highlighted = highlightTop,
@@ -145,6 +153,7 @@ private fun TransitionText(
             ChapterText(
                 header = bottomLabel,
                 name = bottomChapter.name,
+                chapterNumber = bottomChapter.chapterNumber,
                 scanlator = bottomChapter.scanlator,
                 downloaded = bottomChapterDownloaded,
                 highlighted = !highlightTop,
@@ -235,10 +244,16 @@ private fun ChapterHeaderText(
 private fun ChapterText(
     header: String,
     name: String,
+    chapterNumber: Double,
     scanlator: String?,
     downloaded: Boolean,
     highlighted: Boolean = false,
 ) {
+    // AniTenshi: " / 300" after the name, when the chapter and the last one have a number
+    val total = LocalLastChapterNumber.current
+        ?.takeIf { it > 0 && chapterNumber > 0 && chapterNumber <= it }
+        ?.let { formatChapterNumber(it) }
+    val totalColor = LocalContentColor.current.copy(alpha = 0.6f)
     // AniTenshi: each chapter in a rounded frame, gold for the one you are going to
     val frameShape = RoundedCornerShape(18.dp)
     Column(
@@ -264,6 +279,9 @@ private fun ChapterText(
                     append(' ')
                 }
                 append(name)
+                if (total != null) {
+                    withStyle(SpanStyle(color = totalColor)) { append(" / $total") }
+                }
             },
             fontSize = 20.sp,
             maxLines = 5,

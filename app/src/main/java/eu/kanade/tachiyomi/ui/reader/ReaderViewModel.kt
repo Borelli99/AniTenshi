@@ -365,6 +365,9 @@ class ReaderViewModel(
                 incognitoMode = getMangaIncognitoState.await(manga.source)
                 mutableState.update { it.copy(manga = manga, source = source) }
                 if (chapterId == -1L) chapterId = initialChapterId
+                // AniTenshi: the last chapter number, shown as "Capitolo 296 / 300" between chapters
+                val lastChapterNumber = unfilteredChapterList.maxOfOrNull { it.chapterNumber }?.takeIf { it > 0 }
+                mutableState.update { it.copy(lastChapterNumber = lastChapterNumber) }
 
                 loader = ChapterLoader(
                     context = context,
@@ -1244,6 +1247,8 @@ class ReaderViewModel(
         val autoScroll: Boolean = false,
         val isAutoScrollEnabled: Boolean = false,
         val ehAutoscrollFreq: String = "",
+        // AniTenshi: highest chapter number of the manga (all scanlators), null when unknown
+        val lastChapterNumber: Double? = null,
     ) {
         val currentChapter: ReaderChapter?
             get() = viewerChapters?.currChapter

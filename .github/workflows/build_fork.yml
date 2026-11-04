@@ -58,19 +58,43 @@ jobs:
           --tests "eu.kanade.tachiyomi.util.EpisodeAirDatesApiTest"
           --tests "eu.kanade.domain.items.SourceDateTest"
 
-      # Google Drive sync: the app's Google key ("Desktop app" OAuth client JSON), kept as a repository
-      # secret because it isn't in the source code. Without it Google Drive sign-in just says it isn't set up.
+      # Google Drive sync: the app's Google key, a "Desktop app" OAuth client of the AniTenshi Google Cloud
+      # project. It isn't in the source code: it comes from repository secrets, either the two values
+      # GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET or the downloaded JSON as GOOGLE_CLIENT_SECRETS.
+      # Without them Google Drive sign-in just says it isn't set up.
       - name: Add Google Drive key
         env:
           GOOGLE_CLIENT_SECRETS: ${{ secrets.GOOGLE_CLIENT_SECRETS }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
-          if [ -z "${GOOGLE_CLIENT_SECRETS}" ]; then
-            echo "No GOOGLE_CLIENT_SECRETS secret: Google Drive stays off in this build"
-            exit 0
-          fi
-          printf '%s' "${GOOGLE_CLIENT_SECRETS}" > app/src/main/assets/client_secrets.json
-          python3 -c "import json; d = json.load(open('app/src/main/assets/client_secrets.json')); c = d.get('installed') or {}; assert c.get('client_id') and c.get('client_secret'), 'not a Desktop app OAuth client'"
-          echo "Google Drive key added"
+          python3 - <<'PY'
+          import json, os
+          path = "app/src/main/assets/client_secrets.json"
+          raw = os.environ.get("GOOGLE_CLIENT_SECRETS", "").strip()
+          cid = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+          secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
+          if raw:
+              data = json.loads(raw)
+          elif cid and secret:
+              data = {"installed": {
+                  "client_id": cid,
+                  "client_secret": secret,
+                  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                  "token_uri": "https://oauth2.googleapis.com/token",
+                  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                  "redirect_uris": ["http://localhost"],
+              }}
+          else:
+              print("No Google key secrets: Google Drive stays off in this build")
+              raise SystemExit(0)
+          client = data.get("installed") or {}
+          assert client.get("client_id", "").endswith(".apps.googleusercontent.com"), "client ID looks wrong"
+          assert client.get("client_secret"), "not a Desktop app OAuth client (no client secret)"
+          with open(path, "w") as f:
+              json.dump(data, f)
+          print("Google Drive key added")
+          PY
 
       - name: Build app
         # The in-app updater checks this repository's latest release.

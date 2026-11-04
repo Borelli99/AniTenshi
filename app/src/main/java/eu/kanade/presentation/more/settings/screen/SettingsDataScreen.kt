@@ -60,6 +60,7 @@ import eu.kanade.tachiyomi.data.export.LibraryExporter
 import eu.kanade.tachiyomi.data.export.LibraryExporter.ExportOptions
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.data.sync.SyncManager
+import eu.kanade.tachiyomi.data.sync.service.GoogleDriveLoopbackSignIn
 import eu.kanade.tachiyomi.data.sync.service.GoogleDriveService
 import eu.kanade.tachiyomi.data.sync.service.GoogleDriveSyncService
 import eu.kanade.tachiyomi.ui.storage.StorageTab
@@ -587,7 +588,6 @@ object SettingsDataScreen : SearchableSettings {
     @Composable
     private fun getGoogleDrivePreferences(): List<Preference> {
         val context = LocalContext.current
-        val googleDriveSync = remember { GoogleDriveService(context) }
         return listOf(
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(TLMR.strings.pref_google_drive_sign_in),
@@ -596,8 +596,8 @@ object SettingsDataScreen : SearchableSettings {
                     if (!GoogleDriveService.isConfigured(context)) {
                         context.toast(TLMR.strings.anitenshi_google_drive_not_configured, duration = 5000)
                     } else {
-                        val intent = googleDriveSync.getSignInIntent()
-                        context.startActivity(intent)
+                        // AniTenshi: loopback sign-in, the redirect Google still accepts
+                        GoogleDriveLoopbackSignIn.start(context)
                     }
                 },
             ),

@@ -58,6 +58,20 @@ jobs:
           --tests "eu.kanade.tachiyomi.util.EpisodeAirDatesApiTest"
           --tests "eu.kanade.domain.items.SourceDateTest"
 
+      # Google Drive sync: the app's Google key ("Desktop app" OAuth client JSON), kept as a repository
+      # secret because it isn't in the source code. Without it Google Drive sign-in just says it isn't set up.
+      - name: Add Google Drive key
+        env:
+          GOOGLE_CLIENT_SECRETS: ${{ secrets.GOOGLE_CLIENT_SECRETS }}
+        run: |
+          if [ -z "${GOOGLE_CLIENT_SECRETS}" ]; then
+            echo "No GOOGLE_CLIENT_SECRETS secret: Google Drive stays off in this build"
+            exit 0
+          fi
+          printf '%s' "${GOOGLE_CLIENT_SECRETS}" > app/src/main/assets/client_secrets.json
+          python3 -c "import json; d = json.load(open('app/src/main/assets/client_secrets.json')); c = d.get('installed') or {}; assert c.get('client_id') and c.get('client_secret'), 'not a Desktop app OAuth client'"
+          echo "Google Drive key added"
+
       - name: Build app
         # The in-app updater checks this repository's latest release.
         run: ./gradlew assembleRelease -Penable-updater

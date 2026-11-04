@@ -306,7 +306,13 @@ class GoogleDriveService(private val context: Context) {
      * @return The authorization URL.
      */
     @Suppress("TooGenericExceptionThrown")
-    private fun generateAuthorizationUrl(): String {
+    private fun generateAuthorizationUrl(): String = authorizationUrl(REDIRECT_URI, state = null)
+
+    /**
+     * AniTenshi: the Google consent page URL for [redirectUri] (the loopback address of
+     * [GoogleDriveLoopbackSignIn]), carrying [state] to check the answer belongs to this request.
+     */
+    fun authorizationUrl(redirectUri: String, state: String?): String {
         val jsonFactory: JsonFactory = JacksonFactory.getDefaultInstance()
         val secrets = GoogleClientSecrets.load(
             jsonFactory,
@@ -321,9 +327,35 @@ class GoogleDriveService(private val context: Context) {
         ).setAccessType("offline").build()
 
         return flow.newAuthorizationUrl()
-            .setRedirectUri(REDIRECT_URI)
+            .setRedirectUri(redirectUri)
             .setApprovalPrompt("force")
+            .setState(state)
             .build()
+    }
+
+    /**
+     * AniTenshi: exchanges the [authorizationCode] Google sent to [redirectUri] for the tokens and saves them.
+     * Throws when Google refuses it.
+     */
+    fun exchangeAuthorizationCode(authorizationCode: String, redirectUri: String) {
+        val jsonFactory: JsonFactory = JacksonFactory.getDefaultInstance()
+        val secrets = GoogleClientSecrets.load(
+            jsonFactory,
+            context.assets.open("client_secrets.json").reader(),
+        )
+        val tokenResponse: GoogleTokenResponse = GoogleAuthorizationCodeTokenRequest(
+            NetHttpTransport(),
+            jsonFactory,
+            secrets.installed.clientId,
+            secrets.installed.clientSecret,
+            authorizationCode,
+            redirectUri,
+        ).setGrantType("authorization_code").execute()
+
+        syncPreferences.googleDriveAccessToken().set(tokenResponse.accessToken)
+        syncPreferences.googleDriveRefreshToken().set(tokenResponse.refreshToken)
+        setupGoogleDriveService(tokenResponse.accessToken, tokenResponse.refreshToken)
+        initGoogleDriveService()
     }
 
     @Suppress("TooGenericExceptionThrown")

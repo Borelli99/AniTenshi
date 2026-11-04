@@ -50,11 +50,13 @@ import tachiyomi.presentation.core.i18n.stringResource
  */
 internal class ReposStep : OnboardingStep {
 
-    /** True once at least one repo exists; the screen then shows "Next" instead of "Skip for now". */
+    /** True once at least one repo exists; until then only "Skip for now" moves on. */
     var hasRepos by mutableStateOf(false)
         private set
 
-    override val isComplete: Boolean = true
+    // AniTenshi: "Next" with no repo went on as if one had been added; now it waits for one
+    override val isComplete: Boolean
+        get() = hasRepos
 
     @Composable
     override fun Content() {

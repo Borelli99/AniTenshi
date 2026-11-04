@@ -17,6 +17,7 @@ import eu.kanade.tachiyomi.data.backup.models.BackupManga
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
 import eu.kanade.tachiyomi.data.backup.restore.RestoreOptions
 import eu.kanade.tachiyomi.data.backup.restore.restorers.AnimeRestorer
+import eu.kanade.tachiyomi.data.backup.restore.restorers.ExtensionStoreRestorer
 import eu.kanade.tachiyomi.data.backup.restore.restorers.MangaRestorer
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.sync.service.GoogleDriveSyncService
@@ -66,6 +67,7 @@ class SyncManager(
     private val mangaRestorer: MangaRestorer,
     private val animeRestorer: AnimeRestorer,
     private val json: Json,
+    private val extensionStoreRestorer: ExtensionStoreRestorer,
 ) {
     private val backupCreator: BackupCreator = backupCreatorFactory.create(isAutoBackup = false)
 
@@ -121,6 +123,9 @@ class SyncManager(
             backupAnimeSources = backupCreator.backupAnimeSources(backupAnime),
             backupPreferences = backupCreator.backupAppPreferences(backupOptions),
             backupSourcePreferences = backupCreator.backupSourcePreferences(backupOptions),
+            // AniTenshi: the extension repos go with the sync too
+            backupAnimeExtensionStore = backupCreator.backupAnimeExtensionStores(backupOptions),
+            backupMangaExtensionStore = backupCreator.backupMangaExtensionStores(backupOptions),
         )
         logcat(LogPriority.DEBUG) { "End create backup" }
 
@@ -158,6 +163,8 @@ class SyncManager(
             // should we call showSyncError?
             return
         }
+
+        addMissingExtensionStores(local = backup, remote = remoteBackup)
 
         if (remoteBackup === syncData.backup) {
             // nothing changed
@@ -230,6 +237,23 @@ class SyncManager(
             syncPreferences.lastSyncTimestamp().set(Date().time)
         } else {
             logcat(LogPriority.ERROR) { "Failed to write sync data to file" }
+        }
+    }
+
+    /**
+     * AniTenshi: adds the repos the other devices have and this one doesn't, before anything else, so they're
+     * there even when the rest of the sync has nothing to restore (first sync, nothing changed).
+     */
+    private suspend fun addMissingExtensionStores(local: Backup, remote: Backup) {
+        val localAnime = local.backupAnimeExtensionStore.mapTo(HashSet()) { it.indexUrl }
+        val localManga = local.backupMangaExtensionStore.mapTo(HashSet()) { it.indexUrl }
+        remote.backupAnimeExtensionStore.filter { it.indexUrl !in localAnime }.forEach { store ->
+            runCatching { extensionStoreRestorer.restoreAnime(store) }
+                .onFailure { e -> logcat(LogPriority.ERROR, throwable = e) { "AniTenshi: sync repo ${store.indexUrl}" } }
+        }
+        remote.backupMangaExtensionStore.filter { it.indexUrl !in localManga }.forEach { store ->
+            runCatching { extensionStoreRestorer.restoreManga(store) }
+                .onFailure { e -> logcat(LogPriority.ERROR, throwable = e) { "AniTenshi: sync repo ${store.indexUrl}" } }
         }
     }
 

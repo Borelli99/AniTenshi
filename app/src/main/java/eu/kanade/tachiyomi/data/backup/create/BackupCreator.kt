@@ -219,13 +219,14 @@ class BackupCreator(
         return preferenceBackupCreator.createApp(includePrivatePreferences = options.privateSettings)
     }
 
-    private suspend fun backupAnimeExtensionStores(options: BackupOptions): List<BackupExtensionStore> {
+    // AniTenshi: also used by the sync, so the repos reach the other devices
+    suspend fun backupAnimeExtensionStores(options: BackupOptions): List<BackupExtensionStore> {
         if (!options.extensionStores) return emptyList()
 
         return animeExtensionStoresBackupCreator()
     }
 
-    private suspend fun backupMangaExtensionStores(options: BackupOptions): List<BackupExtensionStore> {
+    suspend fun backupMangaExtensionStores(options: BackupOptions): List<BackupExtensionStore> {
         if (!options.extensionStores) return emptyList()
 
         return mangaExtensionStoresBackupCreator()

@@ -8,6 +8,7 @@ import eu.kanade.tachiyomi.data.backup.models.BackupAnimeSource
 import eu.kanade.tachiyomi.data.backup.models.BackupCategory
 import eu.kanade.tachiyomi.data.backup.models.BackupChapter
 import eu.kanade.tachiyomi.data.backup.models.BackupEpisode
+import eu.kanade.tachiyomi.data.backup.models.BackupExtensionStore
 import eu.kanade.tachiyomi.data.backup.models.BackupManga
 import eu.kanade.tachiyomi.data.backup.models.BackupPreference
 import eu.kanade.tachiyomi.data.backup.models.BackupSource
@@ -38,6 +39,12 @@ abstract class SyncService(
      * @param remoteSyncData The SData containing the remote sync data.
      * @return The JSON string containing the merged sync data.
      */
+    /** AniTenshi: the repos of both sides, one per address; this device's copy wins. */
+    private fun mergeExtensionStores(
+        local: List<BackupExtensionStore>?,
+        remote: List<BackupExtensionStore>?,
+    ): List<BackupExtensionStore> = (local.orEmpty() + remote.orEmpty()).distinctBy { it.indexUrl }
+
     protected fun mergeSyncData(localSyncData: SyncData, remoteSyncData: SyncData): SyncData {
         val mergedCategoriesList =
             mergeCategoriesLists(
@@ -76,6 +83,16 @@ abstract class SyncService(
             remoteSyncData.backup?.backupSourcePreferences,
         )
 
+        // AniTenshi: the repos travel with the sync too; every device keeps the repos of all the others
+        val mergedAnimeStores = mergeExtensionStores(
+            localSyncData.backup?.backupAnimeExtensionStore,
+            remoteSyncData.backup?.backupAnimeExtensionStore,
+        )
+        val mergedMangaStores = mergeExtensionStores(
+            localSyncData.backup?.backupMangaExtensionStore,
+            remoteSyncData.backup?.backupMangaExtensionStore,
+        )
+
         // Create the merged Backup object
         val mergedBackup = Backup(
             backupManga = mergedMangaList,
@@ -86,6 +103,8 @@ abstract class SyncService(
             backupAnimeSources = mergedAnimeSourcesList,
             backupPreferences = mergedPreferencesList,
             backupSourcePreferences = mergedSourcePreferencesList,
+            backupAnimeExtensionStore = mergedAnimeStores,
+            backupMangaExtensionStore = mergedMangaStores,
         )
 
         // Create the merged SData object

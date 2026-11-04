@@ -5,12 +5,14 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
+import eu.kanade.tachiyomi.data.sync.SyncManager
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+import mihon.app.di.appGraph
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
@@ -86,7 +88,10 @@ object GoogleDriveLoopbackSignIn {
                 is RedirectAnswer.Code -> runCatching { service.exchangeAuthorizationCode(answer.code, redirectUri) }
                     .fold(
                         onSuccess = {
-                            // AniTenshi: first sync right away, instead of "Ultima sincronizzazione: Mai"
+                            // AniTenshi: signing in also picks Google Drive as the sync service (the first
+                            // launch has no menu for it), then the first sync starts right away
+                            appContext.appGraph.syncPreferences.syncService()
+                                .set(SyncManager.SyncService.GOOGLE_DRIVE.value)
                             SyncDataJob.startNow(appContext)
                             appContext.stringResource(TLMR.strings.google_drive_login_success)
                         },

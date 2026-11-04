@@ -8,12 +8,9 @@ import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.more.onboarding.OnboardingScreen
-import eu.kanade.presentation.more.settings.screen.SearchableSettings
-import eu.kanade.presentation.more.settings.screen.SettingsDataScreen
+import eu.kanade.presentation.more.settings.screen.data.RestoreBackupScreen
 import eu.kanade.presentation.util.Screen
-import eu.kanade.tachiyomi.ui.setting.SettingsScreen
 import mihon.app.di.appGraph
-import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
 
 class OnboardingScreen : Screen() {
@@ -31,8 +28,6 @@ class OnboardingScreen : Screen() {
             navigator.pop()
         }
 
-        val restoreSettingKey = stringResource(SettingsDataScreen.restorePreferenceKeyString)
-
         BackHandler(
             enabled = !shownOnboardingFlow,
             onBack = {
@@ -42,11 +37,9 @@ class OnboardingScreen : Screen() {
 
         OnboardingScreen(
             onComplete = finishOnboarding,
-            onRestoreBackup = {
-                finishOnboarding()
-                SearchableSettings.highlightKey = restoreSettingKey
-                navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage))
-            },
+            // AniTenshi: the restore opens on top and comes back here, so the first launch goes on
+            // (the repos from the backup then show in the repos step)
+            onRestoreBackup = { uri -> navigator.push(RestoreBackupScreen(uri)) },
         )
     }
 }

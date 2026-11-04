@@ -9,7 +9,9 @@ import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import dev.zacsweers.metro.Inject
@@ -20,6 +22,8 @@ import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
 import eu.kanade.tachiyomi.util.system.workManager
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import logcat.LogPriority
 import mihon.app.di.AppGraph
 import mihon.core.metro.metroGraph
@@ -114,10 +118,20 @@ class BackupRestoreJob(private val context: Context, workerParams: WorkerParamet
             )
             val request = OneTimeWorkRequestBuilder<BackupRestoreJob>()
                 .addTag(TAG)
+                // AniTenshi: tells a restore from a file apart from the one a sync starts
+                .apply { if (!sync) addTag(TAG_FILE) }
                 .setInputData(inputData)
                 .build()
             workManager.enqueueUniqueWork(TAG, ExistingWorkPolicy.KEEP, request)
         }
+
+        /**
+         * AniTenshi: state of the latest restore from a backup file (not from a sync), or null when there
+         * was none. The first-launch screen follows it.
+         */
+        fun fileRestoreState(context: Context): Flow<WorkInfo.State?> =
+            context.workManager.getWorkInfosFlow(WorkQuery.fromTags(TAG_FILE))
+                .map { infos -> infos.lastOrNull()?.state }
 
         fun stop(workManager: WorkManager) {
             workManager.cancelUniqueWork(TAG)
@@ -126,6 +140,7 @@ class BackupRestoreJob(private val context: Context, workerParams: WorkerParamet
 }
 
 private const val TAG = "BackupRestore"
+private const val TAG_FILE = "BackupRestore:file"
 
 private const val LOCATION_URI_KEY = "location_uri" // String
 

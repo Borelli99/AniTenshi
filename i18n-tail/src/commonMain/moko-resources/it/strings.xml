@@ -427,7 +427,7 @@
   <string name="anitenshi_onboarding_nav_manga_title">Manga</string>
   <string name="anitenshi_onboarding_nav_manga_body">La tua libreria manga</string>
   <string name="anitenshi_onboarding_backup_title">Hai un backup?</string>
-  <string name="anitenshi_onboarding_backup_body">Ripristina libreria e impostazioni</string>
+  <string name="anitenshi_onboarding_backup_body">Ripristina libreria, impostazioni e repo</string>
   <string name="anitenshi_onboarding_next">Avanti</string>
   <string name="anitenshi_onboarding_start">Inizia</string>
   <string name="anitenshi_onboarding_skip">Salta per ora</string>
@@ -457,4 +457,19 @@
   <string name="anitenshi_sync_on_app_start">Quando apri o chiudi l\'app</string>
   <string name="anitenshi_sync_on_app_resume">Quando torni nell\'app (al massimo ogni 5 minuti)</string>
   <string name="anitenshi_sync_on_library_update">Quando aggiorni la libreria (anche con lo swipe verso il basso)</string>
+  <string name="anitenshi_onboarding_sync_title">Sincronizza i dispositivi</string>
+  <string name="anitenshi_onboarding_sync_body">Libreria, capitoli letti ed episodi visti uguali su telefono e tablet. I dati restano nel tuo Google Drive.</string>
+  <string name="anitenshi_onboarding_sync_auto">Si sincronizza da solo quando apri l\'app e quando aggiorni la libreria</string>
+  <string name="anitenshi_onboarding_sync_new_device">Nuovo dispositivo? Collegati e ritrovi la libreria</string>
+  <string name="anitenshi_onboarding_sync_connect">Collega Google Drive</string>
+  <string name="anitenshi_onboarding_sync_connected_body">Prima sincronizzazione avviata</string>
+  <string name="anitenshi_onboarding_or">oppure</string>
+  <string name="anitenshi_onboarding_backup_running">Ripristino in corso…</string>
+  <string name="anitenshi_onboarding_backup_running_body">Intanto puoi andare avanti</string>
+  <string name="anitenshi_onboarding_backup_done">Backup ripristinato</string>
+  <string name="anitenshi_onboarding_backup_done_body">Le sue repo sono già nel prossimo passo</string>
+  <string name="anitenshi_onboarding_backup_failed">Ripristino non riuscito</string>
+  <string name="anitenshi_onboarding_backup_failed_body">Tocca per scegliere di nuovo il file</string>
+  <string name="anitenshi_onboarding_sync_later">Puoi farlo anche dopo, da Impostazioni › Dati e archiviazione.</string>
+  <string name="anitenshi_onboarding_repos_body_existing">Le repo che hai già sono segnate qui sotto. Se vuoi, aggiungine altre.</string>
 </resources>

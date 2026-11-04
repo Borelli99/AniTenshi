@@ -70,7 +70,14 @@ internal class ReposStep : OnboardingStep {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             OnboardingHeader(
                 title = stringResource(TLMR.strings.anitenshi_onboarding_repos_title),
-                subtitle = stringResource(TLMR.strings.anitenshi_onboarding_repos_body),
+                // AniTenshi: repos from a backup (or already added) are ticked; more can still be added
+                subtitle = stringResource(
+                    if (animeStores.isNotEmpty() || mangaStores.isNotEmpty()) {
+                        TLMR.strings.anitenshi_onboarding_repos_body_existing
+                    } else {
+                        TLMR.strings.anitenshi_onboarding_repos_body
+                    },
+                ),
             ) {
                 OnboardingIcon(Icons.Outlined.Layers)
             }

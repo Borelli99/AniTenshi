@@ -510,7 +510,7 @@
     <string name="anitenshi_onboarding_nav_manga_title">Manga</string>
     <string name="anitenshi_onboarding_nav_manga_body">Your manga library</string>
     <string name="anitenshi_onboarding_backup_title">Have a backup?</string>
-    <string name="anitenshi_onboarding_backup_body">Restore your library and settings</string>
+    <string name="anitenshi_onboarding_backup_body">Restore your library, settings and repos</string>
     <string name="anitenshi_onboarding_next">Next</string>
     <string name="anitenshi_onboarding_start">Start</string>
     <string name="anitenshi_onboarding_skip">Skip for now</string>
@@ -540,4 +540,19 @@
     <string name="anitenshi_sync_on_app_start">When you open or close the app</string>
     <string name="anitenshi_sync_on_app_resume">When you come back to the app (at most every 5 minutes)</string>
     <string name="anitenshi_sync_on_library_update">When you update the library (also pull-to-refresh)</string>
+    <string name="anitenshi_onboarding_sync_title">Sync your devices</string>
+    <string name="anitenshi_onboarding_sync_body">Library, read chapters and watched episodes, the same on phone and tablet. Your data stays in your Google Drive.</string>
+    <string name="anitenshi_onboarding_sync_auto">Syncs by itself when you open the app and when you update the library</string>
+    <string name="anitenshi_onboarding_sync_new_device">New device? Connect and get your library back</string>
+    <string name="anitenshi_onboarding_sync_connect">Connect Google Drive</string>
+    <string name="anitenshi_onboarding_sync_connected_body">First sync started</string>
+    <string name="anitenshi_onboarding_or">or</string>
+    <string name="anitenshi_onboarding_backup_running">Restoring…</string>
+    <string name="anitenshi_onboarding_backup_running_body">You can go on meanwhile</string>
+    <string name="anitenshi_onboarding_backup_done">Backup restored</string>
+    <string name="anitenshi_onboarding_backup_done_body">Its repos are already in the next step</string>
+    <string name="anitenshi_onboarding_backup_failed">Restore failed</string>
+    <string name="anitenshi_onboarding_backup_failed_body">Tap to choose the file again</string>
+    <string name="anitenshi_onboarding_sync_later">You can do it later too, from Settings › Data and storage.</string>
+    <string name="anitenshi_onboarding_repos_body_existing">The repos you already have are ticked below. Add more if you like.</string>
 </resources>

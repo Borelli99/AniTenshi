@@ -38,13 +38,13 @@ import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.i18n.stringResource
 
 /**
- * AniTenshi: first launch in five steps: welcome and theme, storage folder, permissions,
- * extension repos, then a short "all set" with how to move around.
+ * AniTenshi: first launch in six steps: welcome and theme, storage folder, permissions, sync with Google Drive
+ * or a backup, extension repos, then a short "all set" with how to move around.
  */
 @Composable
 fun OnboardingScreen(
     onComplete: () -> Unit,
-    onRestoreBackup: () -> Unit,
+    onRestoreBackup: (uri: String) -> Unit,
 ) {
     val slideDistance = rememberSlideDistance()
 
@@ -54,8 +54,9 @@ fun OnboardingScreen(
             WelcomeStep(),
             StorageStep(),
             PermissionStep(),
+            SyncStep(onRestoreBackup = onRestoreBackup),
             ReposStep(),
-            DoneStep(onRestoreBackup = onRestoreBackup),
+            DoneStep(),
         )
     }
     val step = steps[currentStep]

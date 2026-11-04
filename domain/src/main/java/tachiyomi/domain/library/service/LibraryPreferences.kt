@@ -66,13 +66,12 @@ class LibraryPreferences(
         ),
     )
 
+    // AniTenshi: by default only finished series are skipped; the other rules hid new chapters of
+    // entries with unread or unstarted chapters, and the release-period guess skipped them silently
     val autoUpdateMangaRestrictions: Preference<Set<String>> = preferenceStore.getStringSet(
         "library_update_manga_restriction",
         setOf(
-            ENTRY_HAS_UNVIEWED,
             ENTRY_NON_COMPLETED,
-            ENTRY_NON_VIEWED,
-            ENTRY_OUTSIDE_RELEASE_PERIOD,
         ),
     )
 

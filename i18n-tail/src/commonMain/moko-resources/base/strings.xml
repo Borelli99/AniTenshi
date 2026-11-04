@@ -528,4 +528,5 @@
     <string name="anitenshi_airing_on">Airs %1$s at %2$s</string>
     <string name="anitenshi_airing_today">today</string>
     <string name="anitenshi_airing_tomorrow">tomorrow</string>
+    <string name="anitenshi_google_drive_not_configured">Google Drive isn\'t set up in AniTenshi yet. You can use SyncYomi or a backup meanwhile</string>
 </resources>

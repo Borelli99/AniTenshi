@@ -592,8 +592,13 @@ object SettingsDataScreen : SearchableSettings {
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(TLMR.strings.pref_google_drive_sign_in),
                 onClick = {
-                    val intent = googleDriveSync.getSignInIntent()
-                    context.startActivity(intent)
+                    // AniTenshi: without the app's Google key the sign-in crashed; say it instead
+                    if (!GoogleDriveService.isConfigured(context)) {
+                        context.toast(TLMR.strings.anitenshi_google_drive_not_configured, duration = 5000)
+                    } else {
+                        val intent = googleDriveSync.getSignInIntent()
+                        context.startActivity(intent)
+                    }
                 },
             ),
             getGoogleDrivePurge(),

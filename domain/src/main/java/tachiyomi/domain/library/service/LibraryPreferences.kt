@@ -75,6 +75,18 @@ class LibraryPreferences(
         ),
     )
 
+    /**
+     * AniTenshi: the four "skip" rules that used to be the default. Saved exactly like that they almost always
+     * mean "never really chosen" (an OK in the dialog, or a backup from Aniyomi/Animetail), so they become the
+     * new default: skip only completed series. Any other saved choice is kept.
+     */
+    fun replaceOldDefaultUpdateRestrictions() {
+        val restrictions = autoUpdateMangaRestrictions
+        if (restrictions.isSet() && restrictions.get() == OLD_DEFAULT_UPDATE_RESTRICTIONS) {
+            restrictions.set(setOf(ENTRY_NON_COMPLETED))
+        }
+    }
+
     val autoUpdateMetadata: Preference<Boolean> = preferenceStore.getBoolean("auto_update_metadata", false)
 
     val showContinueReadingButton: Preference<Boolean> =
@@ -456,6 +468,14 @@ class LibraryPreferences(
         const val ENTRY_HAS_UNVIEWED = "manga_fully_read"
         const val ENTRY_NON_VIEWED = "manga_started"
         const val ENTRY_OUTSIDE_RELEASE_PERIOD = "manga_outside_release_period"
+
+        /** AniTenshi: the default "skip" rules before 1.0.16. */
+        val OLD_DEFAULT_UPDATE_RESTRICTIONS = setOf(
+            ENTRY_HAS_UNVIEWED,
+            ENTRY_NON_COMPLETED,
+            ENTRY_NON_VIEWED,
+            ENTRY_OUTSIDE_RELEASE_PERIOD,
+        )
 
         const val MARK_DUPLICATE_CHAPTER_READ_NEW = "new"
         const val MARK_DUPLICATE_CHAPTER_READ_EXISTING = "existing"

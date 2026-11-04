@@ -445,4 +445,5 @@
   <string name="anitenshi_airing_on">Esce %1$s alle %2$s</string>
   <string name="anitenshi_airing_today">oggi</string>
   <string name="anitenshi_airing_tomorrow">domani</string>
+  <string name="anitenshi_google_drive_not_configured">Google Drive non è ancora configurato in AniTenshi. Nel frattempo puoi usare SyncYomi o un backup</string>
 </resources>

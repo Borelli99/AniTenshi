@@ -253,6 +253,13 @@ class GoogleDriveService(private val context: Context) {
     var driveService: Drive? = null
     companion object {
         const val REDIRECT_URI = "eu.kanade.google.oauth:/oauth2redirect"
+
+        /**
+         * AniTenshi: true when the build has the app's Google key (client_secrets.json). It isn't in the
+         * source code, so without it signing in to Google Drive crashed the app.
+         */
+        fun isConfigured(context: Context): Boolean =
+            runCatching { context.assets.open("client_secrets.json").close() }.isSuccess
     }
     private val syncPreferences = Injekt.get<SyncPreferences>()
 

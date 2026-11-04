@@ -31,16 +31,20 @@ class PreferenceRestorer(
     private val getMangaCategories: GetMangaCategories,
     private val getAnimeCategories: GetAnimeCategories,
     private val preferenceStore: PreferenceStore,
+    private val libraryPreferences: LibraryPreferences,
 ) {
     suspend fun restoreApp(
         preferences: List<BackupPreference>,
         backupCategories: List<BackupCategory>?,
     ) {
         restorePreferences(
-            preferences,
+            // AniTenshi: a backup never changes the theme; one from Aniyomi/Animetail turned the app grey
+            preferences.filterNot { it.key == APP_THEME_PREF_KEY },
             preferenceStore,
             backupCategories,
         )
+        // AniTenshi: old default "skip" rules from other apps' backups become the AniTenshi default
+        libraryPreferences.replaceOldDefaultUpdateRestrictions()
 
         AnimeLibraryUpdateJob.setupTask(context)
         MangaLibraryUpdateJob.setupTask(context)
@@ -158,3 +162,6 @@ class PreferenceRestorer(
         return true
     }
 }
+
+/** AniTenshi: key of the app theme ([eu.kanade.domain.ui.UiPreferences.appTheme]), not taken from backups. */
+private const val APP_THEME_PREF_KEY = "pref_app_theme"

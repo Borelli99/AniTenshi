@@ -3,15 +3,19 @@ package eu.kanade.tachiyomi.data.sync
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import dev.zacsweers.metro.Inject
 import eu.kanade.domain.sync.SyncPreferences
 import eu.kanade.tachiyomi.data.notification.Notifications
@@ -24,6 +28,9 @@ import mihon.app.di.AppGraph
 import mihon.app.di.appGraph
 import mihon.core.metro.metroGraph
 import tachiyomi.core.common.util.system.logcat
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 
 class SyncDataJob(private val context: Context, workerParams: WorkerParameters) :
@@ -39,6 +46,9 @@ class SyncDataJob(private val context: Context, workerParams: WorkerParameters) 
     override suspend fun doWork(): Result {
         graph.inject(this)
 
+        // AniTenshi: automatic syncs run quietly: no "sync complete" every time the app opens
+        val silent = inputData.getBoolean(KEY_SILENT, false)
+
         if (tags.contains(TAG_AUTO)) {
             // Find a running manual worker. If exists, try again later
             if (context.workManager.isRunning(TAG_MANUAL)) {
@@ -46,15 +56,21 @@ class SyncDataJob(private val context: Context, workerParams: WorkerParameters) 
             }
         }
 
-        setForegroundSafely()
+        // AniTenshi: nothing to sync with yet (not signed in): automatic syncs just skip
+        if ((silent || tags.contains(TAG_AUTO)) && !graph.syncPreferences.isSyncReady()) {
+            return Result.success()
+        }
+
+        if (!silent) setForegroundSafely()
 
         return try {
-            syncManager.syncData()
+            syncManager.syncData(silent = silent)
             Result.success()
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
-            notifier.showSyncError(e.message)
-            Result.failure()
+            if (!silent || !e.isNetworkError()) notifier.showSyncError(e.message)
+            // AniTenshi: a failed sync before a library update must not stop the update
+            if (silent) Result.success() else Result.failure()
         } finally {
             context.cancelNotification(Notifications.ID_RESTORE_PROGRESS)
         }
@@ -72,10 +88,18 @@ class SyncDataJob(private val context: Context, workerParams: WorkerParameters) 
         )
     }
 
+    private fun Throwable.isNetworkError(): Boolean = generateSequence(this) { it.cause }
+        .any { it is UnknownHostException || it is SocketTimeoutException || it is ConnectException }
+
     companion object {
         private const val TAG_JOB = "SyncDataJob"
         private const val TAG_AUTO = "$TAG_JOB:auto"
         const val TAG_MANUAL = "$TAG_JOB:manual"
+        private const val TAG_QUIET = "$TAG_JOB:quiet"
+        private const val KEY_SILENT = "silent"
+
+        // AniTenshi: coming back to the app syncs again only after this long
+        private const val RESUME_SYNC_INTERVAL_MS = 5 * 60 * 1000L
 
         fun isRunning(context: Context): Boolean {
             return context.workManager.isRunning(TAG_JOB)
@@ -116,9 +140,51 @@ class SyncDataJob(private val context: Context, workerParams: WorkerParameters) 
             context.workManager.enqueueUniqueWork(TAG_MANUAL, ExistingWorkPolicy.KEEP, request)
         }
 
+        /**
+         * AniTenshi: a quiet sync for the app's own triggers (opening, closing or coming back to the app).
+         * Does nothing until the account is connected; with [throttle] it skips when the last sync was
+         * moments ago. It waits for a connection instead of failing offline.
+         */
+        fun startAutomatic(context: Context, throttle: Boolean = false) {
+            val syncPreferences = context.appGraph.syncPreferences
+            if (!syncPreferences.isSyncReady()) return
+            if (throttle &&
+                System.currentTimeMillis() - syncPreferences.lastSyncTimestamp().get() < RESUME_SYNC_INTERVAL_MS
+            ) {
+                return
+            }
+            val wm = context.workManager
+            if (wm.isRunning(TAG_JOB)) return
+
+            val request = OneTimeWorkRequestBuilder<SyncDataJob>()
+                .addTag(TAG_JOB)
+                .addTag(TAG_QUIET)
+                .setInputData(workDataOf(KEY_SILENT to true))
+                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+                .build()
+            wm.enqueueUniqueWork(TAG_QUIET, ExistingWorkPolicy.KEEP, request)
+        }
+
+        /**
+         * AniTenshi: the quiet sync to run before a library update started by hand, or null when it
+         * shouldn't: sync off or not connected, the trigger turned off, or a sync already running.
+         */
+        fun requestBeforeLibraryUpdate(context: Context): OneTimeWorkRequest? {
+            val syncPreferences = context.appGraph.syncPreferences
+            if (!syncPreferences.isSyncReady()) return null
+            if (!syncPreferences.getSyncTriggerOptions().syncOnLibraryUpdate) return null
+            if (context.workManager.isRunning(TAG_JOB)) return null
+
+            return OneTimeWorkRequestBuilder<SyncDataJob>()
+                .addTag(TAG_JOB)
+                .addTag(TAG_MANUAL)
+                .setInputData(workDataOf(KEY_SILENT to true))
+                .build()
+        }
+
         fun stop(context: Context) {
             val wm = context.workManager
-            val workQuery = WorkQuery.Builder.fromTags(listOf(TAG_JOB, TAG_AUTO, TAG_MANUAL))
+            val workQuery = WorkQuery.Builder.fromTags(listOf(TAG_JOB, TAG_AUTO, TAG_MANUAL, TAG_QUIET))
                 .addStates(listOf(WorkInfo.State.RUNNING))
                 .build()
             wm.getWorkInfos(workQuery).get()

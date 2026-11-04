@@ -7,10 +7,12 @@ import tachiyomi.i18n.tail.TLMR
 data class SyncTriggerOptions(
     val syncOnChapterRead: Boolean = false,
     val syncOnChapterOpen: Boolean = false,
-    val syncOnAppStart: Boolean = false,
-    val syncOnAppResume: Boolean = false,
+    val syncOnAppStart: Boolean = true,
+    val syncOnAppResume: Boolean = true,
     val syncOnEpisodeSeen: Boolean = false,
     val syncOnEpisodeOpen: Boolean = false,
+    // AniTenshi: sync before a library update started by hand (pull-to-refresh, "Update library")
+    val syncOnLibraryUpdate: Boolean = true,
 ) {
     fun asBooleanArray() = booleanArrayOf(
         syncOnChapterRead,
@@ -19,6 +21,7 @@ data class SyncTriggerOptions(
         syncOnAppResume,
         syncOnEpisodeSeen,
         syncOnEpisodeOpen,
+        syncOnLibraryUpdate,
     )
 
     fun anyEnabled() = syncOnChapterRead ||
@@ -26,39 +29,29 @@ data class SyncTriggerOptions(
         syncOnAppStart ||
         syncOnAppResume ||
         syncOnEpisodeSeen ||
-        syncOnEpisodeOpen
+        syncOnEpisodeOpen ||
+        syncOnLibraryUpdate
 
     companion object {
+        /**
+         * AniTenshi: only the triggers the app acts on. The chapter and episode ones were listed but
+         * nothing ever started a sync from them.
+         */
         val mainOptions = persistentListOf(
             Entry(
-                label = TLMR.strings.sync_on_chapter_read,
-                getter = SyncTriggerOptions::syncOnChapterRead,
-                setter = { options, enabled -> options.copy(syncOnChapterRead = enabled) },
-            ),
-            Entry(
-                label = TLMR.strings.sync_on_chapter_open,
-                getter = SyncTriggerOptions::syncOnChapterOpen,
-                setter = { options, enabled -> options.copy(syncOnChapterOpen = enabled) },
-            ),
-            Entry(
-                label = TLMR.strings.sync_on_app_start,
+                label = TLMR.strings.anitenshi_sync_on_app_start,
                 getter = SyncTriggerOptions::syncOnAppStart,
                 setter = { options, enabled -> options.copy(syncOnAppStart = enabled) },
             ),
             Entry(
-                label = TLMR.strings.sync_on_app_resume,
+                label = TLMR.strings.anitenshi_sync_on_app_resume,
                 getter = SyncTriggerOptions::syncOnAppResume,
                 setter = { options, enabled -> options.copy(syncOnAppResume = enabled) },
             ),
             Entry(
-                label = TLMR.strings.sync_on_episode_seen,
-                getter = SyncTriggerOptions::syncOnEpisodeSeen,
-                setter = { options, enabled -> options.copy(syncOnEpisodeSeen = enabled) },
-            ),
-            Entry(
-                label = TLMR.strings.sync_on_episode_open,
-                getter = SyncTriggerOptions::syncOnEpisodeOpen,
-                setter = { options, enabled -> options.copy(syncOnEpisodeOpen = enabled) },
+                label = TLMR.strings.anitenshi_sync_on_library_update,
+                getter = SyncTriggerOptions::syncOnLibraryUpdate,
+                setter = { options, enabled -> options.copy(syncOnLibraryUpdate = enabled) },
             ),
         )
 
@@ -69,6 +62,7 @@ data class SyncTriggerOptions(
             syncOnAppResume = array[3],
             syncOnEpisodeSeen = array[4],
             syncOnEpisodeOpen = array[5],
+            syncOnLibraryUpdate = array.getOrElse(6) { true },
         )
     }
 

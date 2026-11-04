@@ -18,9 +18,11 @@ import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
 import eu.kanade.tachiyomi.data.backup.restore.RestoreOptions
 import eu.kanade.tachiyomi.data.backup.restore.restorers.AnimeRestorer
 import eu.kanade.tachiyomi.data.backup.restore.restorers.MangaRestorer
+import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.sync.service.GoogleDriveSyncService
 import eu.kanade.tachiyomi.data.sync.service.SyncData
 import eu.kanade.tachiyomi.data.sync.service.SyncYomiSyncService
+import eu.kanade.tachiyomi.util.system.cancelNotification
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
@@ -85,7 +87,7 @@ class SyncManager(
      * from the database using the BackupManager, then synchronizes the data with a sync service.
      */
     @Suppress("ReturnCount", "LongMethod")
-    suspend fun syncData() {
+    suspend fun syncData(silent: Boolean = false) {
         // Reset isSyncing in case it was left over or failed syncing during restore.
         animeHandler.await(inTransaction = true) {
             animesQueries.resetIsSyncing()
@@ -160,13 +162,18 @@ class SyncManager(
         if (remoteBackup === syncData.backup) {
             // nothing changed
             syncPreferences.lastSyncTimestamp().set(Date().time)
-            notifier.showSyncSuccess("Sync completed successfully")
+            showSuccess("Sync completed successfully", silent)
             return
         }
 
         // Stop the sync early if the remote backup is null or empty
         if (remoteBackup.backupManga.size == 0 && remoteBackup.backupAnime.size == 0) {
-            notifier.showSyncError("No data found on remote server.")
+            // AniTenshi: an empty library on every device isn't worth an error on each app open
+            if (silent) {
+                context.cancelNotification(Notifications.ID_RESTORE_PROGRESS)
+            } else {
+                notifier.showSyncError("No data found on remote server.")
+            }
             return
         }
 
@@ -176,7 +183,7 @@ class SyncManager(
         ) {
             // It's first sync no need to restore data. (just update remote data)
             syncPreferences.lastSyncTimestamp().set(Date().time)
-            notifier.showSyncSuccess("Updated remote data successfully")
+            showSuccess("Updated remote data successfully", silent)
             return
         }
 
@@ -201,7 +208,7 @@ class SyncManager(
             // update the sync timestamp
 
             syncPreferences.lastSyncTimestamp().set(Date().time)
-            notifier.showSyncSuccess("Sync completed successfully")
+            showSuccess("Sync completed successfully", silent)
             return
         }
 
@@ -223,6 +230,15 @@ class SyncManager(
             syncPreferences.lastSyncTimestamp().set(Date().time)
         } else {
             logcat(LogPriority.ERROR) { "Failed to write sync data to file" }
+        }
+    }
+
+    /** AniTenshi: automatic syncs don't announce themselves; only what they bring from other devices shows. */
+    private fun showSuccess(message: String, silent: Boolean) {
+        if (silent) {
+            context.cancelNotification(Notifications.ID_RESTORE_PROGRESS)
+        } else {
+            notifier.showSyncSuccess(message)
         }
     }
 

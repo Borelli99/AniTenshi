@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -84,7 +85,11 @@ object GoogleDriveLoopbackSignIn {
             val message = when (answer) {
                 is RedirectAnswer.Code -> runCatching { service.exchangeAuthorizationCode(answer.code, redirectUri) }
                     .fold(
-                        onSuccess = { appContext.stringResource(TLMR.strings.google_drive_login_success) },
+                        onSuccess = {
+                            // AniTenshi: first sync right away, instead of "Ultima sincronizzazione: Mai"
+                            SyncDataJob.startNow(appContext)
+                            appContext.stringResource(TLMR.strings.google_drive_login_success)
+                        },
                         onFailure = { e ->
                             logcat(LogPriority.ERROR, e) { "AniTenshi: Google token exchange" }
                             appContext.stringResource(TLMR.strings.google_drive_login_failed, e.message ?: "")

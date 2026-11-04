@@ -313,6 +313,9 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
 
     private val disableIncognitoReceiver = DisableIncognitoReceiver()
 
+    // AniTenshi: tells opening the app (first onStart of the process) from coming back to it
+    private var startedOnce = false
+
     @SuppressLint("LaunchActivityFromNotification")
     @Suppress("LongMethod")
     override fun onCreate() {
@@ -390,11 +393,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         }
 
         initializeMigrator()
-
-        val syncTriggerOpt = syncPreferences.getSyncTriggerOptions()
-        if (syncPreferences.isSyncEnabled() && syncTriggerOpt.syncOnAppStart) {
-            SyncDataJob.startNow(this@App)
-        }
+        // AniTenshi: the sync on opening moved to onStart: the process also starts in the background
+        // (library updates, notifications), and that isn't opening the app
     }
 
     private fun initializeMigrator() {
@@ -469,9 +469,15 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     override fun onStart(owner: LifecycleOwner) {
         SecureActivityDelegate.onApplicationStart(this)
 
+        // AniTenshi: sync when the app is opened, and again when coming back to it (not more than every
+        // few minutes). Quiet, and only once the account is connected.
         val syncTriggerOpt = syncPreferences.getSyncTriggerOptions()
-        if (syncPreferences.isSyncEnabled() && syncTriggerOpt.syncOnAppResume) {
-            SyncDataJob.startNow(this@App)
+        val firstStart = !startedOnce
+        startedOnce = true
+        if (firstStart && syncTriggerOpt.syncOnAppStart) {
+            SyncDataJob.startAutomatic(this@App)
+        } else if (!firstStart && syncTriggerOpt.syncOnAppResume) {
+            SyncDataJob.startAutomatic(this@App, throttle = true)
         }
 
         // AM (DISCORD) -->
@@ -482,9 +488,10 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     override fun onStop(owner: LifecycleOwner) {
         SecureActivityDelegate.onApplicationStopped(this)
 
+        // AniTenshi: leaving the app sends what changed (chapters read, episodes seen) to the other devices
         val syncTriggerOpt = syncPreferences.getSyncTriggerOptions()
-        if (syncPreferences.isSyncEnabled() && syncTriggerOpt.syncOnAppStart) {
-            SyncDataJob.startNow(this@App)
+        if (syncTriggerOpt.syncOnAppStart) {
+            SyncDataJob.startAutomatic(this@App)
         }
 
         // AM (DISCORD) -->

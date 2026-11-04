@@ -53,6 +53,18 @@ class SyncPreferences(
         return syncService().get() != 0
     }
 
+    /**
+     * AniTenshi: true when the chosen service can sync without asking anything: signed in to Google Drive,
+     * or a SyncYomi key set. Automatic syncs wait for this, so they don't fail on every app open.
+     */
+    fun isSyncReady(): Boolean {
+        return when (syncService().get()) {
+            SYNC_SERVICE_SYNCYOMI -> clientAPIKey().get().isNotBlank()
+            SYNC_SERVICE_GOOGLE_DRIVE -> googleDriveRefreshToken().get().isNotBlank()
+            else -> false
+        }
+    }
+
     fun getSyncSettings(): SyncSettings {
         return SyncSettings(
             libraryEntries = preferenceStore.getBoolean("library_entries", true).get(),
@@ -80,7 +92,9 @@ class SyncPreferences(
         preferenceStore.getBoolean("episodes", true).set(syncSettings.episodes)
         preferenceStore.getBoolean("tracking", true).set(syncSettings.tracking)
         preferenceStore.getBoolean("anime_tracking", true).set(syncSettings.animeTracking)
-        preferenceStore.getBoolean("anime_history", true).set(syncSettings.history)
+        // AniTenshi: the manga history was saved in the anime key and never in its own
+        preferenceStore.getBoolean("history", true).set(syncSettings.history)
+        preferenceStore.getBoolean("anime_history", true).set(syncSettings.animeHistory)
         preferenceStore.getBoolean("appSettings", true).set(syncSettings.appSettings)
         preferenceStore.getBoolean("sourceSettings", true).set(syncSettings.sourceSettings)
         preferenceStore.getBoolean("privateSettings", true).set(syncSettings.privateSettings)
@@ -88,8 +102,10 @@ class SyncPreferences(
 
     fun getSyncTriggerOptions(): SyncTriggerOptions {
         return SyncTriggerOptions(
-            syncOnAppStart = preferenceStore.getBoolean("sync_on_app_start", false).get(),
-            syncOnAppResume = preferenceStore.getBoolean("sync_on_app_resume", false).get(),
+            // AniTenshi: on by default, so a connected account stays in sync without setting anything
+            syncOnAppStart = preferenceStore.getBoolean("sync_on_app_start", true).get(),
+            syncOnAppResume = preferenceStore.getBoolean("sync_on_app_resume", true).get(),
+            syncOnLibraryUpdate = preferenceStore.getBoolean("sync_on_library_update", true).get(),
 
             // Manga
             syncOnChapterRead = preferenceStore.getBoolean("sync_on_chapter_read", false).get(),
@@ -102,10 +118,12 @@ class SyncPreferences(
     }
 
     fun setSyncTriggerOptions(syncTriggerOptions: SyncTriggerOptions) {
-        preferenceStore.getBoolean("sync_on_app_start", false)
+        preferenceStore.getBoolean("sync_on_app_start", true)
             .set(syncTriggerOptions.syncOnAppStart)
-        preferenceStore.getBoolean("sync_on_app_resume", false)
+        preferenceStore.getBoolean("sync_on_app_resume", true)
             .set(syncTriggerOptions.syncOnAppResume)
+        preferenceStore.getBoolean("sync_on_library_update", true)
+            .set(syncTriggerOptions.syncOnLibraryUpdate)
 
         // Manga
         preferenceStore.getBoolean("sync_on_chapter_read", false)
@@ -113,10 +131,16 @@ class SyncPreferences(
         preferenceStore.getBoolean("sync_on_chapter_open", false)
             .set(syncTriggerOptions.syncOnChapterOpen)
 
-        // Anime
+        // Anime (AniTenshi: these saved the manga values)
         preferenceStore.getBoolean("sync_on_episode_seen", false)
-            .set(syncTriggerOptions.syncOnChapterRead)
+            .set(syncTriggerOptions.syncOnEpisodeSeen)
         preferenceStore.getBoolean("sync_on_episode_open", false)
-            .set(syncTriggerOptions.syncOnChapterOpen)
+            .set(syncTriggerOptions.syncOnEpisodeOpen)
+    }
+
+    private companion object {
+        // Same values as SyncManager.SyncService
+        const val SYNC_SERVICE_SYNCYOMI = 1
+        const val SYNC_SERVICE_GOOGLE_DRIVE = 2
     }
 }

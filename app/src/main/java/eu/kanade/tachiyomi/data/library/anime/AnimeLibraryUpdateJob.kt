@@ -20,7 +20,6 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import aniyomi.util.nullIfBlank
 import dev.zacsweers.metro.Inject
-import eu.kanade.domain.sync.SyncPreferences
 import eu.kanade.tachiyomi.animesource.UnmeteredSource
 import eu.kanade.tachiyomi.animesource.model.AnimeUpdateStrategy
 import eu.kanade.tachiyomi.animesource.model.FetchType
@@ -630,21 +629,10 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
                 // SY <--
             )
 
-            val syncPreferences: SyncPreferences = context.appGraph.syncPreferences
-
-            // Always sync the data before library update if syncing is enabled.
-            if (syncPreferences.isSyncEnabled()) {
-                // Check if SyncDataJob is already running
-                if (SyncDataJob.isRunning(context)) {
-                    // SyncDataJob is already running
-                    return false
-                }
-
-                // Define the SyncDataJob
-                val syncDataJob = OneTimeWorkRequestBuilder<SyncDataJob>()
-                    .addTag(SyncDataJob.TAG_MANUAL)
-                    .build()
-
+            // AniTenshi: sync first when the account is connected; a sync already running no longer
+            // blocks the update, and a failed sync doesn't stop it
+            val syncDataJob = SyncDataJob.requestBeforeLibraryUpdate(context)
+            if (syncDataJob != null) {
                 // Chain SyncDataJob to run before AnimeLibraryUpdateJob
                 val libraryUpdateJob = OneTimeWorkRequestBuilder<AnimeLibraryUpdateJob>()
                     .addTag(TAG)

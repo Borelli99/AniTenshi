@@ -10,7 +10,9 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeToken
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse
+import com.google.api.client.http.GenericUrl
 import com.google.api.client.http.InputStreamContent
+import com.google.api.client.http.UrlEncodedContent
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.jackson2.JacksonFactory
@@ -253,6 +255,7 @@ class GoogleDriveService(private val context: Context) {
     var driveService: Drive? = null
     companion object {
         const val REDIRECT_URI = "eu.kanade.google.oauth:/oauth2redirect"
+        private const val REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 
         /**
          * AniTenshi: true when the build has the app's Google key (client_secrets.json). It isn't in the
@@ -356,6 +359,26 @@ class GoogleDriveService(private val context: Context) {
         syncPreferences.googleDriveRefreshToken().set(tokenResponse.refreshToken)
         setupGoogleDriveService(tokenResponse.accessToken, tokenResponse.refreshToken)
         initGoogleDriveService()
+    }
+
+    /**
+     * AniTenshi: disconnects this device from Google Drive: asks Google to drop the app's access (best effort,
+     * it may be offline) and forgets the tokens. The data already on Drive stays there.
+     */
+    suspend fun signOut() = withIOContext {
+        val token = syncPreferences.googleDriveRefreshToken().get()
+            .ifBlank { syncPreferences.googleDriveAccessToken().get() }
+        if (token.isNotBlank()) {
+            runCatching {
+                NetHttpTransport().createRequestFactory()
+                    .buildPostRequest(GenericUrl(REVOKE_URL), UrlEncodedContent(mapOf("token" to token)))
+                    .execute()
+                    .disconnect()
+            }.onFailure { e -> logcat(LogPriority.WARN, throwable = e) { "AniTenshi: Google token revoke" } }
+        }
+        syncPreferences.googleDriveAccessToken().delete()
+        syncPreferences.googleDriveRefreshToken().delete()
+        driveService = null
     }
 
     @Suppress("TooGenericExceptionThrown")

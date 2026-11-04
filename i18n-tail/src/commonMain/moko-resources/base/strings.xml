@@ -529,4 +529,15 @@
     <string name="anitenshi_airing_today">today</string>
     <string name="anitenshi_airing_tomorrow">tomorrow</string>
     <string name="anitenshi_google_drive_not_configured">Google Drive isn\'t set up in AniTenshi yet. You can use SyncYomi or a backup meanwhile</string>
+    <string name="anitenshi_google_drive_connected">Connected to Google Drive</string>
+    <string name="anitenshi_google_drive_connected_summary">Your library syncs by itself</string>
+    <string name="anitenshi_google_drive_sign_out">Disconnect</string>
+    <string name="anitenshi_google_drive_sign_out_title">Disconnect Google Drive?</string>
+    <string name="anitenshi_google_drive_sign_out_message">Syncing stops on this device. What is already saved on Drive stays there, and you can connect again whenever you like.</string>
+    <string name="anitenshi_google_drive_signed_out">Disconnected from Google Drive</string>
+    <string name="anitenshi_sync_triggers">When to sync</string>
+    <string name="anitenshi_sync_triggers_summary">Opening the app, coming back to it, updating the library</string>
+    <string name="anitenshi_sync_on_app_start">When you open or close the app</string>
+    <string name="anitenshi_sync_on_app_resume">When you come back to the app (at most every 5 minutes)</string>
+    <string name="anitenshi_sync_on_library_update">When you update the library (also pull-to-refresh)</string>
 </resources>

@@ -35,7 +35,7 @@ class SyncTriggerOptionsScreen : Screen() {
         Scaffold(
             topBar = {
                 AppBar(
-                    title = stringResource(TLMR.strings.pref_sync_options),
+                    title = stringResource(TLMR.strings.anitenshi_sync_triggers),
                     navigateUp = navigator::pop,
                     scrollBehavior = it,
                 )

@@ -576,7 +576,7 @@ object SettingsDataScreen : SearchableSettings {
         return when (syncServiceType) {
             SyncManager.SyncService.NONE -> emptyList()
             SyncManager.SyncService.SYNCYOMI -> getSelfHostPreferences(syncPreferences)
-            SyncManager.SyncService.GOOGLE_DRIVE -> getGoogleDrivePreferences()
+            SyncManager.SyncService.GOOGLE_DRIVE -> getGoogleDrivePreferences(syncPreferences)
         }
     }
 
@@ -586,9 +586,50 @@ object SettingsDataScreen : SearchableSettings {
     }
 
     @Composable
-    private fun getGoogleDrivePreferences(): List<Preference> {
+    private fun getGoogleDrivePreferences(syncPreferences: SyncPreferences): List<Preference> {
         val context = LocalContext.current
-        return listOf(
+        val scope = rememberCoroutineScope()
+        // AniTenshi: the row follows the account: "Accedi" until signed in, then "Connesso" with "Disconnetti"
+        val refreshToken by syncPreferences.googleDriveRefreshToken().collectAsState()
+        var showSignOutDialog by remember { mutableStateOf(false) }
+
+        if (showSignOutDialog) {
+            AlertDialog(
+                onDismissRequest = { showSignOutDialog = false },
+                title = { Text(text = stringResource(TLMR.strings.anitenshi_google_drive_sign_out_title)) },
+                text = { Text(text = stringResource(TLMR.strings.anitenshi_google_drive_sign_out_message)) },
+                dismissButton = {
+                    TextButton(onClick = { showSignOutDialog = false }) {
+                        Text(text = stringResource(MR.strings.action_cancel))
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showSignOutDialog = false
+                            scope.launch {
+                                GoogleDriveService(context).signOut()
+                                withUIContext { context.toast(TLMR.strings.anitenshi_google_drive_signed_out) }
+                            }
+                        },
+                    ) {
+                        Text(text = stringResource(TLMR.strings.anitenshi_google_drive_sign_out))
+                    }
+                },
+            )
+        }
+
+        val accountPreference = if (refreshToken.isNotBlank()) {
+            Preference.PreferenceItem.TextPreference(
+                title = stringResource(TLMR.strings.anitenshi_google_drive_connected),
+                subtitle = stringResource(TLMR.strings.anitenshi_google_drive_connected_summary),
+                widget = {
+                    TextButton(onClick = { showSignOutDialog = true }) {
+                        Text(text = stringResource(TLMR.strings.anitenshi_google_drive_sign_out))
+                    }
+                },
+            )
+        } else {
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(TLMR.strings.pref_google_drive_sign_in),
                 onClick = {
@@ -600,7 +641,11 @@ object SettingsDataScreen : SearchableSettings {
                         GoogleDriveLoopbackSignIn.start(context)
                     }
                 },
-            ),
+            )
+        }
+
+        return listOf(
+            accountPreference,
             getGoogleDrivePurge(),
         )
     }
@@ -722,8 +767,9 @@ object SettingsDataScreen : SearchableSettings {
     private fun getSyncOptionsPref(): Preference.PreferenceItem.TextPreference {
         val navigator = LocalNavigator.currentOrThrow
         return Preference.PreferenceItem.TextPreference(
-            title = stringResource(TLMR.strings.pref_sync_options),
-            subtitle = stringResource(TLMR.strings.pref_sync_options_summ),
+            // AniTenshi: clearer name than "Crea trigger di sincronizzazione"
+            title = stringResource(TLMR.strings.anitenshi_sync_triggers),
+            subtitle = stringResource(TLMR.strings.anitenshi_sync_triggers_summary),
             onClick = { navigator.push(SyncTriggerOptionsScreen()) },
         )
     }

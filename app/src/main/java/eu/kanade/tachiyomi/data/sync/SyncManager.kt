@@ -297,7 +297,12 @@ class SyncManager(
     }
 
     private suspend fun getAllAnimeThatNeedsSync(): List<Anime> {
-        return animeHandler.awaitList { animesQueries.getAnimesWithFavoriteTimestamp(::mapAnime) }
+        val withFavoriteTimestamp = animeHandler.awaitList { animesQueries.getAnimesWithFavoriteTimestamp(::mapAnime) }
+        // AniTenshi: the anime a restore (or a sync) put in the library have no favorite timestamp: it's only set
+        // when "favorite" changes, not when the row is inserted already in the library. They were left out, so
+        // the anime library didn't reach the other devices (the manga one did: it's picked by favorite).
+        val favorites = animeHandler.awaitList { animesQueries.getFavorites(::mapAnime) }
+        return (withFavoriteTimestamp + favorites).distinctBy { it.id }
     }
 
     @Suppress("ReturnCount")

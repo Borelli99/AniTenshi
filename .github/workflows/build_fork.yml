@@ -161,7 +161,7 @@ jobs:
           VERSION_NAME="$(grep -m1 -oP 'versionName = "\K[^"]+' app/build.gradle.kts)"
 
           PREVIOUS_TAG="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"
-          # Readable notes for this version (Italian), shown by the in-app updater above the "---" line.
+          # Readable notes for this version (English, since 1.0.17), shown by the in-app updater above the "---" line.
           # Used only when its first line names this version, so stale notes never reach a new release.
           NOTES_FILE=".github/release-notes.md"
           {
@@ -194,7 +194,7 @@ jobs:
               --jq '.[] | select(.draft and (.tag_name | startswith("test-"))) | .id' |
               while read -r OLD_ID; do gh api -X DELETE "repos/${{ github.repository }}/releases/${OLD_ID}"; done
             {
-              echo "**Build di prova privata** (ramo \`${GITHUB_REF_NAME}\`): la vedi solo tu, l'app non la propone a nessuno."
+              echo "**Private test build** (branch \`${GITHUB_REF_NAME}\`): only you can see it, the app never offers it to anyone."
               echo
               cat "${RUNNER_TEMP}/notes.md"
             } > "${RUNNER_TEMP}/test-notes.md"

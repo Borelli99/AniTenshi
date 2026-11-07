@@ -555,4 +555,13 @@
     <string name="anitenshi_onboarding_backup_failed_body">Tap to choose the file again</string>
     <string name="anitenshi_onboarding_sync_later">You can do it later too, from Settings › Data and storage.</string>
     <string name="anitenshi_onboarding_repos_body_existing">The repos you already have are ticked below. Add more if you like.</string>
+    <string name="anitenshi_google_drive_page_done">AniTenshi: you\'re signed in to Google Drive. You can go back to the app.</string>
+    <string name="anitenshi_google_drive_page_cancelled">AniTenshi: Google Drive sign-in cancelled. You can go back to the app.</string>
+    <string name="anitenshi_google_drive_no_answer">Google Drive sign-in: no answer within 5 minutes. Try again.</string>
+    <string name="anitenshi_google_drive_cancelled">Google Drive sign-in cancelled</string>
+    <string name="anitenshi_google_drive_access_expired">Google Drive access has expired or was removed. Connect again from Settings › Data and storage.</string>
+    <string name="anitenshi_sync_done">Sync complete</string>
+    <string name="anitenshi_sync_saved_for_devices">Library saved for your other devices</string>
+    <string name="anitenshi_sync_nothing_yet">Nothing to sync yet: your library is empty</string>
+    <string name="anitenshi_sync_download_failed">Couldn\'t download the synced data: %s</string>
 </resources>

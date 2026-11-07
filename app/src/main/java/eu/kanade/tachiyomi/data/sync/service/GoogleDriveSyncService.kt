@@ -135,7 +135,8 @@ class GoogleDriveSyncService(context: Context, json: Json, syncPreferences: Sync
             }
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, throwable = e) { "Error downloading file: ${e.message}" }
-            throw Exception("Failed to download sync data: ${e.message}", e)
+            // AniTenshi: translated, it ends up in the sync error notification
+            throw Exception(context.stringResource(TLMR.strings.anitenshi_sync_download_failed, e.message ?: ""), e)
         }
     }
 
@@ -415,18 +416,19 @@ class GoogleDriveService(private val context: Context) {
                 this@GoogleDriveService.logcat(LogPriority.ERROR, throwable = e) {
                     "Refresh token is invalid, prompt user to sign in again"
                 }
-                throw e.message?.let { Exception(it, e) } ?: Exception("Unknown error", e)
+                // AniTenshi: say what to do instead of Google's raw "invalid_grant" answer
+                throw Exception(context.stringResource(TLMR.strings.anitenshi_google_drive_access_expired), e)
             } else {
                 // Token refresh failed; handle this situation
                 this@GoogleDriveService.logcat(LogPriority.ERROR) { "Failed to refresh access token ${e.message}" }
                 this@GoogleDriveService.logcat(LogPriority.ERROR) { "Google Drive sync will be disabled" }
-                throw e.message?.let { Exception(it, e) } ?: Exception("Unknown error", e)
+                throw Exception(e.message ?: context.stringResource(MR.strings.unknown_error), e)
             }
         } catch (e: IOException) {
             // Token refresh failed; handle this situation
             this@GoogleDriveService.logcat(LogPriority.ERROR, throwable = e) { "Failed to refresh access token" }
             this@GoogleDriveService.logcat(LogPriority.ERROR) { "Google Drive sync will be disabled" }
-            throw e.message?.let { Exception(it, e) } ?: Exception("Unknown error", e)
+            throw Exception(e.message ?: context.stringResource(MR.strings.unknown_error), e)
         }
     }
 

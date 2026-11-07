@@ -29,6 +29,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority
 import logcat.logcat
+import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.data.entries.anime.AnimeMapper.mapAnime
 import tachiyomi.data.entries.manga.MangaMapper.mapManga
@@ -38,6 +39,7 @@ import tachiyomi.domain.category.anime.interactor.GetAnimeCategories
 import tachiyomi.domain.category.manga.interactor.GetMangaCategories
 import tachiyomi.domain.entries.anime.model.Anime
 import tachiyomi.domain.entries.manga.model.Manga
+import tachiyomi.i18n.tail.TLMR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
@@ -169,7 +171,7 @@ class SyncManager(
         if (remoteBackup === syncData.backup) {
             // nothing changed
             syncPreferences.lastSyncTimestamp().set(Date().time)
-            showSuccess("Sync completed successfully", silent)
+            showSuccess(context.stringResource(TLMR.strings.anitenshi_sync_done), silent)
             return
         }
 
@@ -179,7 +181,7 @@ class SyncManager(
             if (silent) {
                 context.cancelNotification(Notifications.ID_RESTORE_PROGRESS)
             } else {
-                notifier.showSyncError("No data found on remote server.")
+                notifier.showSyncError(context.stringResource(TLMR.strings.anitenshi_sync_nothing_yet))
             }
             return
         }
@@ -190,7 +192,7 @@ class SyncManager(
         ) {
             // It's first sync no need to restore data. (just update remote data)
             syncPreferences.lastSyncTimestamp().set(Date().time)
-            showSuccess("Updated remote data successfully", silent)
+            showSuccess(context.stringResource(TLMR.strings.anitenshi_sync_saved_for_devices), silent)
             return
         }
 
@@ -215,7 +217,7 @@ class SyncManager(
             // update the sync timestamp
 
             syncPreferences.lastSyncTimestamp().set(Date().time)
-            showSuccess("Sync completed successfully", silent)
+            showSuccess(context.stringResource(TLMR.strings.anitenshi_sync_done), silent)
             return
         }
 
@@ -257,7 +259,10 @@ class SyncManager(
         }
     }
 
-    /** AniTenshi: automatic syncs don't announce themselves; only what they bring from other devices shows. */
+    /**
+     * AniTenshi: automatic syncs don't announce themselves; only what they bring from other devices shows.
+     * The messages are translated (they were written in English in the code).
+     */
     private fun showSuccess(message: String, silent: Boolean) {
         if (silent) {
             context.cancelNotification(Notifications.ID_RESTORE_PROGRESS)

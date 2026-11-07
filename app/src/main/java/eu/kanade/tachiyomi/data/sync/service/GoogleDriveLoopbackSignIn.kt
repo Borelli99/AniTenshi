@@ -44,6 +44,12 @@ object GoogleDriveLoopbackSignIn {
     /** Browsers can open a few extra connections (pre-connect, favicon); this many are tolerated. */
     private const val MAX_CONNECTIONS = 10
 
+    /** No answer from the browser in time; shown with its own translated message. */
+    private const val REASON_NO_ANSWER = "no_answer"
+
+    /** Google's error when the person cancels or refuses on the consent page. */
+    private const val REASON_ACCESS_DENIED = "access_denied"
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @Volatile
@@ -75,8 +81,14 @@ object GoogleDriveLoopbackSignIn {
             return
         }
 
+        // AniTenshi: the page the browser shows afterwards follows the app's language (English when not translated)
+        val pageTexts = PageTexts(
+            done = appContext.stringResource(TLMR.strings.anitenshi_google_drive_page_done),
+            cancelled = appContext.stringResource(TLMR.strings.anitenshi_google_drive_page_cancelled),
+        )
+
         scope.launch {
-            val result = runCatching { waitForRedirect(socket, state) }
+            val result = runCatching { waitForRedirect(socket, state, pageTexts) }
             socket.runCatching { close() }
             if (server === socket) server = null
 
@@ -100,8 +112,11 @@ object GoogleDriveLoopbackSignIn {
                             appContext.stringResource(TLMR.strings.google_drive_login_failed, e.message ?: "")
                         },
                     )
-                is RedirectAnswer.Failed ->
-                    appContext.stringResource(TLMR.strings.google_drive_login_failed, answer.reason)
+                is RedirectAnswer.Failed -> when (answer.reason) {
+                    REASON_NO_ANSWER -> appContext.stringResource(TLMR.strings.anitenshi_google_drive_no_answer)
+                    REASON_ACCESS_DENIED -> appContext.stringResource(TLMR.strings.anitenshi_google_drive_cancelled)
+                    else -> appContext.stringResource(TLMR.strings.google_drive_login_failed, answer.reason)
+                }
             }
             withUIContext { appContext.toast(message, duration = Toast.LENGTH_LONG) }
         }
@@ -117,19 +132,21 @@ object GoogleDriveLoopbackSignIn {
         }
     }
 
+    private class PageTexts(val done: String, val cancelled: String)
+
     private sealed interface RedirectAnswer {
         data class Code(val code: String) : RedirectAnswer
         data class Failed(val reason: String) : RedirectAnswer
     }
 
     /** Accepts browser connections until one carries Google's answer (a code or an error) for [state]. */
-    private fun waitForRedirect(socket: ServerSocket, state: String): RedirectAnswer {
+    private fun waitForRedirect(socket: ServerSocket, state: String, pageTexts: PageTexts): RedirectAnswer {
         socket.soTimeout = WAIT_FOR_CONSENT_MS
         repeat(MAX_CONNECTIONS) {
             val client = try {
                 socket.accept()
             } catch (_: SocketTimeoutException) {
-                return RedirectAnswer.Failed("timeout")
+                return RedirectAnswer.Failed(REASON_NO_ANSWER)
             }
             client.use { connection ->
                 val query = readRequestQuery(connection)
@@ -139,18 +156,18 @@ object GoogleDriveLoopbackSignIn {
                 val stateOk = params?.getQueryParameter("state") == state
                 when {
                     code != null && stateOk -> {
-                        respond(connection, success = true)
+                        respond(connection, pageTexts.done)
                         return RedirectAnswer.Code(code)
                     }
                     error != null && stateOk -> {
-                        respond(connection, success = false)
+                        respond(connection, pageTexts.cancelled)
                         return RedirectAnswer.Failed(error)
                     }
                     else -> respondNotFound(connection)
                 }
             }
         }
-        return RedirectAnswer.Failed("no answer from the browser")
+        return RedirectAnswer.Failed(REASON_NO_ANSWER)
     }
 
     /** The query string of the request line ("GET /?code=…&state=… HTTP/1.1"), or null. */
@@ -163,18 +180,14 @@ object GoogleDriveLoopbackSignIn {
         return target.substringAfter('?', missingDelimiterValue = "").takeIf { it.isNotEmpty() }
     }
 
-    private fun respond(connection: Socket, success: Boolean) {
-        val text = if (success) {
-            "AniTenshi: accesso a Google Drive completato. Puoi tornare all'app."
-        } else {
-            "AniTenshi: accesso a Google Drive annullato. Puoi tornare all'app."
-        }
+    private fun respond(connection: Socket, text: String) {
+        val safeText = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         val body = """
             <!DOCTYPE html><html><head><meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1"></head>
             <body style="background:#100B2C;color:#F6F2EA;font-family:sans-serif;display:flex;
             align-items:center;justify-content:center;height:90vh;text-align:center;padding:24px">
-            <p style="font-size:20px">$text</p></body></html>
+            <p style="font-size:20px">$safeText</p></body></html>
         """.trimIndent()
         writeResponse(connection, "200 OK", body)
     }

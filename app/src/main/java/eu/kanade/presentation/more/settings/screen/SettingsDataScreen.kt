@@ -48,6 +48,7 @@ import eu.kanade.presentation.more.settings.screen.data.RestoreBackupScreen
 import eu.kanade.presentation.more.settings.screen.data.StorageInfo
 import eu.kanade.presentation.more.settings.screen.data.SyncSettingsSelector
 import eu.kanade.presentation.more.settings.screen.data.SyncTriggerOptionsScreen
+import eu.kanade.presentation.more.settings.screen.data.rememberGoogleDriveSignIn
 import eu.kanade.presentation.more.settings.widget.BasePreferenceWidget
 import eu.kanade.presentation.more.settings.widget.PrefsHorizontalPadding
 import eu.kanade.presentation.util.relativeTimeSpanString
@@ -60,7 +61,6 @@ import eu.kanade.tachiyomi.data.export.LibraryExporter
 import eu.kanade.tachiyomi.data.export.LibraryExporter.ExportOptions
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.data.sync.SyncManager
-import eu.kanade.tachiyomi.data.sync.service.GoogleDriveLoopbackSignIn
 import eu.kanade.tachiyomi.data.sync.service.GoogleDriveService
 import eu.kanade.tachiyomi.data.sync.service.GoogleDriveSyncService
 import eu.kanade.tachiyomi.ui.storage.StorageTab
@@ -590,7 +590,10 @@ object SettingsDataScreen : SearchableSettings {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         // AniTenshi: the row follows the account: "Accedi" until signed in, then "Connesso" with "Disconnetti"
-        val refreshToken by syncPreferences.googleDriveRefreshToken().collectAsState()
+        val connected by syncPreferences.googleDriveConnected().collectAsState()
+        val account by syncPreferences.googleDriveAccount().collectAsState()
+        // AniTenshi: sign-in built into Android (Google Play services), no key inside the app
+        val signInToGoogleDrive = rememberGoogleDriveSignIn()
         var showSignOutDialog by remember { mutableStateOf(false) }
 
         if (showSignOutDialog) {
@@ -619,10 +622,11 @@ object SettingsDataScreen : SearchableSettings {
             )
         }
 
-        val accountPreference = if (refreshToken.isNotBlank()) {
+        val accountPreference = if (connected) {
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(TLMR.strings.anitenshi_google_drive_connected),
-                subtitle = stringResource(TLMR.strings.anitenshi_google_drive_connected_summary),
+                // The account it is connected with, when known
+                subtitle = account.ifBlank { stringResource(TLMR.strings.anitenshi_google_drive_connected_summary) },
                 widget = {
                     TextButton(onClick = { showSignOutDialog = true }) {
                         Text(text = stringResource(TLMR.strings.anitenshi_google_drive_sign_out))
@@ -632,15 +636,7 @@ object SettingsDataScreen : SearchableSettings {
         } else {
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(TLMR.strings.pref_google_drive_sign_in),
-                onClick = {
-                    // AniTenshi: without the app's Google key the sign-in crashed; say it instead
-                    if (!GoogleDriveService.isConfigured(context)) {
-                        context.toast(TLMR.strings.anitenshi_google_drive_not_configured, duration = 5000)
-                    } else {
-                        // AniTenshi: loopback sign-in, the redirect Google still accepts
-                        GoogleDriveLoopbackSignIn.start(context)
-                    }
-                },
+                onClick = signInToGoogleDrive,
             )
         }
 

@@ -472,13 +472,12 @@
   <string name="anitenshi_onboarding_backup_failed_body">Tocca per scegliere di nuovo il file</string>
   <string name="anitenshi_onboarding_sync_later">Puoi farlo anche dopo, da Impostazioni › Dati e archiviazione.</string>
   <string name="anitenshi_onboarding_repos_body_existing">Le repo che hai già sono segnate qui sotto. Se vuoi, aggiungine altre.</string>
-  <string name="anitenshi_google_drive_page_done">AniTenshi: accesso a Google Drive completato. Puoi tornare all\'app.</string>
-  <string name="anitenshi_google_drive_page_cancelled">AniTenshi: accesso a Google Drive annullato. Puoi tornare all\'app.</string>
-  <string name="anitenshi_google_drive_no_answer">Accesso a Google Drive: nessuna risposta entro 5 minuti. Riprova.</string>
   <string name="anitenshi_google_drive_cancelled">Accesso a Google Drive annullato</string>
   <string name="anitenshi_google_drive_access_expired">L\'accesso a Google Drive è scaduto o è stato tolto. Ricollegati da Impostazioni › Dati e archiviazione.</string>
   <string name="anitenshi_sync_done">Sincronizzazione completata</string>
   <string name="anitenshi_sync_saved_for_devices">Libreria salvata per gli altri dispositivi</string>
   <string name="anitenshi_sync_nothing_yet">Ancora niente da sincronizzare: la libreria è vuota</string>
   <string name="anitenshi_sync_download_failed">Impossibile scaricare i dati sincronizzati: %s</string>
+  <string name="anitenshi_google_drive_needs_play_services">Per sincronizzare con Google Drive servono i servizi Google Play su questo dispositivo</string>
+  <string name="anitenshi_google_drive_offline">Impossibile contattare Google. Controlla la connessione e riprova.</string>
 </resources>

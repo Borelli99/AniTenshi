@@ -58,46 +58,6 @@ jobs:
           --tests "eu.kanade.tachiyomi.util.EpisodeAirDatesApiTest"
           --tests "eu.kanade.domain.items.SourceDateTest"
 
-      # Google Drive sync: the app's Google key, a "Desktop app" OAuth client of the AniTenshi Google Cloud
-      # project. It isn't in the source code: it comes from repository secrets, either the two values
-      # GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET or the downloaded JSON as GOOGLE_CLIENT_SECRETS.
-      # Without them Google Drive sign-in just says it isn't set up.
-      - name: Add Google Drive key
-        env:
-          GOOGLE_CLIENT_SECRETS: ${{ secrets.GOOGLE_CLIENT_SECRETS }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-        run: |
-          python3 - <<'PY'
-          import json, os
-          path = "app/src/main/assets/client_secrets.json"
-          raw = os.environ.get("GOOGLE_CLIENT_SECRETS", "").strip()
-          cid = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
-          secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
-          if raw:
-              data = json.loads(raw)
-          elif cid and secret:
-              data = {"installed": {
-                  "client_id": cid,
-                  "client_secret": secret,
-                  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                  "token_uri": "https://oauth2.googleapis.com/token",
-                  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                  "redirect_uris": ["http://localhost"],
-              }}
-          else:
-              print("No Google key secrets: Google Drive stays off in this build")
-              raise SystemExit(0)
-          client = data.get("installed") or {}
-          assert client.get("client_id", "").endswith(".apps.googleusercontent.com"), "client ID looks wrong"
-          assert client.get("client_secret"), "not a Desktop app OAuth client (no client secret)"
-          with open(path, "w") as f:
-              json.dump(data, f)
-          print("Google Drive key added")
-          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
-              summary.write("Google Drive: key added to this build\n")
-          PY
-
       - name: Build app
         # The in-app updater checks this repository's latest release.
         run: ./gradlew assembleRelease -Penable-updater
@@ -133,6 +93,18 @@ jobs:
               "${UNSIGNED}"
             "${APKSIGNER}" verify "${OUT}/anitenshi-${abi}.apk"
           done
+
+          # Google Drive sign-in: Google recognises the app by its package name and this certificate's SHA-1
+          # (the "Android" OAuth client of the AniTenshi Google Cloud project). No Google key is in the build.
+          # A different fingerprint here means Drive sign-in stops working until the client is updated.
+          EXPECTED_SHA1="17b684214bd95a7a8699477f830c16c9f2b5c8b9"
+          CERTS="$("${APKSIGNER}" verify --print-certs "${OUT}/anitenshi-universal.apk" | grep -i "SHA-1 digest" || true)"
+          echo "${CERTS}"
+          if echo "${CERTS}" | grep -qi "${EXPECTED_SHA1}"; then
+            echo "Google Drive: signing certificate matches the one registered with Google" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "::warning::Signing certificate SHA-1 is not ${EXPECTED_SHA1}: Google Drive sign-in will not work"
+          fi
 
       - name: Upload APKs
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

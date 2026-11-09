@@ -1,20 +1,22 @@
 package eu.kanade.tachiyomi.data.sync.service
 
-import android.app.Activity
+import android.accounts.Account
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import com.google.api.client.auth.oauth2.TokenResponseException
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
-import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse
-import com.google.api.client.http.GenericUrl
+import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.AuthorizationResult
+import com.google.android.gms.auth.api.identity.ClearTokenRequest
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.auth.api.identity.RevokeAccessRequest
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.common.api.Scope
+import com.google.android.gms.tasks.Task
+import com.google.api.client.http.HttpRequestInitializer
+import com.google.api.client.http.HttpResponseException
 import com.google.api.client.http.InputStreamContent
-import com.google.api.client.http.UrlEncodedContent
 import com.google.api.client.http.javanet.NetHttpTransport
-import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
@@ -22,6 +24,7 @@ import com.google.api.services.drive.model.File
 import eu.kanade.domain.sync.SyncPreferences
 import eu.kanade.tachiyomi.data.backup.models.Backup
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority
@@ -33,11 +36,13 @@ import tachiyomi.i18n.MR
 import tachiyomi.i18n.tail.TLMR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import java.io.IOException
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+import java.net.ConnectException
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class GoogleDriveSyncService(context: Context, json: Json, syncPreferences: SyncPreferences) : SyncService(
     context,
@@ -67,6 +72,10 @@ class GoogleDriveSyncService(context: Context, json: Json, syncPreferences: Sync
     private val googleDriveService = GoogleDriveService(context)
 
     private val protoBuf: ProtoBuf = Injekt.get()
+
+    private companion object {
+        const val HTTP_UNAUTHORIZED = 401
+    }
 
     @Suppress("ReturnCount", "TooGenericExceptionCaught")
     override suspend fun doSync(syncData: SyncData): Backup? {
@@ -209,6 +218,16 @@ class GoogleDriveSyncService(context: Context, json: Json, syncPreferences: Sync
             logcat { "AppData folder file list: $fileList" }
 
             return fileList
+        } catch (e: HttpResponseException) {
+            if (e.statusCode == HTTP_UNAUTHORIZED) {
+                // AniTenshi: Drive refused the token (the app's access was removed in the Google account). That is
+                // not "no sync file yet": stop here instead of uploading over it, and drop the token so the next
+                // sync asks Google again.
+                googleDriveService.dropRefusedToken()
+                throw e
+            }
+            logcat(LogPriority.ERROR, throwable = e) { "Error no sync data found in appData folder" }
+            return mutableListOf()
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, throwable = e) { "Error no sync data found in appData folder" }
             return mutableListOf()
@@ -217,13 +236,18 @@ class GoogleDriveSyncService(context: Context, json: Json, syncPreferences: Sync
 
     @Suppress("TooGenericExceptionCaught")
     suspend fun deleteSyncDataFromGoogleDrive(): DeleteSyncDataStatus {
-        val drive = googleDriveService.driveService
+        // AniTenshi: ask for the access token first: the service has none until then
+        val drive = try {
+            googleDriveService.refreshToken()
+            googleDriveService.driveService
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, throwable = e) { "Google Drive service not initialized" }
+            null
+        }
 
         if (drive == null) {
-            logcat(LogPriority.ERROR) { "Google Drive service not initialized" }
             return DeleteSyncDataStatus.NOT_INITIALIZED
         }
-        googleDriveService.refreshToken()
 
         return withIOContext {
             try {
@@ -252,268 +276,164 @@ class GoogleDriveSyncService(context: Context, json: Json, syncPreferences: Sync
     }
 }
 
+/**
+ * AniTenshi: access to the person's Google Drive through Google Play services, the sign-in built into Android.
+ *
+ * The app holds no key and no long-lived token. Before each sync it asks Play services for a short-lived access
+ * token, which comes without any screen for as long as the person hasn't removed the app's access. Google recognises
+ * the app by its package name and signing certificate (the "Android" OAuth client of the Google Cloud project).
+ *
+ * It replaces the sign-in through the browser with a "Desktop app" client, which needed the client secret inside
+ * the APK.
+ */
 class GoogleDriveService(private val context: Context) {
     var driveService: Drive? = null
-    companion object {
-        const val REDIRECT_URI = "eu.kanade.google.oauth:/oauth2redirect"
-        private const val REVOKE_URL = "https://oauth2.googleapis.com/revoke"
+        private set
 
-        /**
-         * AniTenshi: true when the build has the app's Google key (client_secrets.json). It isn't in the
-         * source code, so without it signing in to Google Drive crashed the app.
-         */
-        fun isConfigured(context: Context): Boolean =
-            runCatching { context.assets.open("client_secrets.json").close() }.isSuccess
-    }
+    private var accessToken: String? = null
+
     private val syncPreferences = Injekt.get<SyncPreferences>()
 
-    init {
-        initGoogleDriveService()
-    }
-
     /**
-     * Initializes the Google Drive service by obtaining the access token and refresh token from the SyncPreferences
-     * and setting up the service using the obtained tokens.
+     * Asks Play services for access to Drive. The answer either carries an access token (access was given before,
+     * nothing to show) or a screen to open ([AuthorizationResult.getPendingIntent]) where the person picks the
+     * account and allows it.
      */
-    private fun initGoogleDriveService() {
-        val accessToken = syncPreferences.googleDriveAccessToken().get()
-        val refreshToken = syncPreferences.googleDriveRefreshToken().get()
-
-        if (accessToken == "" || refreshToken == "") {
-            driveService = null
-            return
+    suspend fun authorize(): AuthorizationResult {
+        val request = AuthorizationRequest.builder().setRequestedScopes(SCOPES)
+        val account = syncPreferences.googleDriveAccount().get()
+        if (account.isNotBlank()) {
+            // Same account as when connecting, also on phones with several Google accounts
+            request.setAccount(Account(account, GOOGLE_ACCOUNT_TYPE))
         }
-
-        setupGoogleDriveService(accessToken, refreshToken)
+        return Identity.getAuthorizationClient(context).authorize(request.build()).await()
+            ?: error("Google Play services gave no authorization result")
     }
 
     /**
-     * Launches an Intent to open the user's default browser for Google Drive sign-in.
-     * The Intent carries the authorization URL, which prompts the user to sign in
-     * and grant the application permission to access their Google Drive account.
-     * @return An Intent configured to launch a browser for Google Drive OAuth sign-in.
+     * Finishes a sign-in with the access [token] Play services gave: checks it against Drive, notes which account
+     * it is (shown in the settings, and asked for again at the next syncs) and marks Drive as connected.
+     * Throws when Drive refuses the token.
      */
-    fun getSignInIntent(): Intent {
-        val authorizationUrl = generateAuthorizationUrl()
-
-        return Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse(authorizationUrl)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+    suspend fun connect(token: String) = withIOContext {
+        setupGoogleDriveService(token)
+        val email = driveService?.about()?.get()?.setFields("user(emailAddress)")?.execute()?.user?.emailAddress
+        syncPreferences.googleDriveAccount().set(email.orEmpty())
+        syncPreferences.googleDriveConnected().set(true)
     }
 
     /**
-     * Generates the authorization URL required for the user to grant the application
-     * permission to access their Google Drive account.
-     * Sets the approval prompt to "force" to ensure that the user is always prompted to grant access,
-     * even if they have previously granted access.
-     * @return The authorization URL.
+     * Disconnects this device from Google Drive: asks Google to drop the app's access (best effort) and forgets the
+     * connection. The data already on Drive stays there.
      */
-    @Suppress("TooGenericExceptionThrown")
-    private fun generateAuthorizationUrl(): String = authorizationUrl(REDIRECT_URI, state = null)
-
-    /**
-     * AniTenshi: the Google consent page URL for [redirectUri] (the loopback address of
-     * [GoogleDriveLoopbackSignIn]), carrying [state] to check the answer belongs to this request.
-     */
-    fun authorizationUrl(redirectUri: String, state: String?): String {
-        val jsonFactory: JsonFactory = JacksonFactory.getDefaultInstance()
-        val secrets = GoogleClientSecrets.load(
-            jsonFactory,
-            context.assets.open("client_secrets.json").reader(),
-        )
-
-        val flow = GoogleAuthorizationCodeFlow.Builder(
-            NetHttpTransport(),
-            jsonFactory,
-            secrets,
-            listOf(DriveScopes.DRIVE_FILE, DriveScopes.DRIVE_APPDATA),
-        ).setAccessType("offline").build()
-
-        return flow.newAuthorizationUrl()
-            .setRedirectUri(redirectUri)
-            .setApprovalPrompt("force")
-            .setState(state)
-            .build()
-    }
-
-    /**
-     * AniTenshi: exchanges the [authorizationCode] Google sent to [redirectUri] for the tokens and saves them.
-     * Throws when Google refuses it.
-     */
-    fun exchangeAuthorizationCode(authorizationCode: String, redirectUri: String) {
-        val jsonFactory: JsonFactory = JacksonFactory.getDefaultInstance()
-        val secrets = GoogleClientSecrets.load(
-            jsonFactory,
-            context.assets.open("client_secrets.json").reader(),
-        )
-        val tokenResponse: GoogleTokenResponse = GoogleAuthorizationCodeTokenRequest(
-            NetHttpTransport(),
-            jsonFactory,
-            secrets.installed.clientId,
-            secrets.installed.clientSecret,
-            authorizationCode,
-            redirectUri,
-        ).setGrantType("authorization_code").execute()
-
-        syncPreferences.googleDriveAccessToken().set(tokenResponse.accessToken)
-        syncPreferences.googleDriveRefreshToken().set(tokenResponse.refreshToken)
-        setupGoogleDriveService(tokenResponse.accessToken, tokenResponse.refreshToken)
-        initGoogleDriveService()
-    }
-
-    /**
-     * AniTenshi: disconnects this device from Google Drive: asks Google to drop the app's access (best effort,
-     * it may be offline) and forgets the tokens. The data already on Drive stays there.
-     */
-    suspend fun signOut() = withIOContext {
-        val token = syncPreferences.googleDriveRefreshToken().get()
-            .ifBlank { syncPreferences.googleDriveAccessToken().get() }
-        if (token.isNotBlank()) {
+    suspend fun signOut() {
+        val account = syncPreferences.googleDriveAccount().get()
+        if (account.isNotBlank()) {
             runCatching {
-                NetHttpTransport().createRequestFactory()
-                    .buildPostRequest(GenericUrl(REVOKE_URL), UrlEncodedContent(mapOf("token" to token)))
-                    .execute()
-                    .disconnect()
-            }.onFailure { e -> logcat(LogPriority.WARN, throwable = e) { "AniTenshi: Google token revoke" } }
+                val request = RevokeAccessRequest.builder()
+                    .setAccount(Account(account, GOOGLE_ACCOUNT_TYPE))
+                    .setScopes(SCOPES)
+                    .build()
+                Identity.getAuthorizationClient(context).revokeAccess(request).await()
+            }.onFailure { e -> logcat(LogPriority.WARN, throwable = e) { "AniTenshi: Google access revoke" } }
         }
-        syncPreferences.googleDriveAccessToken().delete()
-        syncPreferences.googleDriveRefreshToken().delete()
+        forgetConnection()
+    }
+
+    /**
+     * Gets a fresh access token before talking to Drive, without showing anything. Throws with a message for the
+     * person when it can't; when the app's access is gone, Drive is also marked as not connected, so automatic
+     * syncs stop until the person connects again.
+     */
+    @Suppress("TooGenericExceptionThrown", "TooGenericExceptionCaught")
+    internal suspend fun refreshToken() {
+        if (!syncPreferences.googleDriveConnected().get()) {
+            throw Exception(context.stringResource(TLMR.strings.google_drive_not_signed_in))
+        }
+        if (!isAvailable(context)) {
+            forgetConnection()
+            throw Exception(context.stringResource(TLMR.strings.anitenshi_google_drive_needs_play_services))
+        }
+
+        val result = try {
+            authorize()
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, throwable = e) { "AniTenshi: Google Drive authorization" }
+            throw when ((e as? ApiException)?.statusCode) {
+                // Seen as a network problem by the sync job, which doesn't bother the person with those
+                CommonStatusCodes.NETWORK_ERROR, CommonStatusCodes.TIMEOUT ->
+                    ConnectException(errorMessage(context, e)).apply { initCause(e) }
+                else -> Exception(errorMessage(context, e), e)
+            }
+        }
+
+        val token = result.accessToken
+        if (result.hasResolution() || token == null) {
+            // Play services would have to show its screen: the access was removed, or never given on this device
+            forgetConnection()
+            throw Exception(context.stringResource(TLMR.strings.anitenshi_google_drive_access_expired))
+        }
+        setupGoogleDriveService(token)
+    }
+
+    /**
+     * Drive refused the current token: it is dropped from Play services' cache (it keeps tokens for up to an hour),
+     * so the next sync asks Google again and finds out whether the access is really gone.
+     */
+    internal fun dropRefusedToken() {
+        val token = accessToken ?: return
+        accessToken = null
+        driveService = null
+        Identity.getAuthorizationClient(context)
+            .clearToken(ClearTokenRequest.builder().setToken(token).build())
+            .addOnFailureListener { e -> logcat(LogPriority.WARN, throwable = e) { "AniTenshi: Google token cache" } }
+    }
+
+    private fun forgetConnection() {
+        syncPreferences.googleDriveConnected().set(false)
+        syncPreferences.googleDriveAccount().delete()
+        accessToken = null
         driveService = null
     }
 
-    @Suppress("TooGenericExceptionThrown")
-    internal suspend fun refreshToken() = withIOContext {
-        val refreshToken = syncPreferences.googleDriveRefreshToken().get()
-
-        val jsonFactory: JsonFactory = JacksonFactory.getDefaultInstance()
-        val secrets = GoogleClientSecrets.load(
-            jsonFactory,
-            context.assets.open("client_secrets.json").reader(),
-        )
-
-        val credential = GoogleCredential.Builder()
-            .setJsonFactory(jsonFactory)
-            .setTransport(NetHttpTransport())
-            .setClientSecrets(secrets)
-            .build()
-
-        if (refreshToken == "") {
-            throw Exception(context.stringResource(TLMR.strings.google_drive_not_signed_in))
-        }
-
-        credential.refreshToken = refreshToken
-
-        try {
-            credential.refreshToken()
-            val newAccessToken = credential.accessToken
-            // Save the new access token
-            syncPreferences.googleDriveAccessToken().set(newAccessToken)
-            setupGoogleDriveService(newAccessToken, credential.refreshToken)
-        } catch (e: TokenResponseException) {
-            if (e.details.error == "invalid_grant") {
-                // The refresh token is invalid, prompt the user to sign in again
-                this@GoogleDriveService.logcat(LogPriority.ERROR, throwable = e) {
-                    "Refresh token is invalid, prompt user to sign in again"
-                }
-                // AniTenshi: say what to do instead of Google's raw "invalid_grant" answer
-                throw Exception(context.stringResource(TLMR.strings.anitenshi_google_drive_access_expired), e)
-            } else {
-                // Token refresh failed; handle this situation
-                this@GoogleDriveService.logcat(LogPriority.ERROR) { "Failed to refresh access token ${e.message}" }
-                this@GoogleDriveService.logcat(LogPriority.ERROR) { "Google Drive sync will be disabled" }
-                throw Exception(e.message ?: context.stringResource(MR.strings.unknown_error), e)
-            }
-        } catch (e: IOException) {
-            // Token refresh failed; handle this situation
-            this@GoogleDriveService.logcat(LogPriority.ERROR, throwable = e) { "Failed to refresh access token" }
-            this@GoogleDriveService.logcat(LogPriority.ERROR) { "Google Drive sync will be disabled" }
-            throw Exception(e.message ?: context.stringResource(MR.strings.unknown_error), e)
-        }
-    }
-
-    /**
-     * Sets up the Google Drive service using the provided access token and refresh token.
-     * @param accessToken The access token obtained from the SyncPreferences.
-     * @param refreshToken The refresh token obtained from the SyncPreferences.
-     */
-    private fun setupGoogleDriveService(accessToken: String, refreshToken: String) {
-        val jsonFactory: JsonFactory = JacksonFactory.getDefaultInstance()
-        val secrets = GoogleClientSecrets.load(
-            jsonFactory,
-            context.assets.open("client_secrets.json").reader(),
-        )
-
-        val credential = GoogleCredential.Builder()
-            .setJsonFactory(jsonFactory)
-            .setTransport(NetHttpTransport())
-            .setClientSecrets(secrets)
-            .build()
-
-        credential.accessToken = accessToken
-        credential.refreshToken = refreshToken
-
-        driveService = Drive.Builder(
-            NetHttpTransport(),
-            jsonFactory,
-            credential,
-        ).setApplicationName(context.stringResource(MR.strings.app_name))
+    /** Builds the Drive client that sends [token] with every request. */
+    private fun setupGoogleDriveService(token: String) {
+        accessToken = token
+        val withToken = HttpRequestInitializer { request -> request.headers.setAuthorization("Bearer $token") }
+        driveService = Drive.Builder(NetHttpTransport(), JacksonFactory.getDefaultInstance(), withToken)
+            .setApplicationName(context.stringResource(MR.strings.app_name))
             .build()
     }
 
-    /**
-     * Handles the authorization code returned after the user has granted the
-     * application permission to access their Google Drive account.
-     * It obtains the access token and refresh token using the authorization code,
-     * saves the tokens to the SyncPreferences,
-     * sets up the Google Drive service using the obtained tokens, and initializes the service.
-     * @param authorizationCode The authorization code obtained from the OAuthCallbackServer.
-     * @param activity The current activity.
-     * @param onSuccess A callback function to be called on successful authorization.
-     * @param onFailure A callback function to be called on authorization failure.
-     */
-    @Suppress("TooGenericExceptionCaught")
-    fun handleAuthorizationCode(
-        authorizationCode: String,
-        activity: Activity,
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit,
-    ) {
-        val jsonFactory: JsonFactory = JacksonFactory.getDefaultInstance()
-        val secrets = GoogleClientSecrets.load(
-            jsonFactory,
-            context.assets.open("client_secrets.json").reader(),
-        )
+    companion object {
+        private const val GOOGLE_ACCOUNT_TYPE = "com.google"
 
-        val tokenResponse: GoogleTokenResponse = GoogleAuthorizationCodeTokenRequest(
-            NetHttpTransport(),
-            jsonFactory,
-            secrets.installed.clientId,
-            secrets.installed.clientSecret,
-            authorizationCode,
-            REDIRECT_URI,
-        ).setGrantType("authorization_code").execute()
+        private val SCOPES = listOf(Scope(DriveScopes.DRIVE_FILE), Scope(DriveScopes.DRIVE_APPDATA))
 
-        try {
-            // Save the access token and refresh token
-            val accessToken = tokenResponse.accessToken
-            val refreshToken = tokenResponse.refreshToken
+        /** Google Play services are on this device and usable; without them there is no Google Drive sign-in. */
+        fun isAvailable(context: Context): Boolean =
+            GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
 
-            // Save the tokens to SyncPreferences
-            syncPreferences.googleDriveAccessToken().set(accessToken)
-            syncPreferences.googleDriveRefreshToken().set(refreshToken)
-
-            setupGoogleDriveService(accessToken, refreshToken)
-            initGoogleDriveService()
-
-            activity.runOnUiThread {
-                onSuccess()
-            }
-        } catch (e: Exception) {
-            logcat(LogPriority.ERROR, throwable = e) { "Failed to handle authorization code" }
-            activity.runOnUiThread {
-                onFailure(e.localizedMessage ?: "Unknown error")
+        /** What went wrong with the sign-in, in words for the person. */
+        fun errorMessage(context: Context, e: Throwable): String {
+            return when ((e as? ApiException)?.statusCode) {
+                CommonStatusCodes.CANCELED ->
+                    context.stringResource(TLMR.strings.anitenshi_google_drive_cancelled)
+                // The app (package name + signing certificate) isn't registered in the Google Cloud project
+                CommonStatusCodes.DEVELOPER_ERROR ->
+                    context.stringResource(TLMR.strings.anitenshi_google_drive_not_configured)
+                CommonStatusCodes.NETWORK_ERROR, CommonStatusCodes.TIMEOUT ->
+                    context.stringResource(TLMR.strings.anitenshi_google_drive_offline)
+                else ->
+                    context.stringResource(TLMR.strings.google_drive_login_failed, e.message ?: e.javaClass.simpleName)
             }
         }
     }
+}
+
+/** Waits for a Play services [Task] without blocking; null for tasks that carry no result. */
+private suspend fun <T> Task<T>.await(): T? = suspendCancellableCoroutine { continuation ->
+    addOnSuccessListener { result -> continuation.resume(result) }
+    addOnFailureListener { e -> continuation.resumeWithException(e) }
+    addOnCanceledListener { continuation.cancel() }
 }

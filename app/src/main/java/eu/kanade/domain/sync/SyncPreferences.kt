@@ -26,6 +26,23 @@ class SyncPreferences(
     fun syncInterval() = preferenceStore.getInt("sync_interval", 0)
     fun syncService() = preferenceStore.getInt("sync_service", 0)
 
+    /**
+     * AniTenshi: Google Drive is connected through Google Play services. The app keeps no token: this only says
+     * that the person signed in on this device (see GoogleDriveService).
+     */
+    fun googleDriveConnected() = preferenceStore.getBoolean(
+        Preference.appStateKey("google_drive_connected"),
+        false,
+    )
+
+    /** AniTenshi: the Google account Drive is connected with (its email), blank when unknown or not connected. */
+    fun googleDriveAccount() = preferenceStore.getString(
+        Preference.appStateKey("google_drive_account"),
+        "",
+    )
+
+    // AniTenshi: tokens of the old sign-in through the browser (up to 1.0.16). Only read by the migration to the
+    // Play services sign-in, which deletes them.
     fun googleDriveAccessToken() = preferenceStore.getString(
         Preference.appStateKey("google_drive_access_token"),
         "",
@@ -60,7 +77,7 @@ class SyncPreferences(
     fun isSyncReady(): Boolean {
         return when (syncService().get()) {
             SYNC_SERVICE_SYNCYOMI -> clientAPIKey().get().isNotBlank()
-            SYNC_SERVICE_GOOGLE_DRIVE -> googleDriveRefreshToken().get().isNotBlank()
+            SYNC_SERVICE_GOOGLE_DRIVE -> googleDriveConnected().get()
             else -> false
         }
     }

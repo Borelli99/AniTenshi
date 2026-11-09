@@ -38,9 +38,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.work.WorkInfo
+import eu.kanade.presentation.more.settings.screen.data.rememberGoogleDriveSignIn
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
-import eu.kanade.tachiyomi.data.sync.service.GoogleDriveLoopbackSignIn
-import eu.kanade.tachiyomi.data.sync.service.GoogleDriveService
 import eu.kanade.tachiyomi.util.system.toast
 import logcat.LogPriority
 import mihon.app.di.appGraph
@@ -64,7 +63,8 @@ internal class SyncStep(
     override fun Content() {
         val context = LocalContext.current
         val syncPreferences = remember { context.appGraph.syncPreferences }
-        val refreshToken by syncPreferences.googleDriveRefreshToken().collectPreferenceAsState()
+        val connected by syncPreferences.googleDriveConnected().collectPreferenceAsState()
+        val signInToGoogleDrive = rememberGoogleDriveSignIn()
         val restoreState by remember { BackupRestoreJob.fileRestoreState(context) }.collectAsState(initial = null)
 
         val chooseBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -86,14 +86,8 @@ internal class SyncStep(
             }
 
             DriveCard(
-                connected = refreshToken.isNotBlank(),
-                onConnect = {
-                    if (!GoogleDriveService.isConfigured(context)) {
-                        context.toast(TLMR.strings.anitenshi_google_drive_not_configured, duration = 5000)
-                    } else {
-                        GoogleDriveLoopbackSignIn.start(context)
-                    }
-                },
+                connected = connected,
+                onConnect = signInToGoogleDrive,
             )
 
             Row(

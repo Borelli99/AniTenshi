@@ -326,6 +326,8 @@ dependencies {
     implementation(libs.androidx.palette)
     implementation(libs.google.api.services.drive)
     implementation(libs.google.api.client.oauth)
+    // AniTenshi: Google Drive sign-in built into Android (no key inside the app)
+    implementation(libs.google.play.services.auth)
 
     // Logging
     implementation(libs.logcat)

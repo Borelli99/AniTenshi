@@ -13,6 +13,8 @@ data class SyncTriggerOptions(
     val syncOnEpisodeOpen: Boolean = false,
     // AniTenshi: sync before a library update started by hand (pull-to-refresh, "Update library")
     val syncOnLibraryUpdate: Boolean = true,
+    // AniTenshi: sync after a chapter is read or an episode watched (not more often than every 10 minutes)
+    val syncOnProgress: Boolean = true,
 ) {
     fun asBooleanArray() = booleanArrayOf(
         syncOnChapterRead,
@@ -22,6 +24,7 @@ data class SyncTriggerOptions(
         syncOnEpisodeSeen,
         syncOnEpisodeOpen,
         syncOnLibraryUpdate,
+        syncOnProgress,
     )
 
     fun anyEnabled() = syncOnChapterRead ||
@@ -30,12 +33,13 @@ data class SyncTriggerOptions(
         syncOnAppResume ||
         syncOnEpisodeSeen ||
         syncOnEpisodeOpen ||
-        syncOnLibraryUpdate
+        syncOnLibraryUpdate ||
+        syncOnProgress
 
     companion object {
         /**
-         * AniTenshi: only the triggers the app acts on. The chapter and episode ones were listed but
-         * nothing ever started a sync from them.
+         * AniTenshi: only the triggers the app acts on. The old chapter and episode ones were listed but
+         * nothing ever started a sync from them; [syncOnProgress] is the one that does.
          */
         val mainOptions = persistentListOf(
             Entry(
@@ -53,6 +57,11 @@ data class SyncTriggerOptions(
                 getter = SyncTriggerOptions::syncOnLibraryUpdate,
                 setter = { options, enabled -> options.copy(syncOnLibraryUpdate = enabled) },
             ),
+            Entry(
+                label = TLMR.strings.anitenshi_sync_on_progress,
+                getter = SyncTriggerOptions::syncOnProgress,
+                setter = { options, enabled -> options.copy(syncOnProgress = enabled) },
+            ),
         )
 
         fun fromBooleanArray(array: BooleanArray) = SyncTriggerOptions(
@@ -63,6 +72,7 @@ data class SyncTriggerOptions(
             syncOnEpisodeSeen = array[4],
             syncOnEpisodeOpen = array[5],
             syncOnLibraryUpdate = array.getOrElse(6) { true },
+            syncOnProgress = array.getOrElse(7) { true },
         )
     }
 

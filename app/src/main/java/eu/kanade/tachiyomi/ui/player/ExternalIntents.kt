@@ -21,6 +21,7 @@ import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.data.connections.discord.DiscordRPCService
 import eu.kanade.tachiyomi.data.connections.discord.PlayerData
 import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
+import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.data.track.AnimeTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.anime.isNsfw
@@ -543,6 +544,11 @@ class ExternalIntents {
             )
             if (trackPreferences.autoUpdateTrack.get() && currEp.seen) {
                 updateTrackEpisodeSeen(currEp.episodeNumber, anime)
+            }
+            // AniTenshi: watched to the end in the external player: the other devices get it too (quiet sync,
+            // not more often than every 10 minutes)
+            if (seen && !currEp.seen) {
+                SyncDataJob.startAfterProgress(Injekt.get<Application>())
             }
             if (seen) {
                 deleteEpisodeIfNeeded(currentEpisode, anime)

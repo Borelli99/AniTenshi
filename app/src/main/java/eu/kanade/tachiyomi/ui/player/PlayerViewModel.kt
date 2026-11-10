@@ -79,6 +79,7 @@ import eu.kanade.tachiyomi.data.download.anime.model.AnimeDownload
 import eu.kanade.tachiyomi.data.saver.Image
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
+import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.anilist.Anilist
 import eu.kanade.tachiyomi.data.track.myanimelist.MyAnimeList
@@ -1231,6 +1232,10 @@ class PlayerViewModel(
      * The episode id of the currently loaded episode. Used to restore from process kill.
      */
     private var episodeId = savedState.get<Long>("episode_id") ?: -1L
+
+    // AniTenshi: the episode that just became seen and still has to be saved before it is synced
+    @Volatile
+    private var episodeToSyncWhenSaved: Long? = null
         set(value) {
             savedState["episode_id"] = value
             field = value
@@ -1897,6 +1902,9 @@ class PlayerViewModel(
 
     private suspend fun updateEpisodeProgressOnComplete(currentEp: Episode) {
         if (isNetworkStreamSession) return
+        // AniTenshi: this runs every second once the episode counts as seen; only the moment it becomes seen
+        // asks for a sync, which starts when that is saved (see saveEpisodeProgress)
+        if (!currentEp.seen) episodeToSyncWhenSaved = currentEp.id
         currentEp.seen = true
         updateTrackEpisodeSeen(currentEp)
         deleteEpisodeIfNeeded(currentEp)
@@ -1996,6 +2004,14 @@ class PlayerViewModel(
                     totalSeconds = episode.total_seconds,
                 ),
             )
+
+            // AniTenshi: the episode just became seen and is saved: the other devices get it without waiting
+            // for the app to be closed (quiet sync, not more often than every 10 minutes)
+            val savedEpisodeId = episode.id
+            if (savedEpisodeId != null && savedEpisodeId == episodeToSyncWhenSaved) {
+                episodeToSyncWhenSaved = null
+                SyncDataJob.startAfterProgress(context)
+            }
         }
     }
 

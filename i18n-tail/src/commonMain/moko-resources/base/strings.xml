@@ -536,7 +536,7 @@
     <string name="anitenshi_google_drive_sign_out_message">Syncing stops on this device. What is already saved on Drive stays there, and you can connect again whenever you like.</string>
     <string name="anitenshi_google_drive_signed_out">Disconnected from Google Drive</string>
     <string name="anitenshi_sync_triggers">When to sync</string>
-    <string name="anitenshi_sync_triggers_summary">Opening the app, coming back to it, updating the library</string>
+    <string name="anitenshi_sync_triggers_summary">Opening the app, coming back to it, updating the library, finishing a chapter or an episode</string>
     <string name="anitenshi_sync_on_app_start">When you open or close the app</string>
     <string name="anitenshi_sync_on_app_resume">When you come back to the app (at most every 5 minutes)</string>
     <string name="anitenshi_sync_on_library_update">When you update the library (also pull-to-refresh)</string>
@@ -563,4 +563,15 @@
     <string name="anitenshi_sync_download_failed">Couldn\'t download the synced data: %s</string>
     <string name="anitenshi_google_drive_needs_play_services">Google Drive sync needs Google Play services on this device</string>
     <string name="anitenshi_google_drive_offline">Couldn\'t reach Google. Check your connection and try again.</string>
+    <string name="anitenshi_sync_status_title">Sync</string>
+    <string name="anitenshi_sync_status_off">Off · Tap to connect your devices</string>
+    <string name="anitenshi_sync_status_connect">Not connected yet: tap to finish setting it up</string>
+    <string name="anitenshi_sync_status_reconnect">Reconnect needed: tap to sign in to Google Drive again</string>
+    <string name="anitenshi_sync_status_running">Syncing…</string>
+    <string name="anitenshi_sync_status_synced">Synced %s</string>
+    <string name="anitenshi_sync_status_never">Not synced yet</string>
+    <string name="anitenshi_sync_status_failed">Last attempt failed · %s</string>
+    <string name="anitenshi_sync_last_error">Last attempt failed: %s</string>
+    <string name="anitenshi_sync_unreachable">Couldn\'t reach the sync service. Check your connection and try again.</string>
+    <string name="anitenshi_sync_on_progress">When you finish a chapter or an episode (at most every 10 minutes)</string>
 </resources>

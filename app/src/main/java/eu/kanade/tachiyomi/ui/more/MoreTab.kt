@@ -25,6 +25,8 @@ import eu.kanade.core.preference.asState
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.more.MoreScreen
+import eu.kanade.presentation.more.rememberSyncStatus
+import eu.kanade.presentation.more.settings.screen.SearchableSettings
 import eu.kanade.presentation.util.Tab
 import eu.kanade.presentation.util.rememberAnimatedVectorPainter
 import eu.kanade.tachiyomi.R
@@ -32,6 +34,7 @@ import eu.kanade.tachiyomi.data.connections.discord.DiscordRPCService
 import eu.kanade.tachiyomi.data.connections.discord.DiscordScreen
 import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadManager
+import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.ui.category.CategoriesTab
 import eu.kanade.tachiyomi.ui.download.DownloadsTab
 import eu.kanade.tachiyomi.ui.history.HistoriesTab
@@ -49,6 +52,7 @@ import mihon.feature.support.AniTenshiDonations
 import mihon.feature.support.SupportUsScreen
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.i18n.MR
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.i18n.stringResource
 
 data object MoreTab : Tab {
@@ -82,6 +86,9 @@ data object MoreTab : Tab {
         } else {
             null
         }
+        // AniTenshi: sync status row; tapping it opens the sync settings, scrolled to the sync part
+        val syncStatus = rememberSyncStatus()
+        val syncSettingsKey = stringResource(TLMR.strings.pref_sync_service)
         val onClickSupport: (() -> Unit)? = if (AniTenshiDonations.links.isNotEmpty()) {
             { navigator.push(SupportUsScreen()) }
         } else {
@@ -105,6 +112,12 @@ data object MoreTab : Tab {
             onClickAbout = { navigator.push(SettingsScreen(SettingsScreen.Destination.About)) },
             navigateUp = navigateUp,
             onClickSupport = onClickSupport,
+            syncStatus = syncStatus,
+            onClickSync = {
+                SearchableSettings.highlightKey = syncSettingsKey
+                navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage))
+            },
+            onClickSyncNow = { SyncDataJob.startNow(context) },
         )
 
         LaunchedEffect(Unit) {

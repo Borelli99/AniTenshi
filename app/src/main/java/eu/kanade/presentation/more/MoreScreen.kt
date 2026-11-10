@@ -55,6 +55,10 @@ fun MoreScreen(
     navigateUp: (() -> Unit)? = null,
     /** AniTenshi: donation page; hidden while there are no donation links. */
     onClickSupport: (() -> Unit)? = null,
+    /** AniTenshi: the sync status row (see [SyncStatusRow]); tapping it opens the sync settings. */
+    syncStatus: SyncStatus = SyncStatus.Off,
+    onClickSync: () -> Unit = {},
+    onClickSyncNow: () -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
 
@@ -138,6 +142,14 @@ fun MoreScreen(
                     },
                     icon = MaterialSymbols.Rounded.Download,
                     onPreferenceClick = onClickDownloadQueue,
+                )
+            }
+            // AniTenshi: automatic syncs are quiet; this row says when the last one was and when something is wrong
+            item {
+                SyncStatusRow(
+                    status = syncStatus,
+                    onClick = onClickSync,
+                    onClickSyncNow = onClickSyncNow,
                 )
             }
             item {

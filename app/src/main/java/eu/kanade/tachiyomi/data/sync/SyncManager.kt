@@ -49,6 +49,12 @@ import kotlin.system.measureTimeMillis
 import data.Chapter as DbChapter
 
 /**
+ * AniTenshi: the sync service couldn't do the sync, usually because it couldn't be reached. [alreadyNotified] is
+ * true when the service has shown its own error notification.
+ */
+class SyncNotDoneException(message: String, val alreadyNotified: Boolean) : Exception(message)
+
+/**
  * A manager to handle synchronization tasks in the app, such as updating
  * sync preferences and performing synchronization with a remote server.
  *
@@ -162,8 +168,13 @@ class SyncManager(
 
         if (remoteBackup == null) {
             logcat(LogPriority.DEBUG) { "Skip restore due to network issues" }
-            // should we call showSyncError?
-            return
+            // AniTenshi: the service couldn't do the sync (it logs why). This ended like a good sync, so nothing
+            // ever said it failed: "Sync now" showed nothing and the last-sync status couldn't tell.
+            throw SyncNotDoneException(
+                message = context.stringResource(TLMR.strings.anitenshi_sync_unreachable),
+                // SyncYomi shows its own error notification
+                alreadyNotified = syncService is SyncYomiSyncService,
+            )
         }
 
         addMissingExtensionStores(local = backup, remote = remoteBackup)

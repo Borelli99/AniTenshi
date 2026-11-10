@@ -35,6 +35,7 @@ import eu.kanade.tachiyomi.data.download.manga.model.MangaDownload
 import eu.kanade.tachiyomi.data.saver.Image
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
+import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.source.MangaSource
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -710,6 +711,10 @@ class ReaderViewModel(
                         lastPageRead = readerChapter.chapter.last_page_read.toLong()
                     },
                 )
+
+                // AniTenshi: the chapter is read and saved: the other devices get it without waiting for the
+                // app to be closed (quiet sync, not more often than every 10 minutes)
+                if (onComplete) SyncDataJob.startAfterProgress(context)
             }
         }
     }

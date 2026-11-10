@@ -453,7 +453,7 @@
   <string name="anitenshi_google_drive_sign_out_message">La sincronizzazione si ferma su questo dispositivo. Quello che è già su Drive resta lì e puoi riconnetterti quando vuoi.</string>
   <string name="anitenshi_google_drive_signed_out">Disconnesso da Google Drive</string>
   <string name="anitenshi_sync_triggers">Quando sincronizzare</string>
-  <string name="anitenshi_sync_triggers_summary">All\'apertura dell\'app, al ritorno nell\'app, all\'aggiornamento della libreria</string>
+  <string name="anitenshi_sync_triggers_summary">All\'apertura dell\'app, al ritorno nell\'app, all\'aggiornamento della libreria, a fine capitolo o episodio</string>
   <string name="anitenshi_sync_on_app_start">Quando apri o chiudi l\'app</string>
   <string name="anitenshi_sync_on_app_resume">Quando torni nell\'app (al massimo ogni 5 minuti)</string>
   <string name="anitenshi_sync_on_library_update">Quando aggiorni la libreria (anche con lo swipe verso il basso)</string>
@@ -480,4 +480,15 @@
   <string name="anitenshi_sync_download_failed">Impossibile scaricare i dati sincronizzati: %s</string>
   <string name="anitenshi_google_drive_needs_play_services">Per sincronizzare con Google Drive servono i servizi Google Play su questo dispositivo</string>
   <string name="anitenshi_google_drive_offline">Impossibile contattare Google. Controlla la connessione e riprova.</string>
+  <string name="anitenshi_sync_status_title">Sincronizzazione</string>
+  <string name="anitenshi_sync_status_off">Non attiva · Tocca per collegare i tuoi dispositivi</string>
+  <string name="anitenshi_sync_status_connect">Da collegare: tocca per completare la configurazione</string>
+  <string name="anitenshi_sync_status_reconnect">Da ricollegare: tocca per accedere di nuovo a Google Drive</string>
+  <string name="anitenshi_sync_status_running">In corso…</string>
+  <string name="anitenshi_sync_status_synced">Aggiornata %s</string>
+  <string name="anitenshi_sync_status_never">Non ancora sincronizzata</string>
+  <string name="anitenshi_sync_status_failed">Ultimo tentativo non riuscito · %s</string>
+  <string name="anitenshi_sync_last_error">Ultimo tentativo non riuscito: %s</string>
+  <string name="anitenshi_sync_unreachable">Impossibile raggiungere il servizio di sincronizzazione. Controlla la connessione e riprova.</string>
+  <string name="anitenshi_sync_on_progress">Quando finisci un capitolo o un episodio (al massimo ogni 10 minuti)</string>
 </resources>

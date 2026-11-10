@@ -776,10 +776,11 @@ object SettingsDataScreen : SearchableSettings {
         val context = LocalContext.current
         val syncIntervalPref = syncPreferences.syncInterval()
         val lastSync by syncPreferences.lastSyncTimestamp().collectAsState()
+        val lastSyncError by syncPreferences.lastSyncError().collectAsState()
 
         return Preference.PreferenceGroup(
             title = stringResource(TLMR.strings.pref_sync_automatic_category),
-            preferenceItems = listOf(
+            preferenceItems = listOfNotNull(
                 Preference.PreferenceItem.ListPreference(
                     preference = syncIntervalPref,
                     title = stringResource(TLMR.strings.pref_sync_interval),
@@ -802,6 +803,12 @@ object SettingsDataScreen : SearchableSettings {
                 Preference.PreferenceItem.InfoPreference(
                     stringResource(TLMR.strings.last_synchronization, relativeTimeSpanString(lastSync)),
                 ),
+                // AniTenshi: why the latest sync failed; automatic syncs fail quietly, so it's said here
+                lastSyncError.takeIf { it.isNotBlank() }?.let { reason ->
+                    Preference.PreferenceItem.InfoPreference(
+                        stringResource(TLMR.strings.anitenshi_sync_last_error, reason),
+                    )
+                },
             ),
         )
     }

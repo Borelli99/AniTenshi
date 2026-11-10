@@ -21,6 +21,12 @@ class SyncPreferences(
     fun clientAPIKey() = preferenceStore.getString("sync_client_api_key", "")
     fun lastSyncTimestamp() = preferenceStore.getLong(Preference.appStateKey("last_sync_timestamp"), 0L)
 
+    /**
+     * AniTenshi: why the latest sync failed, blank when it went well. Automatic syncs fail quietly, so the
+     * status row in "More" and the sync settings show it.
+     */
+    fun lastSyncError() = preferenceStore.getString(Preference.appStateKey("last_sync_error"), "")
+
     fun lastSyncEtag() = preferenceStore.getString("sync_etag", "")
 
     fun syncInterval() = preferenceStore.getInt("sync_interval", 0)
@@ -123,6 +129,7 @@ class SyncPreferences(
             syncOnAppStart = preferenceStore.getBoolean("sync_on_app_start", true).get(),
             syncOnAppResume = preferenceStore.getBoolean("sync_on_app_resume", true).get(),
             syncOnLibraryUpdate = preferenceStore.getBoolean("sync_on_library_update", true).get(),
+            syncOnProgress = preferenceStore.getBoolean("sync_on_progress", true).get(),
 
             // Manga
             syncOnChapterRead = preferenceStore.getBoolean("sync_on_chapter_read", false).get(),
@@ -141,6 +148,8 @@ class SyncPreferences(
             .set(syncTriggerOptions.syncOnAppResume)
         preferenceStore.getBoolean("sync_on_library_update", true)
             .set(syncTriggerOptions.syncOnLibraryUpdate)
+        preferenceStore.getBoolean("sync_on_progress", true)
+            .set(syncTriggerOptions.syncOnProgress)
 
         // Manga
         preferenceStore.getBoolean("sync_on_chapter_read", false)

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -52,16 +53,21 @@ val LocalBottomNavPadding = compositionLocalOf { 0.dp }
 private val RingWidth = 3.dp
 private val RingGap = 4.dp
 
-/** Button sizes: a little larger on tablets. */
+/** Button sizes: a little larger on tablets, where the update badge is a little bigger too. */
 private class NavSizes(
     val side: Dp,
     val home: Dp,
     val sideIcon: Dp,
     val homeIcon: Dp,
+    /** Smallest width and height of the gold update badge. */
+    val badge: Dp,
 )
 
-private val PhoneSizes = NavSizes(side = 60.dp, home = 80.dp, sideIcon = 26.dp, homeIcon = 44.dp)
-private val TabletSizes = NavSizes(side = 72.dp, home = 96.dp, sideIcon = 31.dp, homeIcon = 53.dp)
+private val PhoneSizes = NavSizes(side = 60.dp, home = 80.dp, sideIcon = 26.dp, homeIcon = 44.dp, badge = 16.dp)
+private val TabletSizes = NavSizes(side = 72.dp, home = 96.dp, sideIcon = 31.dp, homeIcon = 53.dp, badge = 20.dp)
+
+/** How far the update badge sits in from the corner of its button's box, which puts it on the button's rim. */
+private val BadgeInset = 2.dp
 
 /** How far the side buttons slide under the Home button, as in the AniTenshi sketch. */
 private val SideOverlap = 8.dp
@@ -89,6 +95,11 @@ internal fun HomeNavButtons(
     // In a row the side buttons slide sideways towards Home; in a column (tablet held sideways) they slide vertically
     val firstShift = if (vertical) Modifier.offset(y = sideShift) else Modifier.offset(x = sideShift)
     val lastShift = if (vertical) Modifier.offset(y = -sideShift) else Modifier.offset(x = -sideShift)
+    // AniTenshi: the update badges sit on the outer rim of the side buttons, away from Home, which is drawn over
+    // them and used to cover part of the Anime one. In a row: top outer corners. In a column: top of the first
+    // button and bottom of the last, on the side of the content.
+    val animeBadgeAlignment = if (vertical) Alignment.TopEnd else Alignment.TopStart
+    val mangaBadgeAlignment = if (vertical) Alignment.BottomEnd else Alignment.TopEnd
 
     val buttons: @Composable () -> Unit = {
         NavCircle(
@@ -96,6 +107,8 @@ internal fun HomeNavButtons(
             diameter = sizes.side,
             label = stringResource(AYMR.strings.label_anime_library),
             badge = animeBadge,
+            badgeSize = sizes.badge,
+            badgeAlignment = animeBadgeAlignment,
             onClick = { onClick(AnimeLibraryTab) },
             modifier = Modifier
                 .zIndex(if (animeSelected) 3f else 1f)
@@ -113,6 +126,8 @@ internal fun HomeNavButtons(
             diameter = sizes.home,
             label = stringResource(MR.strings.label_home),
             badge = 0,
+            badgeSize = sizes.badge,
+            badgeAlignment = Alignment.TopEnd,
             onClick = { onClick(HomeTab) },
             modifier = Modifier.zIndex(if (homeSelected) 3f else 2f),
         ) {
@@ -129,6 +144,8 @@ internal fun HomeNavButtons(
             diameter = sizes.side,
             label = stringResource(AYMR.strings.label_manga_library),
             badge = mangaBadge,
+            badgeSize = sizes.badge,
+            badgeAlignment = mangaBadgeAlignment,
             onClick = { onClick(MangaLibraryTab) },
             modifier = Modifier
                 .zIndex(if (mangaSelected) 3f else 1f)
@@ -165,6 +182,8 @@ private fun NavCircle(
     diameter: Dp,
     label: String,
     badge: Int,
+    badgeSize: Dp,
+    badgeAlignment: Alignment,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: @Composable () -> Unit,
@@ -208,14 +227,23 @@ private fun NavCircle(
             }
         }
         if (badge > 0) {
+            // In from the corner it is aligned to, so it sits on the rim of the circle
+            val insetX = if (badgeAlignment == Alignment.TopStart) BadgeInset else -BadgeInset
+            val insetY = if (badgeAlignment == Alignment.BottomEnd) -BadgeInset else BadgeInset
+            val large = badgeSize > PhoneSizes.badge
             Badge(
                 containerColor = AniTenshiPalette.Gold,
                 contentColor = AniTenshiPalette.Navy,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-2).dp, y = 2.dp),
+                    .align(badgeAlignment)
+                    .offset(x = insetX, y = insetY)
+                    .defaultMinSize(minWidth = badgeSize, minHeight = badgeSize),
             ) {
-                Text(text = badge.toString())
+                if (large) {
+                    Text(text = badge.toString(), style = MaterialTheme.typography.labelMedium)
+                } else {
+                    Text(text = badge.toString())
+                }
             }
         }
     }

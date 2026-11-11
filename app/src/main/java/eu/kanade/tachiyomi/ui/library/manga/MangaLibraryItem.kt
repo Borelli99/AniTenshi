@@ -20,5 +20,7 @@ class MangaLibraryItem(
         val unreadCount: Long,
         val isLocal: Boolean,
         val sourceLanguage: String,
+        // AniTenshi: the manga's extension isn't installed (always shown, it isn't a preference)
+        val isMissingExtension: Boolean = false,
     )
 }

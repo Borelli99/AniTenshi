@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.PersonOutline
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Close
@@ -86,6 +85,7 @@ import coil3.request.crossfade
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.presentation.entries.components.DotSeparatorText
 import eu.kanade.presentation.entries.components.ItemCover
+import eu.kanade.presentation.entries.components.MissingExtensionSourceRow
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.animesource.AnimeSource
 import eu.kanade.tachiyomi.animesource.model.SAnime
@@ -648,29 +648,30 @@ private fun ColumnScope.AnimeContentInfo(
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
             )
-            DotSeparatorText()
-            if (isStubSource) {
-                Icon(
-                    imageVector = Icons.Filled.Warning,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(end = 4.dp)
-                        .size(16.dp),
-                    tint = MaterialTheme.colorScheme.error,
+            // AniTenshi: a source whose extension isn't installed gets a line of its own, below
+            if (!isStubSource) {
+                DotSeparatorText()
+                Text(
+                    text = source.getNameForAnimeInfo(),
+                    modifier = Modifier.clickableNoIndication {
+                        doSearch(
+                            source.query(),
+                            false,
+                        )
+                    },
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                 )
             }
-            Text(
-                text = source.getNameForAnimeInfo(),
-                modifier = Modifier.clickableNoIndication {
-                    doSearch(
-                        source.query(),
-                        false,
-                    )
-                },
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
         }
+    }
+
+    if (isStubSource) {
+        Spacer(modifier = Modifier.height(2.dp))
+        MissingExtensionSourceRow(
+            fallbackName = source.name,
+            onFallbackClick = { doSearch(source.query(), false) },
+        )
     }
 }
 

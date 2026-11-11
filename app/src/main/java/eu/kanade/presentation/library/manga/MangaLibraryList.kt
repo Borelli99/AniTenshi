@@ -12,6 +12,7 @@ import eu.kanade.presentation.library.components.DownloadsBadge
 import eu.kanade.presentation.library.components.EntryListItem
 import eu.kanade.presentation.library.components.GlobalSearchItem
 import eu.kanade.presentation.library.components.LanguageBadge
+import eu.kanade.presentation.library.components.MissingExtensionBadge
 import eu.kanade.presentation.library.components.UnviewedBadge
 import eu.kanade.tachiyomi.ui.library.manga.MangaLibraryItem
 import tachiyomi.domain.entries.manga.model.MangaCover
@@ -64,6 +65,7 @@ internal fun MangaLibraryList(
                 badge = {
                     DownloadsBadge(count = libraryItem.badges.downloadCount)
                     UnviewedBadge(count = libraryItem.badges.unreadCount)
+                    MissingExtensionBadge(isMissing = libraryItem.badges.isMissingExtension)
                     LanguageBadge(
                         isLocal = libraryItem.badges.isLocal,
                         sourceLanguage = libraryItem.badges.sourceLanguage,

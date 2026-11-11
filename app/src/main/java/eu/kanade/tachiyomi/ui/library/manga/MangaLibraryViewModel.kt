@@ -80,6 +80,7 @@ import tachiyomi.domain.library.manga.model.MangaLibrarySort
 import tachiyomi.domain.library.manga.model.sort
 import tachiyomi.domain.library.model.LibraryDisplayMode
 import tachiyomi.domain.library.service.LibraryPreferences
+import tachiyomi.domain.source.manga.model.StubMangaSource
 import tachiyomi.domain.source.manga.service.MangaSourceManager
 import tachiyomi.domain.track.manga.interactor.GetMangaTracks
 import tachiyomi.domain.track.manga.interactor.GetTracksPerManga
@@ -435,9 +436,12 @@ class MangaLibraryViewModel(
             getLibraryManga.subscribe(),
             getLibraryItemPreferencesFlow(),
             downloadCache.changes,
-        ) { libraryMangaList, prefs, _ ->
+            // AniTenshi: so that the missing-extension badge follows extensions being installed and removed
+            sourceManager.catalogueSources,
+        ) { libraryMangaList, prefs, _, _ ->
             libraryMangaList
                 .map { libraryManga ->
+                    val source = sourceManager.getOrStub(libraryManga.manga.source)
                     // Display mode based on user preference: take it from global library setting or category
                     MangaLibraryItem(
                         libraryManga = libraryManga,
@@ -467,6 +471,7 @@ class MangaLibraryViewModel(
                             } else {
                                 ""
                             },
+                            isMissingExtension = source is StubMangaSource,
                         ),
                     )
                 }

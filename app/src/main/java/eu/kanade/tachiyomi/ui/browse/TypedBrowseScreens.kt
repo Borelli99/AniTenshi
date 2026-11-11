@@ -4,6 +4,9 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -31,7 +34,11 @@ private const val TAB_COUNT = 2
  * Browse for anime only: sources, extensions and migration.
  * Opened from the + button of the anime library.
  */
-class AnimeBrowseScreen(private val toExtensions: Boolean = false) : Screen() {
+class AnimeBrowseScreen(
+    private val toExtensions: Boolean = false,
+    // AniTenshi: what to look for in the list when it opens, for a title whose extension isn't installed
+    private val extensionSearch: String? = null,
+) : Screen() {
 
     @Composable
     override fun Content() {
@@ -41,6 +48,15 @@ class AnimeBrowseScreen(private val toExtensions: Boolean = false) : Screen() {
         // Hoisted for the extensions tab's search bar
         val extensionsViewModel = metroViewModel<AnimeExtensionsViewModel>()
         val extensionsSearchQuery by extensionsViewModel.searchQuery.collectAsStateWithLifecycle()
+
+        // Only the first time: afterwards the search bar is the person's
+        var extensionSearchDone by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            if (!extensionSearchDone && !extensionSearch.isNullOrBlank()) {
+                extensionsViewModel.search(extensionSearch)
+            }
+            extensionSearchDone = true
+        }
 
         // Extensions now live on the sources page, so [toExtensions] opens it as well
         val state = rememberPagerState(initialPage = TAB_SOURCES) { TAB_COUNT }
@@ -72,7 +88,11 @@ class AnimeBrowseScreen(private val toExtensions: Boolean = false) : Screen() {
  * Browse for manga only: sources, extensions and migration.
  * Opened from the + button of the manga library.
  */
-class MangaBrowseScreen(private val toExtensions: Boolean = false) : Screen() {
+class MangaBrowseScreen(
+    private val toExtensions: Boolean = false,
+    // AniTenshi: what to look for in the list when it opens, for a title whose extension isn't installed
+    private val extensionSearch: String? = null,
+) : Screen() {
 
     @Composable
     override fun Content() {
@@ -82,6 +102,15 @@ class MangaBrowseScreen(private val toExtensions: Boolean = false) : Screen() {
         // Hoisted for the extensions tab's search bar
         val extensionsViewModel = metroViewModel<MangaExtensionsViewModel>()
         val extensionsSearchQuery by extensionsViewModel.searchQuery.collectAsStateWithLifecycle()
+
+        // Only the first time: afterwards the search bar is the person's
+        var extensionSearchDone by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            if (!extensionSearchDone && !extensionSearch.isNullOrBlank()) {
+                extensionsViewModel.search(extensionSearch)
+            }
+            extensionSearchDone = true
+        }
 
         // Extensions now live on the sources page, so [toExtensions] opens it as well
         val state = rememberPagerState(initialPage = TAB_SOURCES) { TAB_COUNT }

@@ -70,5 +70,7 @@ class AnimeLibraryItem(
         val unseenCount: Long,
         val isLocal: Boolean,
         val sourceLanguage: String,
+        // AniTenshi: the anime's extension isn't installed (always shown, it isn't a preference)
+        val isMissingExtension: Boolean = false,
     )
 }

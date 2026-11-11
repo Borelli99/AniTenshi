@@ -491,4 +491,17 @@
   <string name="anitenshi_sync_last_error">Ultimo tentativo non riuscito: %s</string>
   <string name="anitenshi_sync_unreachable">Impossibile raggiungere il servizio di sincronizzazione. Controlla la connessione e riprova.</string>
   <string name="anitenshi_sync_on_progress">Quando finisci un capitolo o un episodio (al massimo ogni 10 minuti)</string>
+  <string name="anitenshi_extension_missing_title">Estensione non installata</string>
+  <string name="anitenshi_extension_missing_short">Estensione mancante</string>
+  <string name="anitenshi_extension_missing_manga">Per leggere i capitoli serve l\'estensione %s.</string>
+  <string name="anitenshi_extension_missing_manga_unknown">Per leggere i capitoli serve un\'estensione che non è installata.</string>
+  <string name="anitenshi_extension_missing_anime">Per guardare gli episodi serve l\'estensione %s.</string>
+  <string name="anitenshi_extension_missing_anime_unknown">Per guardare gli episodi serve un\'estensione che non è installata.</string>
+  <string name="anitenshi_extension_not_in_repos">Non è nelle tue repo: aggiungi la repo che la contiene.</string>
+  <string name="anitenshi_extension_not_loaded">È installata ma non è stata caricata: guarda il motivo nella lista delle estensioni.</string>
+  <string name="anitenshi_extension_install_failed">Installazione non riuscita. Riprova.</string>
+  <string name="anitenshi_extension_search">Cerca estensione</string>
+  <string name="anitenshi_extension_install">Installa %s</string>
+  <string name="anitenshi_extension_installing">Installazione in corso…</string>
+  <string name="anitenshi_extension_open_repos">Apri le repo</string>
 </resources>

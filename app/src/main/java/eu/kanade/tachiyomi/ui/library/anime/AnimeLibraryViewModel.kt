@@ -455,11 +455,25 @@ class AnimeLibraryViewModel(
      * Get the categories and all its anime from the database.
      */
     private fun getLibraryFlow(): Flow<AnimeLibraryMap> {
-        val animelibAnimesFlow = combine<List<LibraryAnime>, ItemPreferences, Unit, Map<Long, List<AnimeLibraryItem>>>(
+        // AniTenshi: the ids of the installed sources, for the missing-extension badge. Null until the extensions
+        // have loaded: before that the source manager is empty and every title would look like it lost its own.
+        val installedSourceIdsFlow = combine(sourceManager.isInitialized, sourceManager.sources) { ready, sources ->
+            if (ready) sources.mapTo(HashSet()) { it.id } else null
+        }
+            .distinctUntilChanged()
+
+        val animelibAnimesFlow = combine<
+            List<LibraryAnime>,
+            ItemPreferences,
+            Unit,
+            Set<Long>?,
+            Map<Long, List<AnimeLibraryItem>>,
+            >(
             getLibraryAnime.subscribe(),
             getAnimelibItemPreferencesFlow(),
             downloadCache.changes,
-        ) { animelibAnimeList, prefs, _ ->
+            installedSourceIdsFlow,
+        ) { animelibAnimeList, prefs, _, installedSourceIds ->
             animelibAnimeList
                 .map { animelibAnime ->
                     // Display mode based on user preference: take it from global library setting or category
@@ -489,6 +503,8 @@ class AnimeLibraryViewModel(
                             } else {
                                 ""
                             },
+                            isMissingExtension = installedSourceIds != null &&
+                                animelibAnime.anime.source !in installedSourceIds,
                         ),
                     )
                 }

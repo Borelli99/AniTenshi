@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +32,9 @@ import eu.kanade.presentation.category.components.ChangeCategoryDialog
 import eu.kanade.presentation.components.NavigatorAdaptiveSheet
 import eu.kanade.presentation.entries.EditCoverAction
 import eu.kanade.presentation.entries.components.DeleteItemsDialog
+import eu.kanade.presentation.entries.components.LocalMissingExtension
+import eu.kanade.presentation.entries.components.MissingExtensionDialog
+import eu.kanade.presentation.entries.components.MissingExtensionUi
 import eu.kanade.presentation.entries.components.SetDateDialog
 import eu.kanade.presentation.entries.components.SetIntervalDialog
 import eu.kanade.presentation.entries.manga.ChapterSettingsDialog
@@ -38,6 +42,7 @@ import eu.kanade.presentation.entries.manga.DuplicateMangaDialog
 import eu.kanade.presentation.entries.manga.MangaScreen
 import eu.kanade.presentation.entries.manga.components.MangaCoverDialog
 import eu.kanade.presentation.entries.manga.components.ScanlatorFilterDialog
+import eu.kanade.presentation.more.settings.screen.browse.ExtensionStoresScreen
 import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.AssistContentScreen
 import eu.kanade.presentation.util.Screen
@@ -45,6 +50,7 @@ import eu.kanade.presentation.util.isTabletUi
 import eu.kanade.tachiyomi.source.MangaSource
 import eu.kanade.tachiyomi.source.manga.isLocalOrStub
 import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.ui.browse.MangaBrowseScreen
 import eu.kanade.tachiyomi.ui.browse.manga.migration.search.MigrateMangaDialog
 import eu.kanade.tachiyomi.ui.browse.manga.migration.search.MigrateMangaDialogScreenModel
 import eu.kanade.tachiyomi.ui.browse.manga.source.browse.BrowseMangaSourceScreen
@@ -98,7 +104,8 @@ class MangaScreen(
         }
 
         val successState = state as MangaViewModel.State.Success
-        val isHttpSource = remember { successState.source is HttpSource }
+        // AniTenshi: keyed, the source changes when its missing extension gets installed
+        val isHttpSource = remember(successState.source) { successState.source is HttpSource }
 
         LaunchedEffect(successState.manga, viewModel.source) {
             if (isHttpSource) {
@@ -111,6 +118,33 @@ class MangaScreen(
                 }
             }
         }
+
+        // AniTenshi: the manga's extension isn't installed -->
+        val missingExtension by viewModel.missingExtension.collectAsStateWithLifecycle()
+        val sourceId = successState.manga.source
+        val missingExtensionUi = remember(missingExtension, sourceId) {
+            missingExtension?.let { missing ->
+                MissingExtensionUi(
+                    state = missing,
+                    onSearch = {
+                        navigator.push(MangaBrowseScreen(extensionSearch = missing.searchQuery(sourceId)))
+                    },
+                    onInstall = viewModel::installMissingExtension,
+                    onOpenRepos = { navigator.push(ExtensionStoresScreen(isManga = true)) },
+                )
+            }
+        }
+        var showMissingExtensionDialog by remember { mutableStateOf(false) }
+        LaunchedEffect(missingExtension == null) {
+            if (missingExtension == null) showMissingExtensionDialog = false
+        }
+        // A chapter that isn't downloaded can't be read without the extension: say so instead of failing
+        val canOpenChapter: (Chapter) -> Boolean = { chapter ->
+            val canOpen = missingExtension == null || viewModel.isChapterDownloaded(chapter)
+            if (!canOpen) showMissingExtensionDialog = true
+            canOpen
+        }
+        // <-- AniTenshi
 
         // KMK -->
         val showingRelatedMangasScreen = rememberSaveable { mutableStateOf(false) }
@@ -142,15 +176,26 @@ class MangaScreen(
                         showRelatedMangasScreen = { showingRelatedMangasScreen.value = true },
                         navigator = navigator,
                         scope = scope,
+                        canOpenChapter = canOpenChapter,
                     )
                 }
             }
         }
         TachiyomiTheme {
             // AniTenshi: entries always use the app theme, never colors taken from the cover
-            content()
+            CompositionLocalProvider(LocalMissingExtension provides missingExtensionUi) {
+                content()
+            }
         }
         // KMK <--
+
+        if (showMissingExtensionDialog && missingExtensionUi != null) {
+            MissingExtensionDialog(
+                ui = missingExtensionUi,
+                isAnime = false,
+                onDismissRequest = { showMissingExtensionDialog = false },
+            )
+        }
 
         var showScanlatorsDialog by remember { mutableStateOf(false) }
 
@@ -336,8 +381,11 @@ class MangaScreen(
         showRelatedMangasScreen: () -> Unit,
         navigator: Navigator,
         scope: CoroutineScope,
+        // AniTenshi: false when the chapter can't be opened (and the person has been told why)
+        canOpenChapter: (Chapter) -> Boolean = { true },
     ) {
-        val isHttpSource = remember { successState.source is HttpSource }
+        // AniTenshi: keyed, the source changes when its missing extension gets installed
+        val isHttpSource = remember(successState.source) { successState.source is HttpSource }
         val haptic = LocalHapticFeedback.current
 
         MangaScreen(
@@ -348,7 +396,7 @@ class MangaScreen(
             chapterSwipeStartAction = viewModel.chapterSwipeStartAction,
             chapterSwipeEndAction = viewModel.chapterSwipeEndAction,
             navigateUp = navigator::pop,
-            onChapterClicked = { openChapter(context, it) },
+            onChapterClicked = { if (canOpenChapter(it)) openChapter(context, it) },
             onDownloadChapter = viewModel::runChapterDownloadActions.takeIf { !successState.source.isLocalOrStub() },
             downloadProgressProvider = viewModel::getDownloadProgress,
             onAddToLibraryClicked = {
@@ -383,7 +431,10 @@ class MangaScreen(
             onTagSearch = { scope.launch { performGenreSearch(navigator, it, viewModel.source!!) } },
             onFilterButtonClicked = viewModel::showSettingsDialog,
             onRefresh = viewModel::fetchAllFromSource,
-            onContinueReading = { continueReading(context, viewModel.getNextUnreadChapter()) },
+            onContinueReading = {
+                val next = viewModel.getNextUnreadChapter()
+                if (next != null && canOpenChapter(next)) continueReading(context, next)
+            },
             onSearch = { query, global -> scope.launch { performSearch(navigator, query, global) } },
             onCoverClicked = viewModel::showCoverDialog,
             onShareClicked = { shareManga(context, viewModel.manga, viewModel.source) }.takeIf { isHttpSource },

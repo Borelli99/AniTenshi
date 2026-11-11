@@ -53,8 +53,12 @@ import eu.kanade.tachiyomi.data.download.manga.MangaDownloadManager
 import eu.kanade.tachiyomi.data.download.manga.model.MangaDownload
 import eu.kanade.tachiyomi.data.track.EnhancedMangaTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
+import eu.kanade.tachiyomi.extension.manga.MangaExtensionManager
+import eu.kanade.tachiyomi.extension.manga.model.MangaExtension
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.MangaSource
+import eu.kanade.tachiyomi.ui.entries.MissingExtensionFinder
+import eu.kanade.tachiyomi.ui.entries.MissingExtensionState
 import eu.kanade.tachiyomi.ui.entries.manga.RelatedManga.Companion.isLoading
 import eu.kanade.tachiyomi.ui.entries.manga.RelatedManga.Companion.removeDuplicates
 import eu.kanade.tachiyomi.ui.entries.manga.RelatedManga.Companion.sorted
@@ -160,6 +164,8 @@ class MangaViewModel(
     // KMK <--
     private val refreshTracks: RefreshMangaTracks,
     private val coverCache: MangaCoverCache,
+    // AniTenshi: to find and install the extension of a title that came without it
+    private val extensionManager: MangaExtensionManager,
 ) : ViewModel() {
 
     val state: StateFlow<State>
@@ -221,6 +227,43 @@ class MangaViewModel(
         }
     }
 
+    // AniTenshi: the manga's extension isn't installed (declared before init, which uses it) -->
+    private val missingExtensionFinder = MissingExtensionFinder<MangaExtension.Available>(
+        scope = viewModelScope,
+        installedSourcesChanges = sourceManager.catalogueSources,
+        isSourceInstalled = { sourceId -> sourceManager.get(sourceId) != null },
+        availableExtensions = extensionManager.availableExtensionsFlow,
+        loadAvailableExtensions = { extensionManager.findAvailableExtensions(quiet = true) },
+        isOffered = { extension ->
+            extension.store.indexUrl !in sourcePreferences.disabledRepos.get() &&
+                extension.contentWarning in sourcePreferences.enabledContentWarnings.get()
+        },
+        sourceNameIn = { extension, sourceId -> extension.sources.firstOrNull { it.id == sourceId }?.name },
+        extensionName = { extension -> extension.name },
+        installExtension = { extension -> extensionManager.installExtension(extension) },
+        onSourceInstalled = { onExtensionInstalled() },
+    )
+
+    /** Null when the manga's extension is installed. */
+    val missingExtension: StateFlow<MissingExtensionState?> = missingExtensionFinder.state
+
+    fun installMissingExtension() {
+        missingExtensionFinder.install()
+    }
+
+    private suspend fun onExtensionInstalled() {
+        val sourceId = manga?.source ?: return
+        val source = sourceManager.getOrStub(sourceId)
+        updateSuccessState { it.copy(source = source) }
+        fetchAllFromSource(manualFetch = false)
+    }
+
+    /** Whether [chapter] can be read without its extension. */
+    fun isChapterDownloaded(chapter: Chapter): Boolean {
+        return allChapters?.any { it.chapter.id == chapter.id && it.isDownloaded } == true
+    }
+    // <-- AniTenshi
+
     init {
         viewModelScope.launchIO {
             combine(
@@ -272,11 +315,13 @@ class MangaViewModel(
             val needRefreshInfo = !manga.initialized
             val needRefreshChapter = chapters.isEmpty()
 
+            val source = sourceManager.getOrStub(manga.source)
+
             // Show what we have earlier
             state.update {
                 State.Success(
                     manga = manga,
-                    source = sourceManager.getOrStub(manga.source),
+                    source = source,
                     isFromSource = isFromSource,
                     chapters = chapters,
                     availableScanlators = getAvailableScanlators.await(mangaId),
@@ -285,6 +330,9 @@ class MangaViewModel(
                     dialog = null,
                 )
             }
+
+            // AniTenshi: without its extension, look for it and wait for it
+            if (source is StubMangaSource) missingExtensionFinder.watch(manga.source, source.name)
 
             // Start observe tracking since it only needs mangaId
             observeTrackers()

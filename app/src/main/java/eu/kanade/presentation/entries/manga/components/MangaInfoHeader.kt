@@ -77,6 +77,7 @@ import com.mikepenz.markdown.utils.getUnescapedTextInNode
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.presentation.entries.components.DotSeparatorText
 import eu.kanade.presentation.entries.components.ItemCover
+import eu.kanade.presentation.entries.components.MissingExtensionSourceRow
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.source.MangaSource
 import eu.kanade.tachiyomi.source.manga.getNameForMangaInfo
@@ -102,7 +103,6 @@ import mihon.icons.materialsymbols.rounded.Person
 import mihon.icons.materialsymbols.rounded.Public
 import mihon.icons.materialsymbols.rounded.Schedule
 import mihon.icons.materialsymbols.rounded.Sync
-import mihon.icons.materialsymbols.rounded.Warning
 import mihon.icons.materialsymbols.roundedfilled.Favorite
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes
@@ -607,26 +607,27 @@ private fun ColumnScope.MangaContentInfo(
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
             )
-            DotSeparatorText()
-            if (isStubSource) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.Warning,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(end = 4.dp)
-                        .size(16.dp),
-                    tint = MaterialTheme.colorScheme.error,
+            // AniTenshi: a source whose extension isn't installed gets a line of its own, below
+            if (!isStubSource) {
+                DotSeparatorText()
+                Text(
+                    text = source.getNameForMangaInfo(),
+                    modifier = Modifier.clickableNoIndication {
+                        doSearch(source.query(), false)
+                    },
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                 )
             }
-            Text(
-                text = source.getNameForMangaInfo(),
-                modifier = Modifier.clickableNoIndication {
-                    doSearch(source.query(), false)
-                },
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
         }
+    }
+
+    if (isStubSource) {
+        Spacer(modifier = Modifier.height(2.dp))
+        MissingExtensionSourceRow(
+            fallbackName = source.name,
+            onFallbackClick = { doSearch(source.query(), false) },
+        )
     }
 }
 

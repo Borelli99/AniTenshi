@@ -83,11 +83,14 @@ import eu.kanade.presentation.entries.anime.components.ExpandableAnimeDescriptio
 import eu.kanade.presentation.entries.anime.components.NextEpisodeAiringListItem
 import eu.kanade.presentation.entries.anime.components.OutlinedButtonWithArrow
 import eu.kanade.presentation.entries.anime.components.RelatedAnimesRow
+import eu.kanade.presentation.entries.components.ENTRY_MISSING_EXTENSION_KEY
 import eu.kanade.presentation.entries.components.ENTRY_RESUME_BUTTON_KEY
 import eu.kanade.presentation.entries.components.EntryBottomActionMenu
 import eu.kanade.presentation.entries.components.EntryResumeButton
 import eu.kanade.presentation.entries.components.EntryToolbar
 import eu.kanade.presentation.entries.components.ItemHeader
+import eu.kanade.presentation.entries.components.LocalMissingExtension
+import eu.kanade.presentation.entries.components.MissingExtensionCard
 import eu.kanade.presentation.entries.components.MissingItemCountListItem
 import eu.kanade.presentation.util.formatEpisodeNumber
 import eu.kanade.tachiyomi.animesource.AnimeSource
@@ -450,6 +453,7 @@ private fun AnimeScreenSmallImpl(
 
     // AniTenshi: gold "Resume ep. N" button under the actions; the FAB only shows once it scrolls away
     val resumeInfo = rememberResumeInfo(state)
+    val missingExtension = LocalMissingExtension.current
     val hideFab by remember {
         derivedStateOf { itemListState.layoutInfo.visibleItemsInfo.any { it.key == ENTRY_RESUME_BUTTON_KEY } }
     }
@@ -606,8 +610,9 @@ private fun AnimeScreenSmallImpl(
                             isTabletUi = false,
                             appBarPadding = topPadding,
                             anime = state.anime,
-                            source = remember { state.source },
-                            isStubSource = remember { state.source is StubAnimeSource },
+                            // AniTenshi: not remembered, the source changes when its extension gets installed
+                            source = state.source,
+                            isStubSource = state.source is StubAnimeSource,
                             onCoverClick = onCoverClicked,
                             doSearch = onSearch,
                             modifier = Modifier.ignorePadding(offsetGridPaddingPx),
@@ -636,6 +641,21 @@ private fun AnimeScreenSmallImpl(
                             onEditCategory = onEditCategoryClicked,
                             modifier = Modifier.ignorePadding(offsetGridPaddingPx),
                         )
+                    }
+
+                    // AniTenshi: the extension isn't installed
+                    if (missingExtension != null) {
+                        item(
+                            key = ENTRY_MISSING_EXTENSION_KEY,
+                            contentType = ENTRY_MISSING_EXTENSION_KEY,
+                            span = { GridItemSpan(maxLineSpan) },
+                        ) {
+                            MissingExtensionCard(
+                                ui = missingExtension,
+                                isAnime = true,
+                                modifier = Modifier.ignorePadding(offsetGridPaddingPx),
+                            )
+                        }
                     }
 
                     if (resumeInfo != null && !isAnySelected) {
@@ -946,6 +966,7 @@ fun AnimeScreenLargeImpl(
 
     // AniTenshi: gold "Resume ep. N" button in the side panel, which is always in view
     val resumeInfo = rememberResumeInfo(state)
+    val missingExtension = LocalMissingExtension.current
     val hideFab = resumeInfo != null && !isAnySelected
 
     val insetPadding = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal).asPaddingValues()
@@ -1095,8 +1116,9 @@ fun AnimeScreenLargeImpl(
                                 isTabletUi = true,
                                 appBarPadding = contentPadding.calculateTopPadding(),
                                 anime = state.anime,
-                                source = remember { state.source },
-                                isStubSource = remember { state.source is StubAnimeSource },
+                                // AniTenshi: not remembered, the source changes when its extension gets installed
+                                source = state.source,
+                                isStubSource = state.source is StubAnimeSource,
                                 onCoverClick = onCoverClicked,
                                 doSearch = onSearch,
                             )
@@ -1115,6 +1137,10 @@ fun AnimeScreenLargeImpl(
                                 onEditIntervalClicked = onEditIntervalClicked,
                                 onEditCategory = onEditCategoryClicked,
                             )
+                            // AniTenshi: the extension isn't installed
+                            if (missingExtension != null) {
+                                MissingExtensionCard(ui = missingExtension, isAnime = true)
+                            }
                             if (resumeInfo != null && !isAnySelected) {
                                 EntryResumeButton(
                                     title = resumeInfo.title,

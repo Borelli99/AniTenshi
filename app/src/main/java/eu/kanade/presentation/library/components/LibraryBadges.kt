@@ -1,6 +1,8 @@
 package eu.kanade.presentation.library.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -47,6 +49,18 @@ internal fun LanguageBadge(
     }
 }
 
+/** AniTenshi: a warning triangle on the cover of a title whose extension isn't installed. */
+@Composable
+internal fun MissingExtensionBadge(isMissing: Boolean) {
+    if (isMissing) {
+        Badge(
+            imageVector = Icons.Outlined.WarningAmber,
+            color = MaterialTheme.colorScheme.error,
+            iconColor = MaterialTheme.colorScheme.onError,
+        )
+    }
+}
+
 @PreviewLightDark
 @Composable
 private fun BadgePreview() {
@@ -56,6 +70,7 @@ private fun BadgePreview() {
             UnviewedBadge(count = 10)
             LanguageBadge(isLocal = true, sourceLanguage = "EN")
             LanguageBadge(isLocal = false, sourceLanguage = "EN")
+            MissingExtensionBadge(isMissing = true)
         }
     }
 }

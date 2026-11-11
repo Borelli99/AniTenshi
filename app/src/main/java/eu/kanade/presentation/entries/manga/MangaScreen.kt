@@ -59,11 +59,14 @@ import eu.kanade.presentation.components.relativeDateTimeText
 import eu.kanade.presentation.entries.DownloadAction
 import eu.kanade.presentation.entries.EntryScreenItem
 import eu.kanade.presentation.entries.anime.components.OutlinedButtonWithArrow
+import eu.kanade.presentation.entries.components.ENTRY_MISSING_EXTENSION_KEY
 import eu.kanade.presentation.entries.components.ENTRY_RESUME_BUTTON_KEY
 import eu.kanade.presentation.entries.components.EntryBottomActionMenu
 import eu.kanade.presentation.entries.components.EntryResumeButton
 import eu.kanade.presentation.entries.components.EntryToolbar
 import eu.kanade.presentation.entries.components.ItemHeader
+import eu.kanade.presentation.entries.components.LocalMissingExtension
+import eu.kanade.presentation.entries.components.MissingExtensionCard
 import eu.kanade.presentation.entries.components.MissingItemCountListItem
 import eu.kanade.presentation.entries.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.entries.manga.components.ExpandableMangaDescription
@@ -352,6 +355,7 @@ private fun MangaScreenSmallImpl(
 
     // AniTenshi: gold "Resume ch. N" button under the actions; the FAB only shows once it scrolls away
     val resumeInfo = rememberResumeInfo(state)
+    val missingExtension = LocalMissingExtension.current
     val hideFab by remember {
         derivedStateOf { chapterListState.layoutInfo.visibleItemsInfo.any { it.key == ENTRY_RESUME_BUTTON_KEY } }
     }
@@ -488,8 +492,9 @@ private fun MangaScreenSmallImpl(
                             isTabletUi = false,
                             appBarPadding = topPadding,
                             manga = state.manga,
-                            source = remember { state.source },
-                            isStubSource = remember { state.source is StubMangaSource },
+                            // AniTenshi: not remembered, the source changes when its extension gets installed
+                            source = state.source,
+                            isStubSource = state.source is StubMangaSource,
                             onCoverClick = onCoverClicked,
                             doSearch = onSearch,
                         )
@@ -511,6 +516,16 @@ private fun MangaScreenSmallImpl(
                             onEditIntervalClicked = onEditIntervalClicked,
                             onEditCategory = onEditCategoryClicked,
                         )
+                    }
+
+                    // AniTenshi: the extension isn't installed
+                    if (missingExtension != null) {
+                        item(
+                            key = ENTRY_MISSING_EXTENSION_KEY,
+                            contentType = ENTRY_MISSING_EXTENSION_KEY,
+                        ) {
+                            MissingExtensionCard(ui = missingExtension, isAnime = false)
+                        }
                     }
 
                     if (resumeInfo != null && !isAnySelected) {
@@ -704,6 +719,7 @@ fun MangaScreenLargeImpl(
 
     // AniTenshi: gold "Resume ch. N" button in the side panel, which is always in view
     val resumeInfo = rememberResumeInfo(state)
+    val missingExtension = LocalMissingExtension.current
     val hideFab = resumeInfo != null && !isAnySelected
 
     // KMK -->
@@ -831,8 +847,9 @@ fun MangaScreenLargeImpl(
                             isTabletUi = true,
                             appBarPadding = contentPadding.calculateTopPadding(),
                             manga = state.manga,
-                            source = remember { state.source },
-                            isStubSource = remember { state.source is StubMangaSource },
+                            // AniTenshi: not remembered, the source changes when its extension gets installed
+                            source = state.source,
+                            isStubSource = state.source is StubMangaSource,
                             onCoverClick = onCoverClicked,
                             doSearch = onSearch,
                         )
@@ -848,6 +865,10 @@ fun MangaScreenLargeImpl(
                             onEditIntervalClicked = onEditIntervalClicked,
                             onEditCategory = onEditCategoryClicked,
                         )
+                        // AniTenshi: the extension isn't installed
+                        if (missingExtension != null) {
+                            MissingExtensionCard(ui = missingExtension, isAnime = false)
+                        }
                         if (resumeInfo != null && !isAnySelected) {
                             EntryResumeButton(
                                 title = resumeInfo.title,

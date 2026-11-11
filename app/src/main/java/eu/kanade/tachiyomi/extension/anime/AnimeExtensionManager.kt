@@ -207,13 +207,15 @@ class AnimeExtensionManager(
 
     /**
      * Finds the available extensions in the stores and updates [availableExtensionListFlow].
+     *
+     * AniTenshi: [quiet] is for when the person didn't ask for it, so they aren't told when it fails.
      */
-    suspend fun findAvailableExtensions() {
+    suspend fun findAvailableExtensions(quiet: Boolean = false) {
         val extensions: List<AnimeExtension.Available> = try {
             fetchExtensions()
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
-            withUIContext { context.toast(MR.strings.extension_api_error) }
+            if (!quiet) withUIContext { context.toast(MR.strings.extension_api_error) }
             return
         }
 

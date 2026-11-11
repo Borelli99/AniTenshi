@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -15,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -42,8 +44,12 @@ import eu.kanade.presentation.entries.anime.EpisodeSettingsDialog
 import eu.kanade.presentation.entries.anime.SeasonSettingsDialog
 import eu.kanade.presentation.entries.anime.components.AnimeImagesDialog
 import eu.kanade.presentation.entries.components.DeleteItemsDialog
+import eu.kanade.presentation.entries.components.LocalMissingExtension
+import eu.kanade.presentation.entries.components.MissingExtensionDialog
+import eu.kanade.presentation.entries.components.MissingExtensionUi
 import eu.kanade.presentation.entries.components.SetDateDialog
 import eu.kanade.presentation.entries.components.SetIntervalDialog
+import eu.kanade.presentation.more.settings.screen.browse.ExtensionStoresScreen
 import eu.kanade.presentation.more.settings.screen.player.PlayerSettingsGesturesScreen.SkipIntroLengthDialog
 import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.AssistContentScreen
@@ -56,6 +62,7 @@ import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.data.torrent.service.TorrentServerService
 import eu.kanade.tachiyomi.source.anime.isLocalOrStub
 import eu.kanade.tachiyomi.source.anime.isSourceForTorrents
+import eu.kanade.tachiyomi.ui.browse.AnimeBrowseScreen
 import eu.kanade.tachiyomi.ui.browse.anime.migration.anime.season.MigrateSeasonSelectScreen
 import eu.kanade.tachiyomi.ui.browse.anime.migration.search.MigrateAnimeDialog
 import eu.kanade.tachiyomi.ui.browse.anime.migration.search.MigrateAnimeDialogScreenModel
@@ -122,6 +129,34 @@ class AnimeScreen(
         }
 
         val successState = state as AnimeViewModel.State.Success
+
+        // AniTenshi: the anime's extension isn't installed -->
+        val missingExtension by viewModel.missingExtension.collectAsStateWithLifecycle()
+        val sourceId = successState.anime.source
+        val missingExtensionUi = remember(missingExtension, sourceId) {
+            missingExtension?.let { missing ->
+                MissingExtensionUi(
+                    state = missing,
+                    onSearch = {
+                        navigator.push(AnimeBrowseScreen(extensionSearch = missing.searchQuery(sourceId)))
+                    },
+                    onInstall = viewModel::installMissingExtension,
+                    onOpenRepos = { navigator.push(ExtensionStoresScreen(isManga = false)) },
+                )
+            }
+        }
+        var showMissingExtensionDialog by remember { mutableStateOf(false) }
+        LaunchedEffect(missingExtension == null) {
+            if (missingExtension == null) showMissingExtensionDialog = false
+        }
+        // An episode that isn't downloaded can't be watched without the extension: say so instead of failing
+        val canOpenEpisode: (Episode) -> Boolean = { episode ->
+            val canOpen = missingExtension == null || viewModel.isEpisodeDownloaded(episode)
+            if (!canOpen) showMissingExtensionDialog = true
+            canOpen
+        }
+        // <-- AniTenshi
+
         // KMK -->
 
         val showingRelatedMangasScreen = rememberSaveable { mutableStateOf(false) }
@@ -153,13 +188,24 @@ class AnimeScreen(
                         showRelatedMangasScreen = { showingRelatedMangasScreen.value = true },
                         navigator = navigator,
                         scope = scope,
+                        canOpenEpisode = canOpenEpisode,
                     )
                 }
             }
         }
         TachiyomiTheme {
             // AniTenshi: entries always use the app theme, never colors taken from the cover
-            content()
+            CompositionLocalProvider(LocalMissingExtension provides missingExtensionUi) {
+                content()
+            }
+        }
+
+        if (showMissingExtensionDialog && missingExtensionUi != null) {
+            MissingExtensionDialog(
+                ui = missingExtensionUi,
+                isAnime = true,
+                onDismissRequest = { showMissingExtensionDialog = false },
+            )
         }
     }
 
@@ -171,9 +217,12 @@ class AnimeScreen(
         showRelatedMangasScreen: () -> Unit,
         navigator: Navigator,
         scope: CoroutineScope,
+        // AniTenshi: false when the episode can't be opened (and the person has been told why)
+        canOpenEpisode: (Episode) -> Boolean = { true },
     ) {
         // KMK <--
-        val isAnimeHttpSource = remember { successState.source is AnimeHttpSource }
+        // AniTenshi: keyed, the source changes when its missing extension gets installed
+        val isAnimeHttpSource = remember(successState.source) { successState.source is AnimeHttpSource }
 
         LaunchedEffect(successState.anime, viewModel.source) {
             if (isAnimeHttpSource) {
@@ -202,12 +251,14 @@ class AnimeScreen(
             // <-- AM (FILE_SIZE)
             navigateUp = navigator::pop,
             onEpisodeClicked = { episode, alt ->
-                scope.launchIO {
-                    if (viewModel.isTorrentEnabled() && successState.source.isSourceForTorrents()) {
-                        TorrentServerService.start()
+                if (canOpenEpisode(episode)) {
+                    scope.launchIO {
+                        if (viewModel.isTorrentEnabled() && successState.source.isSourceForTorrents()) {
+                            TorrentServerService.start()
+                        }
+                        val extPlayer = viewModel.alwaysUseExternalPlayer != alt
+                        openEpisode(context, episode, extPlayer)
                     }
-                    val extPlayer = viewModel.alwaysUseExternalPlayer != alt
-                    openEpisode(context, episode, extPlayer)
                 }
             },
             onDownloadEpisode = viewModel::runEpisodeDownloadActions.takeIf {
@@ -247,9 +298,12 @@ class AnimeScreen(
             onFilterButtonClicked = viewModel::showSettingsDialog,
             onRefresh = viewModel::fetchAllFromSource,
             onContinueWatching = {
-                scope.launchIO {
-                    val extPlayer = viewModel.alwaysUseExternalPlayer
-                    continueWatching(context, viewModel.getNextUnseenEpisode(), extPlayer)
+                val next = viewModel.getNextUnseenEpisode()
+                if (next == null || canOpenEpisode(next)) {
+                    scope.launchIO {
+                        val extPlayer = viewModel.alwaysUseExternalPlayer
+                        continueWatching(context, next, extPlayer)
+                    }
                 }
             },
             onSearch = { query, global -> scope.launch { performSearch(navigator, query, global) } },

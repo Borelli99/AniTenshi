@@ -69,8 +69,12 @@ import eu.kanade.tachiyomi.data.download.anime.model.AnimeDownload
 import eu.kanade.tachiyomi.data.torrent.service.TorrentServerService
 import eu.kanade.tachiyomi.data.track.EnhancedAnimeTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
+import eu.kanade.tachiyomi.extension.anime.AnimeExtensionManager
+import eu.kanade.tachiyomi.extension.anime.model.AnimeExtension
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.anime.isSourceForTorrents
+import eu.kanade.tachiyomi.ui.entries.MissingExtensionFinder
+import eu.kanade.tachiyomi.ui.entries.MissingExtensionState
 import eu.kanade.tachiyomi.ui.entries.anime.RelatedAnime.Companion.isLoading
 import eu.kanade.tachiyomi.ui.entries.anime.RelatedAnime.Companion.removeDuplicates
 import eu.kanade.tachiyomi.ui.entries.anime.RelatedAnime.Companion.sorted
@@ -213,6 +217,8 @@ class AnimeViewModel(
     // AniTenshi: AniList entry found by title, and automatic AniList / MyAnimeList links
     private val findAnilistAnime: FindAnilistAnime,
     private val autoLinkAnimeTrackers: AutoLinkAnimeTrackers,
+    // AniTenshi: to find and install the extension of a title that came without it
+    private val extensionManager: AnimeExtensionManager,
 ) : ViewModel() {
 
     val state: StateFlow<State>
@@ -282,6 +288,45 @@ class AnimeViewModel(
             }
         }
     }
+
+    // AniTenshi: the anime's extension isn't installed (declared before init, which uses it) -->
+    private val missingExtensionFinder = MissingExtensionFinder<AnimeExtension.Available>(
+        scope = viewModelScope,
+        // The source manager starts out empty: nothing can be said before the extensions have loaded
+        installedSourcesChanges = combine(sourceManager.isInitialized, sourceManager.sources) { ready, _ -> ready }
+            .filter { ready -> ready },
+        isSourceInstalled = { sourceId -> sourceManager.get(sourceId) != null },
+        availableExtensions = extensionManager.availableExtensionsFlow,
+        loadAvailableExtensions = { extensionManager.findAvailableExtensions(quiet = true) },
+        isOffered = { extension ->
+            extension.store.indexUrl !in sourcePreferences.disabledRepos.get() &&
+                extension.contentWarning in sourcePreferences.enabledContentWarnings.get()
+        },
+        sourceNameIn = { extension, sourceId -> extension.sources.firstOrNull { it.id == sourceId }?.name },
+        extensionName = { extension -> extension.name },
+        installExtension = { extension -> extensionManager.installExtension(extension) },
+        onSourceInstalled = { onExtensionInstalled() },
+    )
+
+    /** Null when the anime's extension is installed. */
+    val missingExtension: StateFlow<MissingExtensionState?> = missingExtensionFinder.state
+
+    fun installMissingExtension() {
+        missingExtensionFinder.install()
+    }
+
+    private fun onExtensionInstalled() {
+        val sourceId = anime?.source ?: return
+        val source = sourceManager.getOrStub(sourceId)
+        updateSuccessState { it.copy(source = source) }
+        fetchAllFromSource(manualFetch = false)
+    }
+
+    /** Whether [episode] can be watched without its extension. */
+    fun isEpisodeDownloaded(episode: Episode): Boolean {
+        return successState?.episodes?.any { it.episode.id == episode.id && it.isDownloaded } == true
+    }
+    // <-- AniTenshi
 
     init {
         viewModelScope.launchIO {
@@ -365,6 +410,9 @@ class AnimeViewModel(
                     dialog = null,
                 )
             }
+            // AniTenshi: without its extension, look for it and wait for it
+            if (source is StubAnimeSource) missingExtensionFinder.watch(anime.source, source.name)
+
             // Start observe tracking since it only needs animeId
             observeTrackers()
 

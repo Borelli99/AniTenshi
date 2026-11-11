@@ -1,7 +1,6 @@
 package eu.kanade.tachiyomi.ui.player.controls
 
 import `is`.xyz.mpv.MPV
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
@@ -75,7 +74,9 @@ fun CompactBottomPlayerControls(
         ) {
             // The chapter takes the room the button on the right leaves, and shortens its name to fit
             Box(modifier = Modifier.weight(1f)) {
-                AnimatedVisibility(
+                // Named in full: inside the Box, the plain name would mean the Row's own variant, which can't be
+                // called from here
+                androidx.compose.animation.AnimatedVisibility(
                     visible = currentChapter != null && playerPreferences.showCurrentChapter().get(),
                     enter = fadeIn(),
                     exit = fadeOut(),

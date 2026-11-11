@@ -39,12 +39,14 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import eu.kanade.presentation.util.rememberRequestPackageInstallsPermissionState
 import eu.kanade.tachiyomi.util.system.launchRequestPackageInstallsPermission
+import kotlinx.coroutines.delay
 import mihon.app.di.appGraph
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Check
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.secondaryItemAlpha
+import kotlin.time.Duration.Companion.seconds
 
 internal class PermissionStep : OnboardingStep {
 
@@ -75,6 +77,13 @@ internal class PermissionStep : OnboardingStep {
                 .isIgnoringBatteryOptimizations(context.packageName)
         }
         LaunchedEffect(Unit) { refresh() }
+        // Until both are granted, look again every second: on some phones the answer arrives a moment late
+        LaunchedEffect(notificationGranted, batteryGranted) {
+            while (!(notificationGranted && batteryGranted)) {
+                delay(1.seconds)
+                refresh()
+            }
+        }
 
         val activityLifecycle = (LocalActivity.current as? ComponentActivity)?.lifecycle
         DisposableEffect(lifecycleOwner.lifecycle, activityLifecycle) {

@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -50,8 +52,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -81,6 +85,18 @@ import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 
 private val ContinueCoverWidth = 108.dp
+
+// The gold pill on those covers: its paddings, icon and gap, and what they leave for the label
+private val ContinuePillMargin = 6.dp
+private val ContinuePillPadding = 9.dp
+private val ContinuePillIconSize = 15.dp
+private val ContinuePillGap = 4.dp
+private val ContinuePillLabelMaxWidth = ContinueCoverWidth -
+    ContinuePillMargin * 2 - ContinuePillPadding * 2 - ContinuePillIconSize - ContinuePillGap
+
+// The pill label shrinks down to this to fit a long number
+private val ContinuePillMinFontSize = 9.sp
+private val ContinuePillMaxFontSize = 12.sp
 private val LatestCoverWidth = 96.dp
 
 /**
@@ -486,29 +502,55 @@ private fun ContinueCard(
             // Gold pill: play (or book) and the episode / chapter that a tap opens
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(ContinuePillGap),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(6.dp)
+                    .padding(ContinuePillMargin)
                     .heightIn(min = 30.dp)
                     .background(AniTenshiPalette.Gold, CircleShape)
-                    .padding(horizontal = 9.dp, vertical = 6.dp),
+                    .padding(horizontal = ContinuePillPadding, vertical = 6.dp),
             ) {
                 Icon(
                     painter = painterResource(if (isAnime) R.drawable.ic_nav_anime else R.drawable.ic_nav_manga),
                     contentDescription = null,
                     tint = AniTenshiPalette.Navy,
-                    modifier = Modifier.size(15.dp),
+                    modifier = Modifier.size(ContinuePillIconSize),
                 )
                 entry.nextNumber?.let { number ->
-                    Text(
-                        text = stringResource(
-                            if (isAnime) TLMR.strings.anitenshi_episode_short else TLMR.strings.anitenshi_chapter_short,
-                            if (isAnime) formatEpisodeNumber(number) else formatChapterNumber(number),
-                        ),
+                    val numberText = if (isAnime) formatEpisodeNumber(number) else formatChapterNumber(number)
+                    val label = stringResource(
+                        if (isAnime) TLMR.strings.anitenshi_episode_short else TLMR.strings.anitenshi_chapter_short,
+                        numberText,
+                    )
+                    val style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
                         color = AniTenshiPalette.Navy,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    )
+                    // AniTenshi: a four-digit number ("Cap. 1165") was too wide for the pill: the text wrapped and
+                    // only "Cap." showed. The label now stays on one line and shrinks a little to fit. When it
+                    // wouldn't fit even at its smallest (big system fonts), the number shows alone: the icon
+                    // already says what it is, and a number cut short would be a wrong number.
+                    val textMeasurer = rememberTextMeasurer()
+                    val density = LocalDensity.current
+                    val labelFits = remember(label, style, density) {
+                        val smallest = textMeasurer.measure(
+                            text = label,
+                            style = style.copy(fontSize = ContinuePillMinFontSize),
+                            softWrap = false,
+                            maxLines = 1,
+                        )
+                        smallest.size.width <= with(density) { ContinuePillLabelMaxWidth.roundToPx() }
+                    }
+                    BasicText(
+                        text = if (labelFits) label else numberText,
+                        style = style,
                         maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = ContinuePillMinFontSize,
+                            maxFontSize = ContinuePillMaxFontSize,
+                        ),
                     )
                 }
             }

@@ -51,6 +51,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -207,6 +208,13 @@ fun PlayerControls(
                 val mpvVolume by viewModel.currentMPVVolume.collectAsState()
                 val swapVolumeAndBrightness by gesturePreferences.swapVolumeBrightness().collectAsState()
                 val reduceMotion by playerPreferences.reduceMotion().collectAsState()
+
+                // AniTenshi: on a narrow screen (a phone held upright) the buttons don't fit side by side: the
+                // title was squeezed down to one letter and the speed button into a tall column. There the top
+                // buttons go under the title and the bottom ones take two lines (CompactBottomPlayerControls).
+                val compactControls =
+                    LocalConfiguration.current.screenWidthDp < COMPACT_PLAYER_CONTROLS_MAX_WIDTH_DP
+                val compactBottomControls = createRef()
 
                 LaunchedEffect(volume, mpvVolume, isVolumeSliderShown) {
                     delay(2000)
@@ -447,7 +455,8 @@ fun PlayerControls(
                         top.linkTo(parent.top, spacing.medium)
                         start.linkTo(parent.start)
                         width = Dimension.fillToConstraints
-                        end.linkTo(topRightControls.start)
+                        // AniTenshi: on a narrow screen the title has the whole line
+                        end.linkTo(if (compactControls) parent.end else topRightControls.start)
                     },
                 ) {
                     TopLeftPlayerControls(
@@ -475,7 +484,12 @@ fun PlayerControls(
                         fadeOut(playerControlsExitAnimationSpec())
                     },
                     modifier = Modifier.constrainAs(topRightControls) {
-                        top.linkTo(parent.top, spacing.medium)
+                        // AniTenshi: on a narrow screen these buttons go under the title
+                        if (compactControls) {
+                            top.linkTo(topLeftControls.bottom, spacing.small)
+                        } else {
+                            top.linkTo(parent.top, spacing.medium)
+                        }
                         end.linkTo(parent.end)
                     },
                 ) {
@@ -499,7 +513,7 @@ fun PlayerControls(
                 val skipIntroButton by viewModel.skipIntroText.collectAsState()
                 val customButtonTitle by viewModel.primaryButtonTitle.collectAsState()
                 AnimatedVisibility(
-                    controlsShown && !areControlsLocked,
+                    controlsShown && !areControlsLocked && !compactControls,
                     enter = if (!reduceMotion) {
                         slideInHorizontally(playerControlsEnterAnimationSpec()) { it } +
                             fadeIn(playerControlsEnterAnimationSpec())
@@ -544,7 +558,7 @@ fun PlayerControls(
                 // Bottom left controls
                 val playbackSpeed by viewModel.playbackSpeed.collectAsState()
                 AnimatedVisibility(
-                    controlsShown && !areControlsLocked,
+                    controlsShown && !areControlsLocked && !compactControls,
                     enter = if (!reduceMotion) {
                         slideInHorizontally(playerControlsEnterAnimationSpec()) { -it } +
                             fadeIn(playerControlsEnterAnimationSpec())
@@ -573,6 +587,50 @@ fun PlayerControls(
                             viewModel.mpv.setPropertyDouble("speed", it.toDouble())
                         },
                         onOpenSheet = viewModel::showSheet,
+                    )
+                }
+                // AniTenshi: bottom controls on a narrow screen, in place of the two groups above (same actions)
+                AnimatedVisibility(
+                    controlsShown && !areControlsLocked && compactControls,
+                    enter = fadeIn(playerControlsEnterAnimationSpec()),
+                    exit = fadeOut(playerControlsExitAnimationSpec()),
+                    modifier = Modifier.constrainAs(compactBottomControls) {
+                        bottom.linkTo(seekbar.top)
+                        start.linkTo(seekbar.start)
+                        end.linkTo(seekbar.end)
+                        width = Dimension.fillToConstraints
+                    },
+                ) {
+                    val activity = LocalContext.current as PlayerActivity
+                    CompactBottomPlayerControls(
+                        playbackSpeed = playbackSpeed,
+                        currentChapter = currentChapter?.toSegment(),
+                        onLockControls = viewModel::lockControls,
+                        onCycleRotation = viewModel::cycleScreenRotations,
+                        onPlaybackSpeedChange = {
+                            viewModel.mpv.setPropertyDouble("speed", it.toDouble())
+                        },
+                        onOpenSheet = viewModel::showSheet,
+                        mpv = viewModel.mpv,
+                        customButton = customButton,
+                        customButtonTitle = customButtonTitle,
+                        skipIntroButton = skipIntroButton,
+                        onPressSkipIntroButton = viewModel::onSkipIntro,
+                        isPipAvailable = activity.isPipSupportedAndEnabled,
+                        onPipClick = {
+                            if (!viewModel.isLoadingEpisode.value) {
+                                activity.enterPictureInPictureMode(activity.createPipParams())
+                            }
+                        },
+                        onAspectClick = {
+                            viewModel.changeVideoAspect(
+                                when (aspectRatio) {
+                                    VideoAspect.Fit -> VideoAspect.Stretch
+                                    VideoAspect.Stretch -> VideoAspect.Crop
+                                    VideoAspect.Crop -> VideoAspect.Fit
+                                },
+                            )
+                        },
                     )
                 }
 

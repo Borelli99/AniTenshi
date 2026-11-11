@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import dev.vivvvek.seeker.Segment
 import eu.kanade.tachiyomi.ui.player.Sheets
 import eu.kanade.tachiyomi.ui.player.controls.components.ControlsButton
@@ -60,28 +61,13 @@ fun BottomLeftPlayerControls(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.playerPill(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ControlsButton(
-                Icons.Default.LockOpen,
-                onClick = onLockControls,
-            )
-            ControlsButton(
-                icon = Icons.Default.ScreenRotation,
-                onClick = onCycleRotation,
-            )
-            ControlsButton(
-                text = stringResource(AYMR.strings.player_speed, playbackSpeed),
-                onClick = {
-                    val newSpeed = if (playbackSpeed >= 2) 0.25f else playbackSpeed + 0.25f
-                    onPlaybackSpeedChange(newSpeed)
-                    playerPreferences.playerSpeed().set(newSpeed)
-                },
-                onLongClick = { onOpenSheet(Sheets.PlaybackSpeed) },
-            )
-        }
+        PlayerLockRotationSpeedPill(
+            playbackSpeed = playbackSpeed,
+            onLockControls = onLockControls,
+            onCycleRotation = onCycleRotation,
+            onPlaybackSpeedChange = onPlaybackSpeedChange,
+            onOpenSheet = onOpenSheet,
+        )
         Spacer(modifier = Modifier.width(MaterialTheme.padding.small))
         AnimatedVisibility(
             currentChapter != null && playerPreferences.showCurrentChapter().get(),
@@ -93,5 +79,48 @@ fun BottomLeftPlayerControls(
                 onClick = { onOpenSheet(Sheets.Chapters) },
             )
         }
+    }
+}
+
+/**
+ * AniTenshi: the pill with lock, rotation and speed, on its own, so the narrow-screen layout
+ * ([CompactBottomPlayerControls]) can place it too. [buttonSpacing] is the room at the sides of each button.
+ */
+@Composable
+fun PlayerLockRotationSpeedPill(
+    playbackSpeed: Float,
+    onLockControls: () -> Unit,
+    onCycleRotation: () -> Unit,
+    onPlaybackSpeedChange: (Float) -> Unit,
+    onOpenSheet: (Sheets) -> Unit,
+    modifier: Modifier = Modifier,
+    buttonSpacing: Dp = MaterialTheme.padding.medium,
+) {
+    val playerPreferences = remember { Injekt.get<PlayerPreferences>() }
+
+    Row(
+        modifier = modifier.playerPill(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ControlsButton(
+            Icons.Default.LockOpen,
+            onClick = onLockControls,
+            horizontalSpacing = buttonSpacing,
+        )
+        ControlsButton(
+            icon = Icons.Default.ScreenRotation,
+            onClick = onCycleRotation,
+            horizontalSpacing = buttonSpacing,
+        )
+        ControlsButton(
+            text = stringResource(AYMR.strings.player_speed, playbackSpeed),
+            onClick = {
+                val newSpeed = if (playbackSpeed >= 2) 0.25f else playbackSpeed + 0.25f
+                onPlaybackSpeedChange(newSpeed)
+                playerPreferences.playerSpeed().set(newSpeed)
+            },
+            onLongClick = { onOpenSheet(Sheets.PlaybackSpeed) },
+            horizontalSpacing = buttonSpacing,
+        )
     }
 }

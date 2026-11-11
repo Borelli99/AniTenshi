@@ -22,15 +22,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.PictureInPictureAlt
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import eu.kanade.tachiyomi.ui.player.controls.components.ControlsButton
 import eu.kanade.tachiyomi.ui.player.controls.components.FilledControlsButton
 import eu.kanade.tachiyomi.ui.player.controls.components.playerPill
 import eu.kanade.tachiyomi.ui.player.execute
 import eu.kanade.tachiyomi.ui.player.executeLongPress
 import tachiyomi.domain.custombuttons.model.CustomButton
+import tachiyomi.presentation.core.components.material.padding
 
 @Composable
 fun BottomRightPlayerControls(
@@ -45,33 +48,77 @@ fun BottomRightPlayerControls(
     modifier: Modifier = Modifier,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        if (skipIntroButton != null) {
-            FilledControlsButton(
-                text = skipIntroButton,
-                onClick = onPressSkipIntroButton,
-                onLongClick = {},
-            )
-        } else if (customButton != null) {
-            FilledControlsButton(
-                text = customButtonTitle,
-                onClick = { customButton.execute(mpv) },
-                onLongClick = { customButton.executeLongPress(mpv) },
-                highlighted = false,
-            )
-        }
+        PlayerSkipOrCustomButton(
+            mpv = mpv,
+            customButton = customButton,
+            customButtonTitle = customButtonTitle,
+            skipIntroButton = skipIntroButton,
+            onPressSkipIntroButton = onPressSkipIntroButton,
+        )
+        PlayerPipAspectPill(
+            isPipAvailable = isPipAvailable,
+            onAspectClick = onAspectClick,
+            onPipClick = onPipClick,
+        )
+    }
+}
 
-        Row(modifier = Modifier.playerPill()) {
-            if (isPipAvailable) {
-                ControlsButton(
-                    Icons.Default.PictureInPictureAlt,
-                    onClick = onPipClick,
-                )
-            }
+/**
+ * AniTenshi: the button that skips an opening or ending, or else the custom button ("+85 s"), on its own, so the
+ * narrow-screen layout ([CompactBottomPlayerControls]) can place it too. Nothing when there is neither.
+ */
+@Composable
+fun PlayerSkipOrCustomButton(
+    mpv: MPV,
+    customButton: CustomButton?,
+    customButtonTitle: String,
+    skipIntroButton: String?,
+    onPressSkipIntroButton: () -> Unit,
+    modifier: Modifier = Modifier,
+    endPadding: Dp = MaterialTheme.padding.small,
+) {
+    if (skipIntroButton != null) {
+        FilledControlsButton(
+            text = skipIntroButton,
+            onClick = onPressSkipIntroButton,
+            onLongClick = {},
+            modifier = modifier,
+            endPadding = endPadding,
+        )
+    } else if (customButton != null) {
+        FilledControlsButton(
+            text = customButtonTitle,
+            onClick = { customButton.execute(mpv) },
+            onLongClick = { customButton.executeLongPress(mpv) },
+            modifier = modifier,
+            highlighted = false,
+            endPadding = endPadding,
+        )
+    }
+}
 
+/** AniTenshi: the pill with picture-in-picture and aspect ratio, on its own (see [PlayerSkipOrCustomButton]). */
+@Composable
+fun PlayerPipAspectPill(
+    isPipAvailable: Boolean,
+    onAspectClick: () -> Unit,
+    onPipClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    buttonSpacing: Dp = MaterialTheme.padding.medium,
+) {
+    Row(modifier = modifier.playerPill()) {
+        if (isPipAvailable) {
             ControlsButton(
-                Icons.Default.AspectRatio,
-                onClick = onAspectClick,
+                Icons.Default.PictureInPictureAlt,
+                onClick = onPipClick,
+                horizontalSpacing = buttonSpacing,
             )
         }
+
+        ControlsButton(
+            Icons.Default.AspectRatio,
+            onClick = onAspectClick,
+            horizontalSpacing = buttonSpacing,
+        )
     }
 }

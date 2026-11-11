@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -100,6 +101,7 @@ fun ControlsButton(
     modifier: Modifier = Modifier,
     onLongClick: () -> Unit = {},
     color: Color = Color.White,
+    horizontalSpacing: Dp = MaterialTheme.padding.medium,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -121,12 +123,16 @@ fun ControlsButton(
                 interactionSource,
                 ripple(),
             )
-            .padding(MaterialTheme.padding.medium),
+            .padding(vertical = MaterialTheme.padding.medium, horizontal = horizontalSpacing),
     ) {
+        // AniTenshi: one line, always. Squeezed for room, "1,00x" wrapped letter by letter and turned its pill
+        // into a tall circle.
         Text(
             text,
             color = color,
             style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }
@@ -139,12 +145,14 @@ fun FilledControlsButton(
     modifier: Modifier = Modifier,
     /** AniTenshi: gold when it skips a known opening/ending, night blue for the "+85 s" button. */
     highlighted: Boolean = true,
+    /** AniTenshi: gap after the button; none when it stands alone at the edge (narrow screens). */
+    endPadding: Dp = MaterialTheme.padding.small,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val clickEvent = LocalPlayerButtonsClickEvent.current
 
     Box(
-        modifier = modifier.padding(end = MaterialTheme.padding.small),
+        modifier = modifier.padding(end = endPadding),
     ) {
         Box(
             modifier = Modifier
@@ -162,6 +170,8 @@ fun FilledControlsButton(
                 color = if (highlighted) AniTenshiPalette.Navy else AniTenshiPalette.Gold,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         Box(

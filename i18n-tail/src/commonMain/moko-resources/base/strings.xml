@@ -588,4 +588,5 @@
     <string name="anitenshi_extension_installing">Installing…</string>
     <string name="anitenshi_extension_open_repos">Open repos</string>
     <string name="anitenshi_reader_not_an_image">Not an image (%s)</string>
+    <string name="anitenshi_reader_image_too_large">The image is too large for this device\'s memory</string>
 </resources>

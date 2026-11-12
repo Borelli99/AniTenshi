@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.reader.viewer
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.text.format.Formatter
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -14,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import ca.mpreg.imagedecoder.ImageDecoder
 import eu.kanade.presentation.reader.ReaderError
 import eu.kanade.presentation.util.formattedMessage
+import eu.kanade.tachiyomi.data.coil.PageTooLargeException
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
@@ -58,7 +60,11 @@ fun ReaderPageError(
 @Composable
 fun rememberReaderErrorMessage(page: ReaderPage?, error: Throwable?): String? {
     val context = LocalContext.current
-    val reason = error?.let { with(context) { it.formattedMessage } }
+    val reason = when (error) {
+        null -> null
+        is PageTooLargeException -> context.stringResource(TLMR.strings.anitenshi_reader_image_too_large)
+        else -> with(context) { error.formattedMessage }
+    }
     // Only for an image that was downloaded: before that there is nothing to describe
     val imageNote by produceState<String?>(null, page, error) {
         value = if (page != null && page.status == Page.State.READY) describePageImage(context, page) else null
@@ -81,7 +87,8 @@ private suspend fun describePageImage(context: Context, page: ReaderPage): Strin
         val image = try {
             ImageDecoder.open(buffer.peek().inputStream()).use { dec -> "${dec.format} ${dec.width}×${dec.height}" }
         } catch (e: Exception) {
-            null
+            // The bundled decoder refuses some images Android reads, such as a PNG over 32,767 pixels a side
+            describeWithPlatform(buffer)
         }
         if (image != null) {
             "$image, $size"
@@ -98,6 +105,15 @@ private suspend fun describePageImage(context: Context, page: ReaderPage): Strin
     } catch (e: Exception) {
         null
     }
+}
+
+/** Format and size as Android's own decoder reads them, or null when it can't read the image either. */
+private fun describeWithPlatform(buffer: Buffer): String? {
+    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeStream(buffer.peek().inputStream(), null, options)
+    if (options.outWidth <= 0 || options.outHeight <= 0) return null
+    val format = options.outMimeType?.substringAfter('/')?.uppercase().orEmpty()
+    return "$format ${options.outWidth}×${options.outHeight}".trim()
 }
 
 private const val NOT_AN_IMAGE_PREVIEW_BYTES = 48L

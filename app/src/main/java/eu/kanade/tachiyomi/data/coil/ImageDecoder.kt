@@ -14,6 +14,7 @@ import coil3.decode.Decoder
 import coil3.decode.ImageSource
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import okio.BufferedSource
@@ -104,7 +105,22 @@ class ImageDecoder(private val resources: ImageSource, private val options: Opti
      * [MAX_PAGE_BYTES]. They are never narrower than the view, so the page stays sharp unzoomed.
      */
     private suspend fun decodeStrips(): DecodeResult = stripDecodes.withPermit {
-        val (frame, isHdr, widths) = resources.source().use {
+        // AniTenshi: the source is only peeked, so a page the bundled decoder refuses can still go to Android's own.
+        // That one is slower and knows fewer formats, but has no 32,767 pixel limit for PNG (PlatformStripDecoder).
+        resources.source().use { source ->
+            try {
+                decodeStripsBundled(source.peek())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                PlatformStripDecoder.decode(source.peek()) { width -> options.size.widthPx(options.scale) { width } }
+                    ?: throw e
+            }
+        }
+    }
+
+    private fun decodeStripsBundled(source: BufferedSource): DecodeResult {
+        val (frame, isHdr, widths) = source.use {
             ImageDecoder.open(it.inputStream()).use { dec ->
                 val bytesPerPixel = if (dec.isHdr) 8 else 4
                 val viewWidth = options.size.widthPx(options.scale) { dec.width }
@@ -126,7 +142,7 @@ class ImageDecoder(private val resources: ImageSource, private val options: Opti
             }
         }
         val (stripWidth, pageWidth) = widths
-        frame.use {
+        return frame.use {
             val config = if (isHdr) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
             val bytesPerPixel = if (isHdr) 8 else 4
             val rowBytes = frame.width * bytesPerPixel

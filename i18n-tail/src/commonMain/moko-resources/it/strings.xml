@@ -505,4 +505,5 @@
   <string name="anitenshi_extension_installing">Installazione in corso…</string>
   <string name="anitenshi_extension_open_repos">Apri le repo</string>
   <string name="anitenshi_reader_not_an_image">Non è un\'immagine (%s)</string>
+  <string name="anitenshi_reader_image_too_large">L\'immagine è troppo grande per la memoria di questo dispositivo</string>
 </resources>

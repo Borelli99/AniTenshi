@@ -587,4 +587,5 @@
     <string name="anitenshi_extension_install">Install %s</string>
     <string name="anitenshi_extension_installing">Installing…</string>
     <string name="anitenshi_extension_open_repos">Open repos</string>
+    <string name="anitenshi_reader_not_an_image">Not an image (%s)</string>
 </resources>

@@ -1105,7 +1105,7 @@ open class WebGpuViewer(
                     if (pageInCache(page) && status == Page.State.ERROR && !page.streaming) {
                         val old = page.imagePage
                         if (old is ProgressPage) {
-                            page.imagePage = ErrorPage(this@WebGpuViewer, page, null)
+                            page.imagePage = ErrorPage(this@WebGpuViewer, page, page.page.error)
                             cleanupImage(old)
                             viewerState.invalidate()
                         }
@@ -1238,7 +1238,7 @@ open class WebGpuViewer(
                     val preview = page.preview
                     if (pageInCache(page) && page.imagePage === preview && page.page.status == Page.State.ERROR) {
                         page.preview = null
-                        page.imagePage = ErrorPage(this@WebGpuViewer, page, null)
+                        page.imagePage = ErrorPage(this@WebGpuViewer, page, page.page.error)
                         cleanupImage(preview)
                         viewerState.invalidate()
                     }

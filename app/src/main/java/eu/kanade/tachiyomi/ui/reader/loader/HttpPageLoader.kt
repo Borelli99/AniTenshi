@@ -19,7 +19,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import logcat.LogPriority
 import mihon.data.cache.ChapterCache
+import tachiyomi.core.common.util.system.logcat
 import java.io.FileNotFoundException
 import java.util.concurrent.ConcurrentHashMap
 
@@ -230,6 +232,7 @@ internal class HttpPageLoader(
      */
     private suspend fun internalLoadPage(page: ReaderPage, force: Boolean = false) {
         try {
+            page.error = null
             if (page.imageUrl.isNullOrEmpty()) {
                 page.status = Page.State.LOAD_PAGE
                 page.imageUrl = source.getImageUrl(page)
@@ -269,6 +272,9 @@ internal class HttpPageLoader(
                 page.status = Page.State.QUEUE
                 throw e
             }
+            // AniTenshi: the reason used to be dropped here, so the reader could only say "couldn't be loaded"
+            logcat(LogPriority.ERROR, e) { "Failed to load page ${page.index + 1} (${page.imageUrl ?: page.url})" }
+            page.error = e
             page.status = Page.State.ERROR
         }
     }

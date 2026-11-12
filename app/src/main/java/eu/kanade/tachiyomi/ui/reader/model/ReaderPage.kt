@@ -34,4 +34,11 @@ open class ReaderPage(
     /** Set by a viewer before the download; filled during [Page.State.DownloadImage]. */
     @Volatile
     var downloadStream: DownloadStream? = null
+
+    /**
+     * AniTenshi: why the page ended in [Page.State.ERROR], for the reader to say. Null when it didn't, or when the
+     * reason isn't known. Set before the state, so whoever sees the state finds it.
+     */
+    @Volatile
+    var error: Throwable? = null
 }

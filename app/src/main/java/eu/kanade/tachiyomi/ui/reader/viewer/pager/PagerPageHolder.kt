@@ -122,7 +122,7 @@ class PagerPageHolder(
 
                     Page.State.READY -> setImage()
 
-                    Page.State.ERROR -> setError()
+                    Page.State.ERROR -> setError(page.error)
                 }
             }
         }
@@ -376,9 +376,9 @@ class PagerPageHolder(
     /**
      * Called when an image fails to decode.
      */
-    override fun onImageLoadError() {
-        super.onImageLoadError()
-        setError()
+    override fun onImageLoadError(error: Throwable?) {
+        super.onImageLoadError(error)
+        setError(error)
     }
 
     /**

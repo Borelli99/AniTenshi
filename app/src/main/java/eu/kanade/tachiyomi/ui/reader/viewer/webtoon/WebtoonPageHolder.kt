@@ -79,7 +79,7 @@ class WebtoonPageHolder(
         refreshLayoutParams()
 
         frame.onImageLoaded = { onImageDecoded() }
-        frame.onImageLoadError = { setError() }
+        frame.onImageLoadError = { error -> setError(error) }
         frame.onScaleChanged = { viewer.activity.hideMenu() }
     }
 
@@ -147,7 +147,7 @@ class WebtoonPageHolder(
 
                     Page.State.READY -> setImage()
 
-                    Page.State.ERROR -> setError()
+                    Page.State.ERROR -> setError(page.error)
                 }
             }
         }

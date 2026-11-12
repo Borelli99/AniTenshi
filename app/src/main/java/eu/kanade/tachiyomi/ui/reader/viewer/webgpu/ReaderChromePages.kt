@@ -22,11 +22,11 @@ import androidx.compose.ui.util.fastCoerceIn
 import ca.mpreg.webgpuviewer.viewer.ComposePageSize
 import ca.mpreg.webgpuviewer.viewer.ImagePage
 import eu.kanade.presentation.reader.ReaderError
-import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderThemedContent
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderTransitionPage
+import eu.kanade.tachiyomi.ui.reader.viewer.rememberReaderErrorMessage
 import eu.kanade.tachiyomi.ui.reader.viewer.transitionDownloadState
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import tachiyomi.presentation.core.components.CombinedCircularProgressIndicator
@@ -94,7 +94,7 @@ class ErrorPage internal constructor(
 
         ReaderError(
             modifier = strip,
-            message = with(context) { error?.formattedMessage },
+            message = rememberReaderErrorMessage(viewerPage?.page, error),
             onRetry = { viewerPage?.let { viewer.retryLoad(it) } },
             onOpenInWebView = imageUrl?.let {
                 {

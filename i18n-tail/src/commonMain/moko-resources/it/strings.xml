@@ -508,4 +508,5 @@
   <string name="anitenshi_reader_image_too_large">L\'immagine è troppo grande per la memoria di questo dispositivo</string>
   <string name="anitenshi_reader_hint_long_strip">Il lettore a pagine non può aprire questa immagine. Passa alla modalità di lettura «%s».</string>
   <string name="anitenshi_reader_hint_high_quality">Il rendering ad alta qualità non può aprire questa immagine. Disattiva «%s» in Impostazioni › Avanzate.</string>
+  <string name="anitenshi_reader_auto_long_strip">Pagine molto lunghe: modalità di lettura impostata su «%s»</string>
 </resources>

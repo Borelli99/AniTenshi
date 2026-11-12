@@ -170,6 +170,9 @@ class PagerPageHolder(
         val streamFn = page.stream ?: return
         val streamFn2 = extraPage?.stream
 
+        // AniTenshi: a page made to be scrolled, which this viewer shows as a sliver or not at all
+        var isStrip = false
+
         try {
             val (source, isAnimated, background) = withIOContext {
                 streamFn().buffered(16).use { source ->
@@ -200,6 +203,7 @@ class PagerPageHolder(
                             mergePages(Buffer().readFrom(source), source2?.let { Buffer().readFrom(it) })
                         }
                         // SY <--
+                        isStrip = extraPage == null && ImageUtil.isStripImage(itemSource)
                         val isAnimated = ImageUtil.isAnimatedAndSupported(itemSource)
                         val background = if (!isAnimated && viewer.general.automaticBackground) {
                             ImageUtil.chooseBackground(context, itemSource.peek().inputStream())
@@ -211,6 +215,8 @@ class PagerPageHolder(
                 }
             }
             withUIContext {
+                // AniTenshi: with enough of these the manga goes to long strip, which replaces this viewer
+                if (isStrip && viewer.activity.onStripPageFound(page)) return@withUIContext
                 setImage(
                     source,
                     isAnimated,

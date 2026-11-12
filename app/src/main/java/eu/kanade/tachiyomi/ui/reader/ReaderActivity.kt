@@ -162,6 +162,9 @@ class ReaderActivity : BaseActivity() {
     private val graph: AppGraph by lazy { metroGraph() }
 
     companion object {
+        // AniTenshi: how many pages made to be scrolled a chapter must have for its manga to go to long strip
+        private const val STRIP_PAGES_FOR_LONG_STRIP = 2
+
         fun newIntent(
             context: Context,
             mangaId: Long?,
@@ -195,6 +198,10 @@ class ReaderActivity : BaseActivity() {
     private val hasCutout by lazy { hasDisplayCutout() }
     private var menuToggleToast: Toast? = null
     private var readingModeToast: Toast? = null
+
+    // AniTenshi: pages made to be scrolled that a paged viewer met, by chapter id and page index
+    private val stripPagesFound = mutableSetOf<Pair<Long?, Int>>()
+    private var switchedToLongStripByItself = false
     private val displayRefreshHost = DisplayRefreshHost()
     private val navigationOverlayState = ReaderNavigationOverlayState()
 
@@ -945,7 +952,18 @@ class ReaderActivity : BaseActivity() {
             viewModel.state.value.lastShiftDoubleState?.let { newViewer.config.shiftDoublePage = it }
         }
 
-        if (readerPreferences.showReadingMode.get()) {
+        if (switchedToLongStripByItself) {
+            // AniTenshi: say why the mode changed, whether or not reading modes are announced
+            switchedToLongStripByItself = false
+            readingModeToast?.cancel()
+            readingModeToast = toast(
+                stringResource(
+                    TLMR.strings.anitenshi_reader_auto_long_strip,
+                    stringResource(MR.strings.webtoon_viewer),
+                ),
+                Toast.LENGTH_LONG,
+            )
+        } else if (readerPreferences.showReadingMode.get()) {
             // SY <--
             showReadingModeToast(viewModel.getMangaReadingMode())
         }
@@ -954,6 +972,33 @@ class ReaderActivity : BaseActivity() {
         // AM (DISCORD) -->
         updateDiscordRPC(exitingReader = false)
         // <-- AM (DISCORD)
+    }
+
+    /**
+     * AniTenshi: a paged viewer has [page], far taller than it is wide, to show. When the chapter has enough of
+     * these and no reading mode was chosen for the manga, the manga goes to long strip, where they can be read (and
+     * where the ones the bundled decoder refuses can be shown at all).
+     *
+     * Two such pages are asked for, or half the chapter when it is shorter, so that one odd image in a manga of
+     * ordinary pages changes nothing.
+     *
+     * @return whether the reading mode was changed, which replaces the viewer.
+     */
+    fun onStripPageFound(page: ReaderPage): Boolean {
+        if (!viewModel.canSwitchToLongStripByItself()) return false
+
+        val chapter = page.chapter
+        val chapterId = chapter.chapter.id
+        stripPagesFound += chapterId to page.index
+        val found = stripPagesFound.count { it.first == chapterId }
+        val pageCount = chapter.pages?.size ?: 1
+        val needed = ((pageCount + 1) / 2).coerceIn(1, STRIP_PAGES_FOR_LONG_STRIP)
+        if (found < needed) return false
+
+        stripPagesFound.clear()
+        switchedToLongStripByItself = true
+        viewModel.setMangaReadingMode(ReadingMode.WEBTOON)
+        return true
     }
 
     private fun openMangaScreen() {

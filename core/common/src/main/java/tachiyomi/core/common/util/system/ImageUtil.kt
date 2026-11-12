@@ -109,6 +109,18 @@ object ImageUtil {
     }
 
     /**
+     * AniTenshi: whether the image is a strip made to be scrolled through rather than a page: at least
+     * [STRIP_IMAGE_RATIO] times as tall as it is wide. On a phone held upright a paged viewer shows it about half
+     * the screen wide at best.
+     */
+    fun isStripImage(imageSource: BufferedSource): Boolean {
+        val options = extractImageOptions(imageSource)
+        return options.outWidth > 0 && options.outHeight / options.outWidth >= STRIP_IMAGE_RATIO
+    }
+
+    private const val STRIP_IMAGE_RATIO = 4
+
+    /**
      * Extract the 'side' part from [BufferedSource] and return it as [BufferedSource].
      */
     fun splitInHalf(imageSource: BufferedSource, side: Side, sidePadding: Int): BufferedSource {

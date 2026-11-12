@@ -591,4 +591,5 @@
     <string name="anitenshi_reader_image_too_large">The image is too large for this device\'s memory</string>
     <string name="anitenshi_reader_hint_long_strip">The paged reader can\'t open this image. Switch the reading mode to %s.</string>
     <string name="anitenshi_reader_hint_high_quality">The high quality renderer can\'t open this image. Turn off %s in Settings › Advanced.</string>
+    <string name="anitenshi_reader_auto_long_strip">Very tall pages: reading mode set to %s</string>
 </resources>

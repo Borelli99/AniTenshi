@@ -843,6 +843,16 @@ class ReaderViewModel(
     }
 
     /**
+     * AniTenshi: whether the open manga may be moved to long strip without being asked: only while no reading mode
+     * was chosen for it and the default one is paged. A mode the person picked is never overridden.
+     */
+    fun canSwitchToLongStripByItself(): Boolean {
+        val manga = manga ?: return false
+        return ReadingMode.fromPreference(manga.readingMode.toInt()) == ReadingMode.DEFAULT &&
+            ReadingMode.isPagerType(readerPreferences.defaultReadingMode.get())
+    }
+
+    /**
      * Updates the viewer position for the open manga.
      */
     fun setMangaReadingMode(readingMode: ReadingMode) {

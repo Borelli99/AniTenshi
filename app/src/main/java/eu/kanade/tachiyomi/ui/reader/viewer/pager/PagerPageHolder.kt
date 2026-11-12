@@ -5,6 +5,7 @@ import android.content.Context
 import coil3.Bitmap
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
+import eu.kanade.tachiyomi.ui.reader.viewer.ReaderErrorHint
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderPageErrorView
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderPageImageView
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderProgressIndicator
@@ -399,6 +400,8 @@ class PagerPageHolder(
             error = error,
             sourceId = viewer.activity.viewModel.manga?.source,
             onButtonPressChange = { pressed -> viewer.pager.setGestureDetectorEnabled(!pressed) },
+            // AniTenshi: a page only Android's decoder reads can be shown in long strip, not here
+            hint = ReaderErrorHint.USE_LONG_STRIP,
         )
     }
 

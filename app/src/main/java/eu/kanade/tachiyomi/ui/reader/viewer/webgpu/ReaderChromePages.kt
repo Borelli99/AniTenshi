@@ -24,6 +24,7 @@ import ca.mpreg.webgpuviewer.viewer.ImagePage
 import eu.kanade.presentation.reader.ReaderError
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
+import eu.kanade.tachiyomi.ui.reader.viewer.ReaderErrorHint
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderThemedContent
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderTransitionPage
 import eu.kanade.tachiyomi.ui.reader.viewer.rememberReaderErrorMessage
@@ -94,7 +95,8 @@ class ErrorPage internal constructor(
 
         ReaderError(
             modifier = strip,
-            message = rememberReaderErrorMessage(viewerPage?.page, error),
+            // AniTenshi: this renderer has no way around an image the bundled decoder refuses
+            message = rememberReaderErrorMessage(viewerPage?.page, error, ReaderErrorHint.TURN_OFF_HIGH_QUALITY),
             onRetry = { viewerPage?.let { viewer.retryLoad(it) } },
             onOpenInWebView = imageUrl?.let {
                 {

@@ -51,12 +51,15 @@ internal object PlatformStripDecoder {
             // Like the bundled path: what a power-of-two sample size leaves, never narrower than the view...
             var sample = 1
             while (width / (sample * 2) >= shownWidth) sample *= 2
-            // ...unless the page would then be too much to keep
-            while (pageBytes(width, height, sample) > MAX_PAGE_BYTES && sample < MAX_SAMPLE) sample *= 2
+            // ...unless the page would then be too much to keep, even in 16-bit colour
+            while (pageBytes(width, height, sample) > MAX_PAGE_BYTES * 2 && sample < MAX_SAMPLE) sample *= 2
 
             repeat(OUT_OF_MEMORY_RETRIES + 1) {
                 try {
-                    val strips = decodeStrips(decoder, sample)
+                    // Past the budget, 16-bit colour halves the memory and keeps the text sharp, where half the
+                    // resolution would blur it
+                    val lessColour = pageBytes(width, height, sample) > MAX_PAGE_BYTES
+                    val strips = decodeStrips(decoder, sample, lessColour)
                     return DecodeResult(image = ImageDecoder.StripsImage(strips), isSampled = sample > 1)
                 } catch (e: OutOfMemoryError) {
                     // Half the size on each side is a quarter of the memory
@@ -69,7 +72,11 @@ internal object PlatformStripDecoder {
         }
     }
 
-    private fun decodeStrips(decoder: BitmapRegionDecoder, sample: Int): List<Bitmap> {
+    /**
+     * @param lessColour keeps the strips in 16-bit colour, unless the image shows transparency, which that would
+     * lose.
+     */
+    private fun decodeStrips(decoder: BitmapRegionDecoder, sample: Int, lessColour: Boolean): List<Bitmap> {
         val width = decoder.width
         val height = decoder.height
         val options = BitmapFactory.Options().apply {
@@ -90,13 +97,18 @@ internal object PlatformStripDecoder {
                 val band = decoder.decodeRegion(Rect(0, top, width, bottom), options)
                     ?: throw IOException("Rows $top-$bottom of a ${width}x$height image couldn't be decoded")
                 try {
+                    val config = if (lessColour && looksOpaque(band)) {
+                        Bitmap.Config.RGB_565
+                    } else {
+                        Bitmap.Config.ARGB_8888
+                    }
                     var y = 0
                     while (y < band.height) {
                         val rows = min(stripRows, band.height - y)
                         val piece = Bitmap.createBitmap(band, 0, y, band.width, rows)
                         // The view wants immutable strips, which only reach the GPU when drawn, and copy is the
                         // only way to one (see the bundled path)
-                        val strip = piece.copy(Bitmap.Config.ARGB_8888, false)
+                        val strip = piece.copy(config, false)
                         if (piece !== band) piece.recycle()
                         strips += strip ?: throw OutOfMemoryError("No memory for a strip of ${width}x$height")
                         y += rows
@@ -114,6 +126,25 @@ internal object PlatformStripDecoder {
         }
     }
 
+    /**
+     * Many PNGs carry an alpha channel with nothing transparent in it. Looked at on a grid, so a band of millions
+     * of pixels costs a few thousand reads; a transparent spot between the points would come out black.
+     */
+    private fun looksOpaque(band: Bitmap): Boolean {
+        if (!band.hasAlpha()) return true
+        var y = 0
+        while (y < band.height) {
+            var x = 0
+            while (x < band.width) {
+                if (band.getPixel(x, y) ushr ALPHA_SHIFT != OPAQUE) return false
+                x += OPAQUE_CHECK_STEP
+            }
+            y += OPAQUE_CHECK_STEP
+        }
+        return true
+    }
+
+    /** In full colour. */
     private fun pageBytes(width: Int, height: Int, sample: Int): Long {
         return (width / sample).toLong() * (height / sample) * BYTES_PER_PIXEL
     }
@@ -134,12 +165,18 @@ internal object PlatformStripDecoder {
     private const val BAND_BYTES = 64 * 1024 * 1024
 
     /**
-     * A page at the view's width can go over the bundled path's budget too: it keeps such a page whole, however tall.
-     * Here there is a ceiling, past which the page is kept at a lower resolution instead of not at all.
+     * The bundled path's own budget for a page. It lets a page no wider than the view go over it, however tall;
+     * here such a page first loses colour depth and, past twice the budget, resolution.
      */
-    private const val MAX_PAGE_BYTES = 256L * 1024 * 1024
+    private const val MAX_PAGE_BYTES = 128L * 1024 * 1024
 
     private const val MAX_SAMPLE = 8
+
+    private const val OPAQUE_CHECK_STEP = 64
+
+    private const val ALPHA_SHIFT = 24
+
+    private const val OPAQUE = 0xFF
 
     private const val OUT_OF_MEMORY_RETRIES = 2
 }

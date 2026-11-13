@@ -118,6 +118,9 @@ data object AnimeLibraryTab : Tab {
 
         val snackbarHostState = remember { SnackbarHostState() }
         val extensionUpdates by context.appGraph.sourcePreferences.animeExtensionUpdatesCount.collectAsState()
+        // AniTenshi: the number on the round anime button, also on the bell, where it is clear what it counts
+        val showUpdatesCount by context.appGraph.libraryPreferences.newShowUpdatesCount.collectAsState()
+        val newUpdates by context.appGraph.libraryPreferences.newAnimeUpdatesCount.collectAsState()
 
         val onClickRefresh: (Category?) -> Boolean = { category ->
             // SY -->
@@ -221,6 +224,7 @@ data object AnimeLibraryTab : Tab {
                     onClickUpdates = { navigator.push(AnimeUpdatesScreen()) },
                     // AniTenshi: last item of the ⋮ menu
                     onClickSettings = { navigator.push(SettingsScreen(SettingsScreen.Destination.Library)) },
+                    updatesBadge = if (showUpdatesCount) newUpdates else 0,
                 )
             },
             bottomBar = {

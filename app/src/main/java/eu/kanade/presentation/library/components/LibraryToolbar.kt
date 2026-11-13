@@ -48,6 +48,8 @@ fun LibraryToolbar(
     navigateUp: (() -> Unit)? = null,
     onClickUpdates: (() -> Unit)? = null,
     onClickSettings: (() -> Unit)? = null,
+    // AniTenshi: the new chapters / episodes counted on the round library button, shown on the bell too
+    updatesBadge: Int = 0,
 ) = when {
     selectedCount > 0 -> LibrarySelectionToolbar(
         selectedCount = selectedCount,
@@ -70,6 +72,7 @@ fun LibraryToolbar(
         navigateUp = navigateUp,
         onClickUpdates = onClickUpdates,
         onClickSettings = onClickSettings,
+        updatesBadge = updatesBadge,
     )
 }
 
@@ -88,6 +91,7 @@ private fun LibraryRegularToolbar(
     navigateUp: (() -> Unit)?,
     onClickUpdates: (() -> Unit)?,
     onClickSettings: (() -> Unit)?,
+    updatesBadge: Int,
 ) {
     val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
     SearchToolbar(
@@ -139,6 +143,7 @@ private fun LibraryRegularToolbar(
                             title = stringResource(MR.strings.label_recent_updates),
                             icon = Icons.Outlined.Notifications,
                             onClick = it,
+                            badge = updatesBadge,
                         )
                     },
                     AppBar.OverflowAction(

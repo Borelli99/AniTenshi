@@ -14,6 +14,8 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -55,6 +57,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import eu.kanade.presentation.theme.AniTenshiPalette
 import kotlinx.coroutines.flow.drop
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.ArrowBack
@@ -237,11 +240,30 @@ fun AppBarActions(
                 onClick = it.onClick,
                 enabled = it.enabled,
             ) {
-                Icon(
-                    imageVector = it.icon,
-                    tint = it.iconTint ?: LocalContentColor.current,
-                    contentDescription = it.title,
-                )
+                if (it.badge > 0) {
+                    BadgedBox(
+                        badge = {
+                            Badge(
+                                containerColor = AniTenshiPalette.Gold,
+                                contentColor = AniTenshiPalette.Navy,
+                            ) {
+                                Text(text = it.badge.toString())
+                            }
+                        },
+                    ) {
+                        Icon(
+                            imageVector = it.icon,
+                            tint = it.iconTint ?: LocalContentColor.current,
+                            contentDescription = "${it.title}, ${it.badge}",
+                        )
+                    }
+                } else {
+                    Icon(
+                        imageVector = it.icon,
+                        tint = it.iconTint ?: LocalContentColor.current,
+                        contentDescription = it.title,
+                    )
+                }
             }
         }
     }
@@ -488,6 +510,8 @@ sealed interface AppBar {
         val iconTint: Color? = null,
         val onClick: () -> Unit,
         val enabled: Boolean = true,
+        // AniTenshi: a gold number on the icon, like the one on the round library buttons; none when 0
+        val badge: Int = 0,
     ) : AppBarAction
 
     // KMK -->

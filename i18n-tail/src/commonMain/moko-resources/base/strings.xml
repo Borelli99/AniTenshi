@@ -589,7 +589,10 @@
     <string name="anitenshi_extension_open_repos">Open repos</string>
     <string name="anitenshi_reader_not_an_image">Not an image (%s)</string>
     <string name="anitenshi_reader_image_too_large">The image is too large for this device\'s memory</string>
-    <string name="anitenshi_reader_hint_long_strip">The paged reader can\'t open this image. Switch the reading mode to %s.</string>
-    <string name="anitenshi_reader_hint_high_quality">The high quality renderer can\'t open this image. Turn off %s in Settings › Advanced.</string>
     <string name="anitenshi_reader_auto_long_strip">Very tall pages: reading mode set to %s</string>
+    <string name="anitenshi_reader_long_strip_only_title">Page too tall for the paged reader</string>
+    <string name="anitenshi_reader_long_strip_only_body">It can be read in %s mode.</string>
+    <string name="anitenshi_reader_switch_to_long_strip">Switch to %s</string>
+    <string name="anitenshi_reader_high_quality_only_title">Image too large for the high quality renderer</string>
+    <string name="anitenshi_reader_high_quality_only_body">Turn off \"%s\" in Settings › Advanced.</string>
 </resources>

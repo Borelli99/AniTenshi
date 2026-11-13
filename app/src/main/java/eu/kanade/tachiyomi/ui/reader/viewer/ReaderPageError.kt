@@ -4,26 +4,34 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.text.format.Formatter
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import ca.mpreg.imagedecoder.ImageDecoder
 import eu.kanade.presentation.reader.ReaderError
+import eu.kanade.presentation.reader.ReaderErrorSuggestion
 import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.data.coil.PageTooLargeException
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
+import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import kotlinx.coroutines.CancellationException
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.tail.TLMR
+import tachiyomi.presentation.core.i18n.stringResource
 import java.io.FilterInputStream
 import java.io.InputStream
 
@@ -42,14 +50,16 @@ fun ReaderPageError(
 ) {
     val context = LocalContext.current
     val imageUrl = page.imageUrl?.takeIf { it.startsWith("http", ignoreCase = true) }
+    val details = rememberReaderErrorDetails(page, error)
     ReaderError(
-        message = rememberReaderErrorMessage(page, error, hint),
+        details = details.text,
         onRetry = { page.chapter.pageLoader?.retryPage(page) },
         onOpenInWebView = imageUrl?.let {
             { context.startActivity(WebViewActivity.newIntent(context, it, sourceId)) }
         },
         modifier = modifier,
         onButtonPressChange = onButtonPressChange,
+        suggestion = readerErrorSuggestion(hint, details),
     )
 }
 
@@ -57,21 +67,27 @@ fun ReaderPageError(
  * AniTenshi: what to suggest for an image the bundled decoder refuses and Android's own reads. Only the long strip
  * falls back to Android's (PlatformStripDecoder); the other viewers can't show such an image.
  */
-enum class ReaderErrorHint {
-    /** From a paged viewer. */
-    USE_LONG_STRIP,
+sealed interface ReaderErrorHint {
+    /** From a paged viewer: [onSwitch] sets the manga's reading mode to long strip. */
+    class UseLongStrip(val onSwitch: () -> Unit) : ReaderErrorHint
 
-    /** From the high quality renderer, in any reading mode. */
-    TURN_OFF_HIGH_QUALITY,
+    /** From the high quality renderer, in any reading mode: only turning it off helps. */
+    data object TurnOffHighQuality : ReaderErrorHint
 }
 
 /**
- * AniTenshi: what the reader says about [page] that failed with [error]: the plain sentence, then the reason when it
- * is known and, for an image that did arrive but couldn't be shown, what the image is and, with a [hint], what to do
- * about it. Null for the plain sentence alone.
+ * AniTenshi: what the reader says under "The image couldn't be loaded".
+ *
+ * @param text the reason when it is known and, for an image that did arrive but couldn't be shown, what the image
+ * is; null when there is nothing to add.
+ * @param onlyAndroidReads the image is one the bundled decoder refuses and Android's own reads.
  */
+@Immutable
+class ReaderErrorDetails(val text: String?, val onlyAndroidReads: Boolean)
+
+/** AniTenshi: [ReaderErrorDetails] for [page] that failed with [error]. */
 @Composable
-fun rememberReaderErrorMessage(page: ReaderPage?, error: Throwable?, hint: ReaderErrorHint? = null): String? {
+fun rememberReaderErrorDetails(page: ReaderPage?, error: Throwable?): ReaderErrorDetails {
     val context = LocalContext.current
     val reason = when (error) {
         null -> null
@@ -82,20 +98,41 @@ fun rememberReaderErrorMessage(page: ReaderPage?, error: Throwable?, hint: Reade
     val imageNote by produceState<ImageNote?>(null, page, error) {
         value = if (page != null && page.status == Page.State.READY) describePageImage(context, page) else null
     }
-    val advice = when (hint.takeIf { imageNote?.onlyAndroidReads == true }) {
-        ReaderErrorHint.USE_LONG_STRIP -> context.stringResource(
-            TLMR.strings.anitenshi_reader_hint_long_strip,
-            context.stringResource(MR.strings.webtoon_viewer),
-        )
-        ReaderErrorHint.TURN_OFF_HIGH_QUALITY -> context.stringResource(
-            TLMR.strings.anitenshi_reader_hint_high_quality,
-            context.stringResource(MR.strings.pref_high_quality_renderer),
+    val lines = listOfNotNull(reason, imageNote?.text)
+    return ReaderErrorDetails(
+        text = lines.takeIf { it.isNotEmpty() }?.joinToString("\n"),
+        onlyAndroidReads = imageNote?.onlyAndroidReads == true,
+    )
+}
+
+/**
+ * AniTenshi: the card under the message, for an image only Android reads: in a paged viewer, a button that moves
+ * the manga to long strip; in the high quality renderer, where turning it off is the only way, just that advice.
+ */
+@Composable
+fun readerErrorSuggestion(hint: ReaderErrorHint?, details: ReaderErrorDetails): ReaderErrorSuggestion? {
+    if (!details.onlyAndroidReads) return null
+    return when (hint) {
+        is ReaderErrorHint.UseLongStrip -> {
+            val longStrip = stringResource(MR.strings.webtoon_viewer)
+            ReaderErrorSuggestion(
+                icon = ImageVector.vectorResource(ReadingMode.WEBTOON.iconRes),
+                title = stringResource(TLMR.strings.anitenshi_reader_long_strip_only_title),
+                body = stringResource(TLMR.strings.anitenshi_reader_long_strip_only_body, longStrip),
+                actionLabel = stringResource(TLMR.strings.anitenshi_reader_switch_to_long_strip, longStrip),
+                onAction = hint.onSwitch,
+            )
+        }
+        ReaderErrorHint.TurnOffHighQuality -> ReaderErrorSuggestion(
+            icon = Icons.Outlined.Tune,
+            title = stringResource(TLMR.strings.anitenshi_reader_high_quality_only_title),
+            body = stringResource(
+                TLMR.strings.anitenshi_reader_high_quality_only_body,
+                stringResource(MR.strings.pref_high_quality_renderer),
+            ),
         )
         null -> null
     }
-    val details = listOfNotNull(reason, imageNote?.text, advice)
-    if (details.isEmpty()) return null
-    return (listOf(context.stringResource(MR.strings.decode_image_error)) + details).joinToString("\n")
 }
 
 /**

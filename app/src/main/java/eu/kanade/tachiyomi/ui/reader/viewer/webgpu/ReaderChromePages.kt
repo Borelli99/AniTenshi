@@ -27,7 +27,8 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderErrorHint
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderThemedContent
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderTransitionPage
-import eu.kanade.tachiyomi.ui.reader.viewer.rememberReaderErrorMessage
+import eu.kanade.tachiyomi.ui.reader.viewer.readerErrorSuggestion
+import eu.kanade.tachiyomi.ui.reader.viewer.rememberReaderErrorDetails
 import eu.kanade.tachiyomi.ui.reader.viewer.transitionDownloadState
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import tachiyomi.presentation.core.components.CombinedCircularProgressIndicator
@@ -93,10 +94,12 @@ class ErrorPage internal constructor(
             Modifier
         }
 
+        val details = rememberReaderErrorDetails(viewerPage?.page, error)
         ReaderError(
             modifier = strip,
+            details = details.text,
             // AniTenshi: this renderer has no way around an image the bundled decoder refuses
-            message = rememberReaderErrorMessage(viewerPage?.page, error, ReaderErrorHint.TURN_OFF_HIGH_QUALITY),
+            suggestion = readerErrorSuggestion(ReaderErrorHint.TurnOffHighQuality, details),
             onRetry = { viewerPage?.let { viewer.retryLoad(it) } },
             onOpenInWebView = imageUrl?.let {
                 {

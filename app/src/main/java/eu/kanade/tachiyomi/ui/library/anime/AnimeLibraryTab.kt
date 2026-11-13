@@ -52,6 +52,7 @@ import eu.kanade.tachiyomi.ui.home.HomeScreen
 import eu.kanade.tachiyomi.ui.home.LocalBottomNavPadding
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
+import eu.kanade.tachiyomi.ui.setting.SettingsScreen
 import eu.kanade.tachiyomi.ui.updates.AnimeUpdatesScreen
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
@@ -218,6 +219,8 @@ data object AnimeLibraryTab : Tab {
                     onSearchQueryChange = viewModel::search,
                     scrollBehavior = scrollBehavior.takeIf { !tabVisible }, // For scroll overlay when no tab
                     onClickUpdates = { navigator.push(AnimeUpdatesScreen()) },
+                    // AniTenshi: last item of the ⋮ menu
+                    onClickSettings = { navigator.push(SettingsScreen(SettingsScreen.Destination.Library)) },
                 )
             },
             bottomBar = {

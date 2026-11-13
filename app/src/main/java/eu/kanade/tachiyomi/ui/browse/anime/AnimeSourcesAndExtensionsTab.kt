@@ -21,6 +21,7 @@ import eu.kanade.presentation.browse.anime.AnimeSourceOptionsDialog
 import eu.kanade.presentation.browse.anime.AnimeSourcesAndExtensionsScreen
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
+import eu.kanade.presentation.components.settingsOverflowAction
 import eu.kanade.presentation.more.settings.screen.browse.ExtensionStoresScreen
 import eu.kanade.tachiyomi.extension.anime.model.AnimeExtension
 import eu.kanade.tachiyomi.ui.browse.anime.extension.AnimeExtensionFilterScreen
@@ -33,6 +34,7 @@ import eu.kanade.tachiyomi.ui.browse.anime.source.browse.BrowseAnimeSourceScreen
 import eu.kanade.tachiyomi.ui.browse.anime.source.browse.BrowseAnimeSourceViewModel
 import eu.kanade.tachiyomi.ui.browse.anime.source.feed.SourceFeedScreen
 import eu.kanade.tachiyomi.ui.browse.anime.source.globalsearch.GlobalAnimeSearchScreen
+import eu.kanade.tachiyomi.ui.setting.SettingsScreen
 import eu.kanade.tachiyomi.ui.webview.WebViewScreen
 import eu.kanade.tachiyomi.util.system.isPackageInstalled
 import kotlinx.collections.immutable.persistentListOf
@@ -84,6 +86,11 @@ fun Screen.animeSourcesAndExtensionsTab(
             AppBar.OverflowAction(
                 title = stringResource(MR.strings.extensionStores),
                 onClick = { navigator.push(ExtensionStoresScreen(isManga = false)) },
+            ),
+            // AniTenshi: last item of the ⋮ menu
+            settingsOverflowAction(
+                title = stringResource(TLMR.strings.anitenshi_settings_browse),
+                onClick = { navigator.push(SettingsScreen(SettingsScreen.Destination.Browse)) },
             ),
         ),
         content = { contentPadding, snackbarHostState ->

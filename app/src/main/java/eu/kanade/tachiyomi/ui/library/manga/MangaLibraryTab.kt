@@ -51,6 +51,7 @@ import eu.kanade.tachiyomi.ui.home.HomeScreen
 import eu.kanade.tachiyomi.ui.home.LocalBottomNavPadding
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
+import eu.kanade.tachiyomi.ui.setting.SettingsScreen
 import eu.kanade.tachiyomi.ui.updates.MangaUpdatesScreen
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.channels.Channel
@@ -203,6 +204,8 @@ data object MangaLibraryTab : Tab {
                     onSearchQueryChange = viewModel::search,
                     scrollBehavior = scrollBehavior.takeIf { !tabVisible }, // For scroll overlay when no tab
                     onClickUpdates = { navigator.push(MangaUpdatesScreen()) },
+                    // AniTenshi: last item of the ⋮ menu
+                    onClickSettings = { navigator.push(SettingsScreen(SettingsScreen.Destination.Library)) },
                 )
             },
             bottomBar = {

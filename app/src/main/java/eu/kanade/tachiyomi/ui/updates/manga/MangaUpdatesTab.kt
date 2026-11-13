@@ -21,6 +21,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
+import eu.kanade.presentation.components.settingsOverflowAction
+import eu.kanade.presentation.more.settings.screen.SearchableSettings
 import eu.kanade.presentation.updates.UpdatesDeleteConfirmationDialog
 import eu.kanade.presentation.updates.UpdatesFilterDialog
 import eu.kanade.presentation.updates.manga.MangaUpdateScreen
@@ -30,6 +32,7 @@ import eu.kanade.tachiyomi.ui.entries.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
+import eu.kanade.tachiyomi.ui.setting.SettingsScreen
 import eu.kanade.tachiyomi.ui.updates.UpdatesSettingsViewModel
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
@@ -38,6 +41,7 @@ import mihon.feature.upcoming.manga.UpcomingMangaScreen
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.theme.active
 
@@ -47,6 +51,7 @@ fun Screen.mangaUpdatesTab(
     fromMore: Boolean,
 ): TabContent {
     val navigator = LocalNavigator.currentOrThrow
+    val automaticUpdatesKey = stringResource(MR.strings.pref_library_update_interval)
     val viewModel = metroViewModel<MangaUpdatesViewModel>()
     val settingsViewModel = metroViewModel<UpdatesSettingsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -184,6 +189,14 @@ fun Screen.mangaUpdatesTab(
                     title = stringResource(MR.strings.action_update_library),
                     icon = Icons.Outlined.Refresh,
                     onClick = { viewModel.updateLibrary() },
+                ),
+                // AniTenshi: the automatic updates are in the library's page of the settings
+                settingsOverflowAction(
+                    title = stringResource(TLMR.strings.anitenshi_settings_updates),
+                    onClick = {
+                        SearchableSettings.highlightKey = automaticUpdatesKey
+                        navigator.push(SettingsScreen(SettingsScreen.Destination.Library))
+                    },
                 ),
             )
         },

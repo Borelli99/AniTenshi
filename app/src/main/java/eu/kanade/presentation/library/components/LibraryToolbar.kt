@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.components.SearchToolbar
+import eu.kanade.presentation.components.settingsOverflowAction
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.FilterList
 import mihon.icons.materialsymbols.rounded.FlipToBack
@@ -46,6 +47,7 @@ fun LibraryToolbar(
     scrollBehavior: TopAppBarScrollBehavior?,
     navigateUp: (() -> Unit)? = null,
     onClickUpdates: (() -> Unit)? = null,
+    onClickSettings: (() -> Unit)? = null,
 ) = when {
     selectedCount > 0 -> LibrarySelectionToolbar(
         selectedCount = selectedCount,
@@ -67,6 +69,7 @@ fun LibraryToolbar(
         scrollBehavior = scrollBehavior,
         navigateUp = navigateUp,
         onClickUpdates = onClickUpdates,
+        onClickSettings = onClickSettings,
     )
 }
 
@@ -84,6 +87,7 @@ private fun LibraryRegularToolbar(
     scrollBehavior: TopAppBarScrollBehavior?,
     navigateUp: (() -> Unit)?,
     onClickUpdates: (() -> Unit)?,
+    onClickSettings: (() -> Unit)?,
 ) {
     val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
     SearchToolbar(
@@ -153,6 +157,12 @@ private fun LibraryRegularToolbar(
                         title = stringResource(TLMR.strings.sync_library),
                         onClick = onClickSyncNow,
                     ),
+                    onClickSettings?.let {
+                        settingsOverflowAction(
+                            title = stringResource(TLMR.strings.anitenshi_settings_library),
+                            onClick = it,
+                        )
+                    },
                 ),
             )
         },

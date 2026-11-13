@@ -13,7 +13,10 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.more.settings.screen.SettingsAppearanceScreen
+import eu.kanade.presentation.more.settings.screen.SettingsBrowseScreen
 import eu.kanade.presentation.more.settings.screen.SettingsDataScreen
+import eu.kanade.presentation.more.settings.screen.SettingsDownloadScreen
+import eu.kanade.presentation.more.settings.screen.SettingsLibraryScreen
 import eu.kanade.presentation.more.settings.screen.SettingsMainScreen
 import eu.kanade.presentation.more.settings.screen.SettingsTrackingScreen
 import eu.kanade.presentation.more.settings.screen.about.AboutScreen
@@ -38,6 +41,9 @@ class SettingsScreen(
                     Destination.About.id -> AboutScreen
                     Destination.DataAndStorage.id -> SettingsDataScreen
                     Destination.Tracking.id -> SettingsTrackingScreen
+                    Destination.Library.id -> SettingsLibraryScreen
+                    Destination.Downloads.id -> SettingsDownloadScreen
+                    Destination.Browse.id -> SettingsBrowseScreen
                     else -> SettingsMainScreen
                 },
                 content = {
@@ -59,6 +65,9 @@ class SettingsScreen(
                     Destination.About.id -> AboutScreen
                     Destination.DataAndStorage.id -> SettingsDataScreen
                     Destination.Tracking.id -> SettingsTrackingScreen
+                    Destination.Library.id -> SettingsLibraryScreen
+                    Destination.Downloads.id -> SettingsDownloadScreen
+                    Destination.Browse.id -> SettingsBrowseScreen
                     else -> SettingsAppearanceScreen
                 },
             ) {
@@ -82,5 +91,10 @@ class SettingsScreen(
         data object About : Destination(0)
         data object DataAndStorage : Destination(1)
         data object Tracking : Destination(2)
+
+        // AniTenshi: opened from the ⋮ menu of the screen they are about
+        data object Library : Destination(3)
+        data object Downloads : Destination(4)
+        data object Browse : Destination(5)
     }
 }

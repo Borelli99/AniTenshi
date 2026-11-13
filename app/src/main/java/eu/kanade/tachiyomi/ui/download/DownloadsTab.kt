@@ -59,16 +59,19 @@ import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.presentation.components.NestedMenuItem
+import eu.kanade.presentation.components.settingsOverflowAction
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.download.anime.AnimeDownloadQueueViewModel
 import eu.kanade.tachiyomi.ui.download.anime.animeDownloadTab
 import eu.kanade.tachiyomi.ui.download.manga.MangaDownloadQueueViewModel
 import eu.kanade.tachiyomi.ui.download.manga.mangaDownloadTab
+import eu.kanade.tachiyomi.ui.setting.SettingsScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.Pill
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.components.material.TabText
@@ -295,11 +298,22 @@ data object DownloadsTab : Tab {
         }
     }
 
+    /** AniTenshi: last item of the ⋮ menu, which opens the downloads' page of the settings. */
+    @Composable
+    private fun downloadSettingsAction(): AppBar.OverflowAction {
+        val navigator = LocalNavigator.currentOrThrow
+        return settingsOverflowAction(
+            title = stringResource(TLMR.strings.anitenshi_settings_downloads),
+            onClick = { navigator.push(SettingsScreen(SettingsScreen.Destination.Downloads)) },
+        )
+    }
+
     @Composable
     private fun AnimeActions(
         animeViewModel: AnimeDownloadQueueViewModel,
         animeDownloadList: List<DownloadQueueSection>,
     ) {
+        val settingsAction = downloadSettingsAction()
         if (animeDownloadList.isNotEmpty()) {
             var sortExpanded by remember { mutableStateOf(false) }
             val onDismissRequest = { sortExpanded = false }
@@ -384,8 +398,12 @@ data object DownloadsTab : Tab {
                         title = stringResource(MR.strings.action_cancel_all),
                         onClick = { animeViewModel.clearQueue() },
                     ),
+                    settingsAction,
                 ),
             )
+        } else {
+            // AniTenshi: the settings are there with an empty queue too
+            AppBarActions(persistentListOf(settingsAction))
         }
     }
 
@@ -394,6 +412,7 @@ data object DownloadsTab : Tab {
         mangaScreenModel: MangaDownloadQueueViewModel,
         mangaDownloadList: List<DownloadQueueSection>,
     ) {
+        val settingsAction = downloadSettingsAction()
         if (mangaDownloadList.isNotEmpty()) {
             var sortExpanded by remember { mutableStateOf(false) }
             val onDismissRequest = { sortExpanded = false }
@@ -478,8 +497,12 @@ data object DownloadsTab : Tab {
                         title = stringResource(MR.strings.action_cancel_all),
                         onClick = { mangaScreenModel.clearQueue() },
                     ),
+                    settingsAction,
                 ),
             )
+        } else {
+            // AniTenshi: the settings are there with an empty queue too
+            AppBarActions(persistentListOf(settingsAction))
         }
     }
 }

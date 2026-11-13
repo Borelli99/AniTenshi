@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -60,6 +61,7 @@ import mihon.icons.materialsymbols.automirroredrounded.ArrowBack
 import mihon.icons.materialsymbols.rounded.Close
 import mihon.icons.materialsymbols.rounded.MoreVert
 import mihon.icons.materialsymbols.rounded.Search
+import mihon.icons.materialsymbols.rounded.Settings
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.Pill
 import tachiyomi.presentation.core.i18n.stringResource
@@ -272,13 +274,34 @@ fun AppBarActions(
             expanded = showMenu,
             onDismissRequest = { showMenu = false },
         ) {
-            overflowActions.map {
+            overflowActions.forEachIndexed { index, action ->
+                if (action.dividerBefore && index > 0) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
+                val icon = action.icon
                 DropdownMenuItem(
                     onClick = {
-                        it.onClick()
+                        action.onClick()
                         showMenu = false
                     },
-                    text = { Text(it.title, fontWeight = FontWeight.Normal) },
+                    // AniTenshi: an item with an icon leads somewhere else, and reads a little stronger
+                    text = {
+                        Text(
+                            text = action.title,
+                            fontWeight = if (icon != null) FontWeight.Medium else FontWeight.Normal,
+                        )
+                    },
+                    leadingIcon = if (icon != null) {
+                        {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = action.iconTint ?: LocalContentColor.current,
+                            )
+                        }
+                    } else {
+                        null
+                    },
                 )
             }
         }
@@ -477,5 +500,24 @@ sealed interface AppBar {
     data class OverflowAction(
         val title: String,
         val onClick: () -> Unit,
+        // AniTenshi: an icon before the title, and a line above the item to set it apart from the ones before
+        val icon: ImageVector? = null,
+        val iconTint: Color? = null,
+        val dividerBefore: Boolean = false,
     ) : AppBarAction
+}
+
+/**
+ * AniTenshi: the last item of a screen's ⋮ menu, which opens that screen's page of the settings: a gold gear,
+ * set apart by a line.
+ */
+@Composable
+fun settingsOverflowAction(title: String, onClick: () -> Unit): AppBar.OverflowAction {
+    return AppBar.OverflowAction(
+        title = title,
+        onClick = onClick,
+        icon = MaterialSymbols.Rounded.Settings,
+        iconTint = MaterialTheme.colorScheme.secondary,
+        dividerBefore = true,
+    )
 }

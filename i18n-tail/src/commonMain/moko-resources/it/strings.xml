@@ -512,4 +512,8 @@
   <string name="anitenshi_reader_switch_to_long_strip">Passa a «%s»</string>
   <string name="anitenshi_reader_high_quality_only_title">Immagine troppo grande per il rendering ad alta qualità</string>
   <string name="anitenshi_reader_high_quality_only_body">Disattiva «%s» in Impostazioni › Avanzate.</string>
+  <string name="anitenshi_settings_library">Impostazioni libreria</string>
+  <string name="anitenshi_settings_updates">Impostazioni aggiornamenti</string>
+  <string name="anitenshi_settings_downloads">Impostazioni download</string>
+  <string name="anitenshi_settings_browse">Impostazioni di Sfoglia</string>
 </resources>

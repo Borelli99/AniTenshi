@@ -595,4 +595,8 @@
     <string name="anitenshi_reader_switch_to_long_strip">Switch to %s</string>
     <string name="anitenshi_reader_high_quality_only_title">Image too large for the high quality renderer</string>
     <string name="anitenshi_reader_high_quality_only_body">Turn off \"%s\" in Settings › Advanced.</string>
+    <string name="anitenshi_settings_library">Library settings</string>
+    <string name="anitenshi_settings_updates">Update settings</string>
+    <string name="anitenshi_settings_downloads">Download settings</string>
+    <string name="anitenshi_settings_browse">Browse settings</string>
 </resources>

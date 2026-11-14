@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.AniTenshiMark
 import tachiyomi.presentation.core.i18n.stringResource
 
 /**
@@ -78,6 +79,8 @@ fun ReaderError(
             verticalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.widthIn(max = ReaderErrorMaxWidth),
         ) {
+            // AniTenshi: the A with the red horns, as on the app's other error screens
+            AniTenshiMark(isError = true, size = 64.dp)
             Text(
                 text = stringResource(MR.strings.decode_image_error),
                 style = MaterialTheme.typography.bodyLarge,

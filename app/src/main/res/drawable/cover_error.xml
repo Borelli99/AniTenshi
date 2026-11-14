@@ -7,18 +7,38 @@
     </item>
 
     <item
-        android:top="48dp"
-        android:bottom="48dp"
-        android:left="48dp"
-        android:right="48dp">
+        android:top="40dp"
+        android:bottom="40dp"
+        android:left="40dp"
+        android:right="40dp">
+        <!-- Opaque paths under one alpha (that of cover_placeholder), so the A and its horns don't add up where they overlap -->
         <vector
-            android:width="24dp"
-            android:height="24dp"
-            android:viewportWidth="24"
-            android:viewportHeight="24">
-            <path
-                android:fillColor="@color/cover_placeholder"
-                android:pathData="M21,5v6.59l-2.29,-2.3c-0.39,-0.39 -1.03,-0.39 -1.42,0L14,12.59 10.71,9.3c-0.39,-0.39 -1.02,-0.39 -1.41,0L6,12.59 3,9.58L3,5c0,-1.1 0.9,-2 2,-2h14c1.1,0 2,0.9 2,2zM18,11.42l3,3.01L21,19c0,1.1 -0.9,2 -2,2L5,21c-1.1,0 -2,-0.9 -2,-2v-6.58l2.29,2.29c0.39,0.39 1.02,0.39 1.41,0l3.3,-3.3 3.29,3.29c0.39,0.39 1.02,0.39 1.41,0l3.3,-3.28z"/>
+            android:width="40dp"
+            android:height="40dp"
+            android:alpha="0.12"
+            android:viewportWidth="56"
+            android:viewportHeight="56">
+            <!-- AniTenshi: the A with the devil horns of AniTenshiMark, in one quiet tone -->
+            <group
+                android:translateX="-26"
+                android:translateY="-27">
+                <path
+                    android:fillColor="#888888"
+                    android:pathData="M47.6,47.5C41.5,46.8 38.6,41.5 39.4,35.5C39.8,32.6 40.9,30.2 42.6,28.2C42.5,33.2 45.2,38.4 49.9,40.8Z" />
+                <group
+                    android:pivotX="54"
+                    android:scaleX="-1">
+                    <path
+                        android:fillColor="#888888"
+                        android:pathData="M47.6,47.5C41.5,46.8 38.6,41.5 39.4,35.5C39.8,32.6 40.9,30.2 42.6,28.2C42.5,33.2 45.2,38.4 49.9,40.8Z" />
+                </group>
+                <path
+                    android:pathData="M38,77L54,33L70,77"
+                    android:strokeColor="#888888"
+                    android:strokeLineCap="round"
+                    android:strokeLineJoin="round"
+                    android:strokeWidth="7.5" />
+            </group>
         </vector>
     </item>
 

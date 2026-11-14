@@ -619,4 +619,25 @@
     <string name="anitenshi_migration_sources_all">All</string>
     <string name="anitenshi_migration_sources_pinned">Only pinned</string>
     <string name="anitenshi_migration_sources_none">None</string>
+    <!-- Settings: main page -->
+    <string name="anitenshi_settings_search">Search settings</string>
+    <string name="anitenshi_settings_group_app">Look and app</string>
+    <string name="anitenshi_settings_group_library">Library and content</string>
+    <string name="anitenshi_settings_group_reading">Reading and watching</string>
+    <string name="anitenshi_settings_group_account">Accounts and data</string>
+    <string name="anitenshi_settings_group_other">Other</string>
+    <string name="anitenshi_settings_reader_manga">Manga reader</string>
+    <string name="anitenshi_settings_player_anime">Anime player</string>
+    <string name="anitenshi_settings_player_summary">Gestures, decoder, subtitles</string>
+    <string name="anitenshi_settings_advanced_summary">Crash logs, battery</string>
+    <string name="anitenshi_settings_value_theme">Theme: %s</string>
+    <string name="anitenshi_settings_value_lock_on">App lock: on</string>
+    <string name="anitenshi_settings_value_lock_off">App lock: off</string>
+    <string name="anitenshi_settings_value_auto_update">Automatic updates: %s</string>
+    <string name="anitenshi_settings_value_wifi_on">Only on Wi-Fi: on</string>
+    <string name="anitenshi_settings_value_wifi_off">Only on Wi-Fi: off</string>
+    <string name="anitenshi_settings_value_reading_mode">Mode: %s</string>
+    <string name="anitenshi_settings_value_trackers_none">No service connected</string>
+    <string name="anitenshi_settings_value_discord_on">Discord: connected</string>
+    <string name="anitenshi_settings_value_discord_off">Discord: not connected</string>
 </resources>

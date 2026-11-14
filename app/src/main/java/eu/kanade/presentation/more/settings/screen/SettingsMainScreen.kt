@@ -1,41 +1,62 @@
 package eu.kanade.presentation.more.settings.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.VideoSettings
-import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.components.AppBar
-import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.more.settings.screen.about.AboutScreen
-import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.presentation.util.Screen
+import eu.kanade.presentation.util.relativeTimeSpanString
+import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import eu.kanade.tachiyomi.ui.setting.PlayerSettingsScreen
+import mihon.app.di.appGraph
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.ChromeReaderMode
 import mihon.icons.materialsymbols.rounded.Code
@@ -43,6 +64,7 @@ import mihon.icons.materialsymbols.rounded.CollectionsBookmark
 import mihon.icons.materialsymbols.rounded.Download
 import mihon.icons.materialsymbols.rounded.Explore
 import mihon.icons.materialsymbols.rounded.Info
+import mihon.icons.materialsymbols.rounded.KeyboardArrowRight
 import mihon.icons.materialsymbols.rounded.Palette
 import mihon.icons.materialsymbols.rounded.Search
 import mihon.icons.materialsymbols.rounded.Security
@@ -52,7 +74,10 @@ import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.material.Scaffold
+import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.util.collectAsState
+import tachiyomi.presentation.core.util.plus
 import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 
 object SettingsMainScreen : Screen() {
@@ -77,87 +102,80 @@ object SettingsMainScreen : Screen() {
         }
     }
 
+    /**
+     * AniTenshi: the first page of the settings. A search bar that is always there (it opens the settings
+     * search, which used to hide behind a small magnifier), and the pages gathered in a few named groups,
+     * each in its own card. Under each page is what it is set to now, where one setting sums the page up,
+     * or a few words on what is inside.
+     */
     @Composable
     fun Content(twoPane: Boolean) {
         val navigator = LocalNavigator.currentOrThrow
         val backPress = LocalBackPress.currentOrThrow
         val containerColor = if (twoPane) getPalerSurface() else MaterialTheme.colorScheme.surface
-        val topBarState = rememberTopAppBarState()
+        val state = rememberLazyListState()
 
         Scaffold(
-            topBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(topBarState),
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = stringResource(MR.strings.label_settings),
-                    navigateUp = backPress::invoke,
-                    actions = {
-                        AppBarActions(
-                            listOf(
-                                AppBar.Action(
-                                    title = stringResource(MR.strings.action_search),
-                                    icon = MaterialSymbols.Rounded.Search,
-                                    onClick = { navigator.navigate(SettingsSearchScreen(), twoPane) },
-                                ),
-                            ),
-                        )
-                    },
-                    scrollBehavior = scrollBehavior,
-                )
+            // The search bar stays under the title while the list scrolls. The bar keeps the color of the
+            // page (no scroll behavior), and a thin line shows up under it once the list has moved.
+            topBar = {
+                Column(modifier = Modifier.background(containerColor)) {
+                    AppBar(
+                        title = stringResource(MR.strings.label_settings),
+                        backgroundColor = containerColor,
+                        navigateUp = backPress::invoke,
+                    )
+                    SettingsSearchBar(
+                        onClick = { navigator.navigate(SettingsSearchScreen(), twoPane) },
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 8.dp),
+                    )
+                    HorizontalDivider(
+                        color = if (state.canScrollBackward) {
+                            MaterialTheme.colorScheme.outlineVariant
+                        } else {
+                            Color.Transparent
+                        },
+                    )
+                }
             },
             containerColor = containerColor,
             content = { contentPadding ->
-                val state = rememberLazyListState()
-                val indexSelected = if (twoPane) {
-                    items.indexOfFirst { it.screen::class == navigator.items.first()::class }
-                        .also {
-                            LaunchedEffect(Unit) {
-                                state.animateScrollToItem(it)
-                                if (it > 0) {
-                                    // Lift scroll
-                                    topBarState.contentOffset = topBarState.heightOffsetLimit
-                                }
-                            }
+                // On tablets the page shown on the right is marked on this list
+                val openScreen = if (twoPane) navigator.items.first()::class else null
+                if (twoPane) {
+                    LaunchedEffect(Unit) {
+                        val groupIndex = groups.indexOfFirst { group ->
+                            group.items.any { it.screen::class == openScreen }
                         }
-                } else {
-                    null
+                        if (groupIndex > 0) state.animateScrollToItem(groupIndex)
+                    }
                 }
 
                 LazyColumn(
                     state = state,
-                    contentPadding = contentPadding,
+                    contentPadding = contentPadding +
+                        PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                    itemsIndexed(
-                        items = items,
-                        key = { _, item -> item.hashCode() },
-                    ) { index, item ->
-                        val selected = indexSelected == index
-                        var modifier: Modifier = Modifier
-                        var contentColor = LocalContentColor.current
-                        if (twoPane) {
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp)
-                                .clip(RoundedCornerShape(24.dp))
-                                .then(
-                                    if (selected) {
-                                        Modifier.background(
-                                            MaterialTheme.colorScheme.surfaceVariant,
-                                        )
-                                    } else {
-                                        Modifier
-                                    },
+                    items(
+                        count = groups.size,
+                        key = { it },
+                    ) { index ->
+                        val group = groups[index]
+                        SettingsGroup(
+                            title = stringResource(group.titleRes),
+                        ) {
+                            group.items.forEach { item ->
+                                SettingsEntry(
+                                    title = stringResource(item.titleRes),
+                                    subtitle = item.subtitle(),
+                                    icon = item.icon,
+                                    // Phones open the page over this one; tablets show it beside the list
+                                    isSelected = twoPane && item.screen::class == openScreen,
+                                    isSelectable = twoPane,
+                                    onClick = { navigator.navigate(item.screen, twoPane) },
                                 )
-                            if (selected) {
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                             }
-                        }
-                        CompositionLocalProvider(LocalContentColor provides contentColor) {
-                            TextPreferenceWidget(
-                                modifier = modifier,
-                                title = stringResource(item.titleRes),
-                                subtitle = item.formatSubtitle(),
-                                icon = item.icon,
-                                onPreferenceClick = { navigator.navigate(item.screen, twoPane) },
-                            )
                         }
                     }
                 }
@@ -169,92 +187,348 @@ object SettingsMainScreen : Screen() {
         if (twoPane) replaceAll(screen) else push(screen)
     }
 
-    private data class Item(
+    @Composable
+    private fun SettingsSearchBar(
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+    ) {
+        Surface(
+            onClick = onClick,
+            modifier = modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        ) {
+            Row(
+                modifier = Modifier
+                    .heightIn(min = 52.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = stringResource(TLMR.strings.anitenshi_settings_search),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun SettingsGroup(
+        title: String,
+        content: @Composable () -> Unit,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = title,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .semantics { heading() },
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+            ) {
+                Column(
+                    modifier = Modifier.padding(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    content()
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun SettingsEntry(
+        title: String,
+        subtitle: String?,
+        icon: ImageVector,
+        isSelected: Boolean,
+        isSelectable: Boolean,
+        onClick: () -> Unit,
+    ) {
+        val colors = MaterialTheme.colorScheme
+        val titleColor = if (isSelected) colors.onSecondaryContainer else colors.onSurface
+        val subtitleColor = if (isSelected) colors.onSecondaryContainer.copy(alpha = 0.8f) else colors.onSurfaceVariant
+        val iconBoxColor = if (isSelected) {
+            colors.onSecondaryContainer.copy(alpha = 0.12f)
+        } else {
+            colors.surfaceContainerHigh
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (isSelected) colors.secondaryContainer else Color.Transparent)
+                .clickable(role = Role.Button, onClick = onClick)
+                .semantics { if (isSelectable) selected = isSelected }
+                .heightIn(min = 60.dp)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(iconBoxColor),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = colors.primary,
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = titleColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                        color = subtitleColor,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            // The arrow says "this opens a page": on tablets the page is already open beside the list
+            if (!isSelectable) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.KeyboardArrowRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = colors.outline,
+                )
+            }
+        }
+    }
+
+    private data class Group(
         val titleRes: StringResource,
-        val subtitleRes: StringResource? = null,
-        val formatSubtitle: @Composable () -> String? = { subtitleRes?.let { stringResource(it) } },
-        val icon: ImageVector,
-        val screen: VoyagerScreen,
+        val items: List<Item>,
     )
 
-    private val items = listOf(
-        Item(
-            titleRes = MR.strings.pref_category_appearance,
-            subtitleRes = MR.strings.pref_appearance_summary,
-            icon = MaterialSymbols.Rounded.Palette,
-            screen = SettingsAppearanceScreen,
+    private data class Item(
+        val titleRes: StringResource,
+        val icon: ImageVector,
+        val screen: VoyagerScreen,
+        val subtitle: @Composable () -> String?,
+    )
+
+    private val groups = listOf(
+        Group(
+            titleRes = TLMR.strings.anitenshi_settings_group_app,
+            items = listOf(
+                Item(
+                    titleRes = MR.strings.pref_category_appearance,
+                    icon = MaterialSymbols.Rounded.Palette,
+                    screen = SettingsAppearanceScreen,
+                    subtitle = {
+                        val context = LocalContext.current
+                        val theme by remember { context.appGraph.uiPreferences.appTheme }.collectAsState()
+                        theme.titleRes
+                            ?.let { stringResource(TLMR.strings.anitenshi_settings_value_theme, stringResource(it)) }
+                            ?: stringResource(MR.strings.pref_appearance_summary)
+                    },
+                ),
+                Item(
+                    titleRes = MR.strings.pref_category_security,
+                    icon = MaterialSymbols.Rounded.Security,
+                    screen = SettingsSecurityScreen,
+                    subtitle = {
+                        val context = LocalContext.current
+                        val locked by remember { context.appGraph.securityPreferences.useAuthenticator }
+                            .collectAsState()
+                        stringResource(
+                            if (locked) {
+                                TLMR.strings.anitenshi_settings_value_lock_on
+                            } else {
+                                TLMR.strings.anitenshi_settings_value_lock_off
+                            },
+                        )
+                    },
+                ),
+            ),
         ),
-        Item(
-            titleRes = MR.strings.pref_category_library,
-            subtitleRes = AYMR.strings.pref_library_summary,
-            icon = MaterialSymbols.Rounded.CollectionsBookmark,
-            screen = SettingsLibraryScreen,
+        Group(
+            titleRes = TLMR.strings.anitenshi_settings_group_library,
+            items = listOf(
+                Item(
+                    titleRes = MR.strings.pref_category_library,
+                    icon = MaterialSymbols.Rounded.CollectionsBookmark,
+                    screen = SettingsLibraryScreen,
+                    subtitle = {
+                        val context = LocalContext.current
+                        val interval by remember { context.appGraph.libraryPreferences.autoUpdateInterval }
+                            .collectAsState()
+                        val every = when (interval) {
+                            0 -> MR.strings.update_never
+                            12 -> MR.strings.update_12hour
+                            24 -> MR.strings.update_24hour
+                            48 -> MR.strings.update_48hour
+                            72 -> MR.strings.update_72hour
+                            168 -> MR.strings.update_weekly
+                            else -> null
+                        }
+                        every
+                            ?.let {
+                                stringResource(TLMR.strings.anitenshi_settings_value_auto_update, stringResource(it))
+                            }
+                            ?: stringResource(AYMR.strings.pref_library_summary)
+                    },
+                ),
+                Item(
+                    titleRes = MR.strings.browse,
+                    icon = MaterialSymbols.Rounded.Explore,
+                    screen = SettingsBrowseScreen,
+                    subtitle = { stringResource(MR.strings.pref_browse_summary) },
+                ),
+                Item(
+                    titleRes = MR.strings.pref_category_downloads,
+                    icon = MaterialSymbols.Rounded.Download,
+                    screen = SettingsDownloadScreen,
+                    subtitle = {
+                        val context = LocalContext.current
+                        val onlyWifi by remember { context.appGraph.downloadPreferences.downloadOnlyOverWifi }
+                            .collectAsState()
+                        stringResource(
+                            if (onlyWifi) {
+                                TLMR.strings.anitenshi_settings_value_wifi_on
+                            } else {
+                                TLMR.strings.anitenshi_settings_value_wifi_off
+                            },
+                        )
+                    },
+                ),
+            ),
         ),
-        Item(
-            titleRes = MR.strings.pref_category_reader,
-            subtitleRes = MR.strings.pref_reader_summary,
-            icon = MaterialSymbols.AutoMirroredRounded.ChromeReaderMode,
-            screen = SettingsReaderScreen,
+        Group(
+            titleRes = TLMR.strings.anitenshi_settings_group_reading,
+            items = listOf(
+                Item(
+                    // "Manga reader" and "Anime player": in some languages the two were both just "Reader"
+                    titleRes = TLMR.strings.anitenshi_settings_reader_manga,
+                    icon = MaterialSymbols.AutoMirroredRounded.ChromeReaderMode,
+                    screen = SettingsReaderScreen,
+                    subtitle = {
+                        val context = LocalContext.current
+                        val mode by remember { context.appGraph.readerPreferences.defaultReadingMode }
+                            .collectAsState()
+                        stringResource(
+                            TLMR.strings.anitenshi_settings_value_reading_mode,
+                            stringResource(ReadingMode.fromPreference(mode).stringRes),
+                        )
+                    },
+                ),
+                Item(
+                    titleRes = TLMR.strings.anitenshi_settings_player_anime,
+                    icon = Icons.Outlined.VideoSettings,
+                    screen = PlayerSettingsScreen(mainSettings = true),
+                    subtitle = { stringResource(TLMR.strings.anitenshi_settings_player_summary) },
+                ),
+            ),
         ),
-        Item(
-            titleRes = AYMR.strings.label_player,
-            subtitleRes = AYMR.strings.pref_player_settings_summary,
-            icon = Icons.Outlined.VideoSettings,
-            screen = PlayerSettingsScreen(mainSettings = true),
+        Group(
+            titleRes = TLMR.strings.anitenshi_settings_group_account,
+            items = listOf(
+                Item(
+                    titleRes = MR.strings.pref_category_tracking,
+                    icon = MaterialSymbols.Rounded.Sync,
+                    screen = SettingsTrackingScreen,
+                    subtitle = {
+                        val context = LocalContext.current
+                        val trackerManager = remember { context.appGraph.trackerManager }
+                        val loggedIn by remember { trackerManager.loggedInTrackersFlow() }
+                            .collectAsState(initial = trackerManager.loggedInTrackers())
+                        if (loggedIn.isEmpty()) {
+                            stringResource(TLMR.strings.anitenshi_settings_value_trackers_none)
+                        } else {
+                            pluralStringResource(
+                                TLMR.plurals.anitenshi_settings_value_trackers,
+                                count = loggedIn.size,
+                                loggedIn.size,
+                            )
+                        }
+                    },
+                ),
+                // AM (CONNECTIONS) -->
+                Item(
+                    titleRes = TLMR.strings.pref_category_connections,
+                    icon = Icons.Outlined.Link,
+                    screen = SettingsConnectionsScreen,
+                    subtitle = {
+                        val context = LocalContext.current
+                        val username by remember {
+                            context.appGraph.connectionsPreferences
+                                .connectionsUsername(context.appGraph.connectionsManager.discord)
+                        }.collectAsState()
+                        stringResource(
+                            if (username.isNotEmpty()) {
+                                TLMR.strings.anitenshi_settings_value_discord_on
+                            } else {
+                                TLMR.strings.anitenshi_settings_value_discord_off
+                            },
+                        )
+                    },
+                ),
+                // <-- AM (CONNECTIONS)
+                Item(
+                    titleRes = MR.strings.label_data_storage,
+                    icon = MaterialSymbols.Rounded.Storage,
+                    screen = SettingsDataScreen,
+                    subtitle = {
+                        val context = LocalContext.current
+                        val lastBackup by remember { context.appGraph.backupPreferences.lastAutoBackupTimestamp }
+                            .collectAsState()
+                        stringResource(MR.strings.last_auto_backup_info, relativeTimeSpanString(lastBackup))
+                    },
+                ),
+            ),
         ),
-        Item(
-            titleRes = MR.strings.pref_category_downloads,
-            subtitleRes = MR.strings.pref_downloads_summary,
-            icon = MaterialSymbols.Rounded.Download,
-            screen = SettingsDownloadScreen,
-        ),
-        Item(
-            titleRes = MR.strings.pref_category_tracking,
-            subtitleRes = MR.strings.pref_tracking_summary,
-            icon = MaterialSymbols.Rounded.Sync,
-            screen = SettingsTrackingScreen,
-        ),
-        // AM (CONNECTIONS) -->
-        Item(
-            titleRes = TLMR.strings.pref_category_connections,
-            subtitleRes = TLMR.strings.pref_connections_summary,
-            icon = Icons.Outlined.Link,
-            screen = SettingsConnectionsScreen,
-        ),
-        // <-- AM (CONNECTIONS)
-        Item(
-            titleRes = MR.strings.browse,
-            subtitleRes = MR.strings.pref_browse_summary,
-            icon = MaterialSymbols.Rounded.Explore,
-            screen = SettingsBrowseScreen,
-        ),
-        Item(
-            titleRes = MR.strings.label_data_storage,
-            subtitleRes = MR.strings.pref_backup_summary,
-            icon = MaterialSymbols.Rounded.Storage,
-            screen = SettingsDataScreen,
-        ),
-        Item(
-            titleRes = MR.strings.pref_category_security,
-            subtitleRes = MR.strings.pref_security_summary,
-            icon = MaterialSymbols.Rounded.Security,
-            screen = SettingsSecurityScreen,
-        ),
-        Item(
-            titleRes = MR.strings.pref_category_advanced,
-            subtitleRes = MR.strings.pref_advanced_summary,
-            icon = MaterialSymbols.Rounded.Code,
-            screen = SettingsAdvancedScreen,
-        ),
-        Item(
-            titleRes = MR.strings.pref_category_about,
-            formatSubtitle = {
-                "${stringResource(MR.strings.app_name)} ${AboutScreen.getVersionName(
-                    withBuildDate = false,
-                )}"
-            },
-            icon = MaterialSymbols.Rounded.Info,
-            screen = AboutScreen,
+        Group(
+            titleRes = TLMR.strings.anitenshi_settings_group_other,
+            items = listOf(
+                Item(
+                    titleRes = MR.strings.pref_category_advanced,
+                    icon = MaterialSymbols.Rounded.Code,
+                    screen = SettingsAdvancedScreen,
+                    subtitle = { stringResource(TLMR.strings.anitenshi_settings_advanced_summary) },
+                ),
+                Item(
+                    titleRes = MR.strings.pref_category_about,
+                    icon = MaterialSymbols.Rounded.Info,
+                    screen = AboutScreen,
+                    subtitle = {
+                        "${stringResource(MR.strings.app_name)} ${AboutScreen.getVersionName(
+                            withBuildDate = false,
+                        )}"
+                    },
+                ),
+            ),
         ),
     )
 }

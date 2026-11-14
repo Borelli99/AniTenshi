@@ -47,6 +47,7 @@ import eu.kanade.presentation.util.Screen
 import kotlinx.collections.immutable.persistentListOf
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.icons.CustomIcons
@@ -88,7 +89,8 @@ class PlayerSettingsMainScreen(private val mainSettings: Boolean) : Screen() {
                 AppBar(
                     title = stringResource(
                         if (mainSettings) {
-                            AYMR.strings.label_player
+                            // AniTenshi: "Anime player", the name it has on the first page of the settings
+                            TLMR.strings.anitenshi_settings_player_anime
                         } else {
                             AYMR.strings.label_player_settings
                         },

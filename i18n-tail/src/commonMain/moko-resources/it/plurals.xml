@@ -40,4 +40,8 @@
     <item quantity="one">%1$d di %2$d scelta</item>
     <item quantity="other">%1$d di %2$d scelte</item>
   </plurals>
+  <plurals name="anitenshi_settings_value_trackers">
+    <item quantity="one">%d servizio collegato</item>
+    <item quantity="other">%d servizi collegati</item>
+  </plurals>
 </resources>

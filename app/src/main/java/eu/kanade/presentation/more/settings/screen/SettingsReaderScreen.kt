@@ -29,7 +29,8 @@ object SettingsReaderScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = MR.strings.pref_category_reader
+    // AniTenshi: "Manga reader", the name it has on the first page of the settings
+    override fun getTitleRes() = TLMR.strings.anitenshi_settings_reader_manga
 
     @Composable
     override fun getPreferences(): List<Preference> {

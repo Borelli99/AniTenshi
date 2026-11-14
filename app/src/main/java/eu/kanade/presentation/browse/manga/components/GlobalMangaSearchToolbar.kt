@@ -46,6 +46,9 @@ fun GlobalMangaSearchToolbar(
     onlyShowHasResults: Boolean,
     onToggleResults: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior,
+    // AniTenshi: false in the migration, whose sources are chosen on the screen before; there "Pinned" only
+    // narrowed that choice down, to nothing when none of the chosen sources was pinned
+    showPinnedFilter: Boolean = true,
 ) {
     Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
         Box {
@@ -75,21 +78,23 @@ fun GlobalMangaSearchToolbar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // TODO: make this UX better; it only applies when triggering a new search
-            FilterChip(
-                selected = sourceFilter == MangaSourceFilter.PinnedOnly,
-                onClick = { onChangeSearchFilter(MangaSourceFilter.PinnedOnly) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.PushPin,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(FilterChipDefaults.IconSize),
-                    )
-                },
-                label = {
-                    Text(text = stringResource(MR.strings.pinned_sources))
-                },
-            )
+            if (showPinnedFilter) {
+                FilterChip(
+                    selected = sourceFilter == MangaSourceFilter.PinnedOnly,
+                    onClick = { onChangeSearchFilter(MangaSourceFilter.PinnedOnly) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = MaterialSymbols.Rounded.PushPin,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(FilterChipDefaults.IconSize),
+                        )
+                    },
+                    label = {
+                        Text(text = stringResource(MR.strings.pinned_sources))
+                    },
+                )
+            }
             FilterChip(
                 selected = sourceFilter == MangaSourceFilter.All,
                 onClick = { onChangeSearchFilter(MangaSourceFilter.All) },

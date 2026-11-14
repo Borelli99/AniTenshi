@@ -32,6 +32,7 @@ class MigrateMangaSearchScreen(private val mangaId: Long) : Screen() {
         MigrateMangaSearchScreen(
             state = state,
             fromSourceId = dialogState.manga?.source,
+            pinnedSourceIds = screenModel.pinnedSourceIds,
             navigateUp = navigator::pop,
             onChangeSearchQuery = screenModel::updateSearchQuery,
             onSearch = { screenModel.search() },

@@ -68,6 +68,8 @@ internal fun GlobalSearchContent(
     onClickItem: (Manga) -> Unit,
     onLongClickItem: (Manga) -> Unit,
     fromSourceId: Long? = null,
+    // AniTenshi: marked with a gold pin; none in the global search, which keeps its own look
+    pinnedSourceIds: Set<String> = emptySet(),
 ) {
     LazyColumn(
         contentPadding = contentPadding,
@@ -79,6 +81,7 @@ internal fun GlobalSearchContent(
                         "▶ ${source.name}".takeIf { source.id == fromSourceId }
                     } ?: source.name,
                     subtitle = LocaleHelper.getLocalizedDisplayName(source.lang),
+                    isPinned = "${source.id}" in pinnedSourceIds,
                     onClick = { onClickSource(source) },
                     modifier = Modifier.animateItem(),
                 ) {

@@ -66,10 +66,23 @@ abstract class AnimeSearchViewModel(
 
     protected var extensionFilter: String? = null
 
+    /** AniTenshi: the ids of the pinned sources, for the screen to mark them. */
+    val pinnedSourceIds: Set<String>
+        get() = pinnedSources
+
+    /**
+     * AniTenshi: the pinned sources come first even when they have no results. The global search lists the sources
+     * with results first; the migration, whose sources were chosen beforehand, the pinned ones.
+     */
+    protected open val pinnedFirst: Boolean
+        get() = false
+
     private val sortComparator = { map: Map<AnimeSource, AnimeSearchItemResult> ->
+        val hasNoResults = { source: AnimeSource -> (map[source] as? AnimeSearchItemResult.Success)?.isEmpty ?: true }
+        val isNotPinned = { source: AnimeSource -> "${source.id}" !in pinnedSources }
         compareBy<AnimeSource>(
-            { (map[it] as? AnimeSearchItemResult.Success)?.isEmpty ?: true },
-            { "${it.id}" !in pinnedSources },
+            { if (pinnedFirst) isNotPinned(it) else hasNoResults(it) },
+            { if (pinnedFirst) hasNoResults(it) else isNotPinned(it) },
             { "${it.name.lowercase()} (${it.lang})" },
         )
     }

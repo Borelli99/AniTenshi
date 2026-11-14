@@ -44,6 +44,10 @@ class MigrateMangaSearchViewModel(
         fun create(mangaId: Long, initialExtensionFilter: String?): MigrateMangaSearchViewModel
     }
 
+    // AniTenshi: the sources were chosen on the screen before; among them the pinned ones come first
+    override val pinnedFirst: Boolean
+        get() = true
+
     init {
         extensionFilter = initialExtensionFilter
         viewModelScope.launch {
@@ -65,7 +69,6 @@ class MigrateMangaSearchViewModel(
         val migrationSources = preferences.migrationMangaSources.get()
         return super.getEnabledSources()
             .filter { migrationSources.isEmpty() || it.id in migrationSources }
-            .filter { state.value.sourceFilter != MangaSourceFilter.PinnedOnly || "${it.id}" in pinnedSources }
             .sortedWith(
                 compareBy(
                     { it.id != state.value.fromSourceId },

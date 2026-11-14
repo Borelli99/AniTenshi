@@ -46,6 +46,9 @@ fun GlobalAnimeSearchToolbar(
     onlyShowHasResults: Boolean,
     onToggleResults: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior,
+    // AniTenshi: false in the migration, whose sources are chosen on the screen before; there "Pinned" only
+    // narrowed that choice down, to nothing when none of the chosen sources was pinned
+    showPinnedFilter: Boolean = true,
 ) {
     Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
         Box {
@@ -74,21 +77,23 @@ fun GlobalAnimeSearchToolbar(
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
         ) {
             // TODO: make this UX better; it only applies when triggering a new search
-            FilterChip(
-                selected = sourceFilter == AnimeSourceFilter.PinnedOnly,
-                onClick = { onChangeSearchFilter(AnimeSourceFilter.PinnedOnly) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.PushPin,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(FilterChipDefaults.IconSize),
-                    )
-                },
-                label = {
-                    Text(text = stringResource(MR.strings.pinned_sources))
-                },
-            )
+            if (showPinnedFilter) {
+                FilterChip(
+                    selected = sourceFilter == AnimeSourceFilter.PinnedOnly,
+                    onClick = { onChangeSearchFilter(AnimeSourceFilter.PinnedOnly) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.PushPin,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(FilterChipDefaults.IconSize),
+                        )
+                    },
+                    label = {
+                        Text(text = stringResource(MR.strings.pinned_sources))
+                    },
+                )
+            }
             FilterChip(
                 selected = sourceFilter == AnimeSourceFilter.All,
                 onClick = { onChangeSearchFilter(AnimeSourceFilter.All) },

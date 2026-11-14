@@ -14,6 +14,7 @@ import tachiyomi.presentation.core.components.material.Scaffold
 fun MigrateAnimeSearchScreen(
     state: AnimeSearchViewModel.State,
     fromSourceId: Long?,
+    pinnedSourceIds: Set<String>,
     navigateUp: () -> Unit,
     onChangeSearchQuery: (String?) -> Unit,
     onSearch: (String) -> Unit,
@@ -38,11 +39,13 @@ fun MigrateAnimeSearchScreen(
                 onlyShowHasResults = state.onlyShowHasResults,
                 onToggleResults = onToggleResults,
                 scrollBehavior = scrollBehavior,
+                showPinnedFilter = false,
             )
         },
     ) { paddingValues ->
         GlobalSearchContent(
             fromSourceId = fromSourceId,
+            pinnedSourceIds = pinnedSourceIds,
             items = state.filteredItems,
             contentPadding = paddingValues,
             getAnime = getAnime,

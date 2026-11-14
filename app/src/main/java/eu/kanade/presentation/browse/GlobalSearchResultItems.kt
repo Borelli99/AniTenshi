@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.ArrowForward
 import mihon.icons.materialsymbols.rounded.Error
+import mihon.icons.materialsymbols.roundedfilled.PushPin
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
@@ -35,6 +36,8 @@ fun GlobalSearchResultItem(
     // SY <--
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    // AniTenshi: a gold pin after the title
+    isPinned: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     Column(modifier = modifier) {
@@ -50,10 +53,23 @@ fun GlobalSearchResultItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    if (isPinned) {
+                        Icon(
+                            imageVector = MaterialSymbols.RoundedFilled.PushPin,
+                            contentDescription = stringResource(MR.strings.pinned_sources),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
                 if (subtitle != null) {
                     Text(text = subtitle)
                 }

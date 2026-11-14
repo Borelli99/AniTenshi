@@ -538,6 +538,7 @@
   <string name="anitenshi_migration_sources_none">Nessuna</string>
   <!-- Impostazioni: pagina principale -->
   <string name="anitenshi_settings_search">Cerca nelle impostazioni</string>
+  <string name="anitenshi_settings_section_general">Generale</string>
   <string name="anitenshi_settings_group_app">Aspetto e app</string>
   <string name="anitenshi_settings_group_library">Libreria e contenuti</string>
   <string name="anitenshi_settings_group_reading">Lettura e visione</string>

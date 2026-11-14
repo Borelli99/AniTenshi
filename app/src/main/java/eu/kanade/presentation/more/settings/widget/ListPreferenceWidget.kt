@@ -36,13 +36,18 @@ fun <T> ListPreferenceWidget(
     icon: ImageVector?,
     entries: Map<out T, String>,
     onValueChange: (T) -> Unit,
+    // AniTenshi: true when the subtitle is just the choice made
+    subtitleIsValue: Boolean = false,
 ) {
     var isDialogShown by remember { mutableStateOf(false) }
 
     TextPreferenceWidget(
         title = title,
         subtitle = subtitle,
+        subtitleIsValue = subtitleIsValue,
         icon = icon,
+        // AniTenshi: tells this setting opens a list
+        widget = { ChoiceIndicator() },
         onPreferenceClick = { isDialogShown = true },
     )
 

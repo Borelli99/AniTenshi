@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.more.settings.LocalPreferenceHighlighted
+import eu.kanade.presentation.more.settings.LocalPreferenceTitleStyle
 import eu.kanade.presentation.track.components.TrackLogoIcon
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.Tracker
@@ -66,8 +67,8 @@ fun TrackingPreferenceWidget(
                         text = tracker.name,
                         modifier = Modifier.padding(horizontal = 16.dp),
                         maxLines = 1,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontSize = TitleFontSize,
+                        style = LocalPreferenceTitleStyle.current
+                            ?: MaterialTheme.typography.titleLarge.copy(fontSize = TitleFontSize),
                         fontWeight = FontWeight.Medium,
                     )
                     val displayName = tracker.getDisplayUsername()

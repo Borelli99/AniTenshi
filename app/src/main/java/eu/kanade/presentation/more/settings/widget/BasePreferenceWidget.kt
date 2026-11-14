@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.more.settings.LocalPreferenceHighlighted
 import eu.kanade.presentation.more.settings.LocalPreferenceMinHeight
+import eu.kanade.presentation.more.settings.LocalPreferenceTitleStyle
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -77,8 +78,8 @@ internal fun BasePreferenceWidget(
                     text = title,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 2,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontSize = TitleFontSize,
+                    style = LocalPreferenceTitleStyle.current
+                        ?: MaterialTheme.typography.titleLarge.copy(fontSize = TitleFontSize),
                 )
             }
             subcomponent?.invoke(this)

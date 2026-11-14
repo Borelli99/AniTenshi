@@ -17,6 +17,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import eu.kanade.domain.connections.service.ConnectionsPreferences
 import eu.kanade.presentation.more.settings.widget.ConnectionsPreferenceWidget
@@ -43,6 +44,14 @@ import uy.kohesive.injekt.api.get
 
 val LocalPreferenceHighlighted = compositionLocalOf(structuralEqualityPolicy()) { false }
 val LocalPreferenceMinHeight = compositionLocalOf(structuralEqualityPolicy()) { 56.dp }
+
+// AniTenshi: the subtitle a list setting has when nothing else is asked for: its text is the choice made
+// and nothing more, so it can be shown as a value. A subtitle written by hand is a description.
+private const val ValueOnlySubtitle = "%s"
+
+// AniTenshi: the style of the title of a setting; null is the usual one (the app's title font at [TitleFontSize]).
+// The settings pages set it to the style used on the first page of the settings.
+val LocalPreferenceTitleStyle = compositionLocalOf<TextStyle?> { null }
 
 @Composable
 fun StatusWrapper(
@@ -100,7 +109,8 @@ internal fun PreferenceItem(
                     valueRange = item.valueRange,
                     valueText = item.subtitle.takeUnless { it.isNullOrEmpty() } ?: item.value.toString(),
                     steps = item.steps,
-                    labelStyle = MaterialTheme.typography.titleLarge.copy(fontSize = TitleFontSize),
+                    labelStyle = LocalPreferenceTitleStyle.current
+                        ?: MaterialTheme.typography.titleLarge.copy(fontSize = TitleFontSize),
                     onChange = {
                         scope.launch {
                             item.onValueChanged(it)
@@ -119,6 +129,7 @@ internal fun PreferenceItem(
                     value = value,
                     title = item.title,
                     subtitle = item.internalSubtitleProvider(value, item.entries),
+                    subtitleIsValue = item.subtitle == ValueOnlySubtitle,
                     icon = item.icon,
                     entries = item.entries,
                     onValueChange = { newValue ->
@@ -136,6 +147,7 @@ internal fun PreferenceItem(
                     value = item.value,
                     title = item.title,
                     subtitle = item.subtitleProvider(item.value, item.entries),
+                    subtitleIsValue = item.subtitle == ValueOnlySubtitle,
                     icon = item.icon,
                     entries = item.entries,
                     onValueChange = { scope.launch { item.onValueChanged(it) } },
@@ -148,6 +160,7 @@ internal fun PreferenceItem(
                     values = values,
                     title = item.title,
                     subtitle = item.internalSubtitleProvider(values, item.entries),
+                    subtitleIsValue = item.subtitle == ValueOnlySubtitle,
                     icon = item.icon,
                     entries = item.entries,
                     onValuesChange = { newValues ->

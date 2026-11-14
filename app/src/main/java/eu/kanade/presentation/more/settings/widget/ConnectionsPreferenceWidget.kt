@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.components.ConnectionsLogoIcon
 import eu.kanade.presentation.more.settings.LocalPreferenceHighlighted
+import eu.kanade.presentation.more.settings.LocalPreferenceTitleStyle
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.connections.ConnectionsService
 
@@ -47,8 +48,8 @@ fun ConnectionsPreferenceWidget(
                     .weight(1f)
                     .padding(horizontal = 16.dp),
                 maxLines = 1,
-                style = MaterialTheme.typography.titleLarge,
-                fontSize = TitleFontSize,
+                style = LocalPreferenceTitleStyle.current
+                    ?: MaterialTheme.typography.titleLarge.copy(fontSize = TitleFontSize),
             )
             if (checked) {
                 Icon(

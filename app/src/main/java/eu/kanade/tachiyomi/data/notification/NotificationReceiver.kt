@@ -48,6 +48,7 @@ import tachiyomi.domain.items.episode.model.toEpisodeUpdate
 import tachiyomi.domain.source.manga.service.MangaSourceManager
 import tachiyomi.i18n.MR
 import eu.kanade.tachiyomi.BuildConfig.APPLICATION_ID as ID
+import eu.kanade.tachiyomi.data.library.FailedUpdates
 
 /**
  * Global [BroadcastReceiver] that runs on UI thread
@@ -85,6 +86,16 @@ class NotificationReceiver : BroadcastReceiver() {
         when (intent.action) {
             // Dismiss notification
             ACTION_DISMISS_NOTIFICATION -> dismissNotification(context, intent.getIntExtra(EXTRA_NOTIFICATION_ID, -1))
+
+            // AniTenshi: the two buttons of the "updates failed" notification
+            ACTION_RETRY_FAILED_UPDATES -> {
+                dismissNotification(context, Notifications.ID_LIBRARY_ERROR)
+                FailedUpdates.retry(context)
+            }
+            ACTION_MUTE_FAILED_UPDATES -> {
+                context.appGraph.libraryPreferences.notifyFailedUpdates.set(false)
+                FailedUpdates.refreshNotification(context)
+            }
 
             // Resume the download service
             ACTION_RESUME_DOWNLOADS -> mangaDownloadManager.startDownloads()
@@ -387,6 +398,10 @@ class NotificationReceiver : BroadcastReceiver() {
 
         private const val ACTION_DISMISS_NOTIFICATION = "$ID.$NAME.ACTION_DISMISS_NOTIFICATION"
 
+        // AniTenshi
+        private const val ACTION_RETRY_FAILED_UPDATES = "$ID.$NAME.ACTION_RETRY_FAILED_UPDATES"
+        private const val ACTION_MUTE_FAILED_UPDATES = "$ID.$NAME.ACTION_MUTE_FAILED_UPDATES"
+
         private const val EXTRA_URI = "$ID.$NAME.URI"
         private const val EXTRA_NOTIFICATION_ID = "$ID.$NAME.NOTIFICATION_ID"
         private const val EXTRA_GROUP_ID = "$ID.$NAME.EXTRA_GROUP_ID"
@@ -403,6 +418,28 @@ class NotificationReceiver : BroadcastReceiver() {
          * @param context context of application
          * @return [PendingIntent]
          */
+        /** AniTenshi: updates again the titles whose last update failed. */
+        internal fun retryFailedUpdatesPendingBroadcast(context: Context): PendingIntent {
+            return failedUpdatesPendingBroadcast(context, ACTION_RETRY_FAILED_UPDATES)
+        }
+
+        /** AniTenshi: stops notifying failed updates. */
+        internal fun muteFailedUpdatesPendingBroadcast(context: Context): PendingIntent {
+            return failedUpdatesPendingBroadcast(context, ACTION_MUTE_FAILED_UPDATES)
+        }
+
+        private fun failedUpdatesPendingBroadcast(context: Context, action: String): PendingIntent {
+            val intent = Intent(context, NotificationReceiver::class.java).apply {
+                this.action = action
+            }
+            return PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
+
         internal fun resumeDownloadsPendingBroadcast(context: Context): PendingIntent {
             val intent = Intent(context, NotificationReceiver::class.java).apply {
                 action = ACTION_RESUME_DOWNLOADS

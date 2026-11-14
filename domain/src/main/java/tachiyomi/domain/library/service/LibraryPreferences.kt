@@ -183,6 +183,21 @@ class LibraryPreferences(
 
     // Mixture Update Count
 
+    // AniTenshi: the titles the last updates couldn't update (JSON, see FailedUpdates in the app), the ones the
+    // person doesn't want to hear about, and whether to notify at all -->
+    val failedMangaUpdates = preferenceStore.getString(Preference.appStateKey("failed_manga_updates"), "")
+    val failedAnimeUpdates = preferenceStore.getString(Preference.appStateKey("failed_anime_updates"), "")
+    val mutedFailedMangaUpdates = preferenceStore.getStringSet(
+        Preference.appStateKey("muted_failed_manga_updates"),
+        emptySet(),
+    )
+    val mutedFailedAnimeUpdates = preferenceStore.getStringSet(
+        Preference.appStateKey("muted_failed_anime_updates"),
+        emptySet(),
+    )
+    val notifyFailedUpdates = preferenceStore.getBoolean("notify_failed_updates", true)
+    // <-- AniTenshi
+
     val newMangaUpdatesCount = preferenceStore.getInt("library_unread_updates_count", 0)
     val newAnimeUpdatesCount = preferenceStore.getInt("library_unseen_updates_count", 0)
 

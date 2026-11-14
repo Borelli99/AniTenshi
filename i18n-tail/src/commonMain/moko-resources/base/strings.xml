@@ -599,4 +599,18 @@
     <string name="anitenshi_settings_updates">Update settings</string>
     <string name="anitenshi_settings_downloads">Download settings</string>
     <string name="anitenshi_settings_browse">Browse settings</string>
+    <string name="anitenshi_failed_updates_title">Failed updates</string>
+    <string name="anitenshi_failed_updates_none">No failed updates</string>
+    <string name="anitenshi_failed_updates_notify">Notify me when an update fails</string>
+    <string name="anitenshi_failed_updates_turn_off">Turn off</string>
+    <string name="anitenshi_failed_updates_muted">No notification</string>
+    <string name="anitenshi_failed_updates_mute_title">Don\'t notify me about this title</string>
+    <string name="anitenshi_failed_updates_unmute_title">Notify me about this title again</string>
+    <string name="anitenshi_failed_updates_migrate">Change source</string>
+    <string name="anitenshi_failed_reason_unreachable_host">The site %s can\'t be reached: it may have closed or changed address.</string>
+    <string name="anitenshi_failed_reason_unreachable">The site can\'t be reached: it may have closed or changed address.</string>
+    <string name="anitenshi_failed_reason_not_responding">The site isn\'t responding. Try again later.</string>
+    <string name="anitenshi_failed_reason_site_error">The site answered with an error (%s).</string>
+    <string name="anitenshi_failed_reason_nothing_found">The site returned no chapters or episodes.</string>
+    <string name="anitenshi_failed_reason_other">The update failed.</string>
 </resources>

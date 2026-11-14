@@ -102,6 +102,7 @@ import eu.kanade.tachiyomi.ui.more.NewUpdateScreen
 import eu.kanade.tachiyomi.ui.more.OnboardingScreen
 import eu.kanade.tachiyomi.ui.player.ExternalIntents
 import eu.kanade.tachiyomi.ui.player.PlayerActivity
+import eu.kanade.tachiyomi.ui.updates.failed.FailedUpdatesScreen
 import eu.kanade.tachiyomi.util.system.isNavigationBarNeedsScrim
 import eu.kanade.tachiyomi.util.system.openInBrowser
 import eu.kanade.tachiyomi.util.system.toast
@@ -589,6 +590,13 @@ class MainActivity : BaseActivity() {
                 HomeScreen.Tab.History
             }
 
+            // AniTenshi: from the "updates failed" notification
+            INTENT_FAILED_UPDATES -> {
+                navigator.popUntilRoot()
+                navigator.push(FailedUpdatesScreen())
+                null
+            }
+
             Constants.SHORTCUT_SOURCES -> {
                 navigator.popUntilRoot()
                 HomeScreen.Tab.Browse(toExtensions = false, anime = true)
@@ -734,6 +742,9 @@ class MainActivity : BaseActivity() {
     }
     companion object {
         const val INTENT_SEARCH = "eu.kanade.tachiyomi.SEARCH"
+
+        // AniTenshi
+        const val INTENT_FAILED_UPDATES = "eu.kanade.tachiyomi.SHOW_FAILED_UPDATES"
         const val INTENT_ANIMESEARCH = "eu.kanade.tachiyomi.ANIMESEARCH"
         const val INTENT_SEARCH_QUERY = "query"
         const val INTENT_SEARCH_FILTER = "filter"

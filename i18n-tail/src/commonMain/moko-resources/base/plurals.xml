@@ -29,4 +29,12 @@
         <item quantity="one">%d chapter to read</item>
         <item quantity="other">%d chapters to read</item>
     </plurals>
+    <plurals name="anitenshi_failed_updates_count">
+        <item quantity="one">%d title not updated</item>
+        <item quantity="other">%d titles not updated</item>
+    </plurals>
+    <plurals name="anitenshi_failed_updates_retry">
+        <item quantity="one">Retry %d title</item>
+        <item quantity="other">Retry %d titles</item>
+    </plurals>
 </resources>

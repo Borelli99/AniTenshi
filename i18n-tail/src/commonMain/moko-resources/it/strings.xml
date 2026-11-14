@@ -516,4 +516,18 @@
   <string name="anitenshi_settings_updates">Impostazioni aggiornamenti</string>
   <string name="anitenshi_settings_downloads">Impostazioni download</string>
   <string name="anitenshi_settings_browse">Impostazioni di Sfoglia</string>
+  <string name="anitenshi_failed_updates_title">Aggiornamenti non riusciti</string>
+  <string name="anitenshi_failed_updates_none">Nessun aggiornamento non riuscito</string>
+  <string name="anitenshi_failed_updates_notify">Avvisami quando un aggiornamento non riesce</string>
+  <string name="anitenshi_failed_updates_turn_off">Disattiva</string>
+  <string name="anitenshi_failed_updates_muted">Senza avviso</string>
+  <string name="anitenshi_failed_updates_mute_title">Non avvisarmi per questo titolo</string>
+  <string name="anitenshi_failed_updates_unmute_title">Riattiva gli avvisi per questo titolo</string>
+  <string name="anitenshi_failed_updates_migrate">Cambia fonte</string>
+  <string name="anitenshi_failed_reason_unreachable_host">Il sito %s non è raggiungibile: può essere chiuso o aver cambiato indirizzo.</string>
+  <string name="anitenshi_failed_reason_unreachable">Il sito non è raggiungibile: può essere chiuso o aver cambiato indirizzo.</string>
+  <string name="anitenshi_failed_reason_not_responding">Il sito non risponde. Riprova più tardi.</string>
+  <string name="anitenshi_failed_reason_site_error">Il sito ha risposto con un errore (%s).</string>
+  <string name="anitenshi_failed_reason_nothing_found">Il sito non ha restituito capitoli o episodi.</string>
+  <string name="anitenshi_failed_reason_other">Aggiornamento non riuscito.</string>
 </resources>

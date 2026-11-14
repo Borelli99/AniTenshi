@@ -17,6 +17,7 @@ import androidx.compose.ui.util.fastAny
 import eu.kanade.presentation.entries.components.EntryBottomActionMenu
 import eu.kanade.presentation.entries.manga.components.ChapterDownloadAction
 import eu.kanade.tachiyomi.data.download.manga.model.MangaDownload
+import eu.kanade.tachiyomi.ui.updates.failed.FailedUpdatesRow
 import eu.kanade.tachiyomi.ui.updates.manga.MangaUpdatesItem
 import eu.kanade.tachiyomi.ui.updates.manga.MangaUpdatesViewModel
 import kotlinx.coroutines.delay
@@ -90,6 +91,9 @@ fun MangaUpdateScreen(
                     FastScrollLazyColumn(
                         contentPadding = contentPadding,
                     ) {
+                        // AniTenshi: failed updates, when their notification is switched off
+                        item(key = "failed-updates") { FailedUpdatesRow() }
+
                         mangaUpdatesLastUpdatedItem(lastUpdated)
 
                         mangaUpdatesUiItems(

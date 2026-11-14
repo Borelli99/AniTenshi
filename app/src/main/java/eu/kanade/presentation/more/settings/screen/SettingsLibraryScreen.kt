@@ -18,6 +18,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.category.visualName
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.widget.TriStateListDialog
+import eu.kanade.tachiyomi.data.library.FailedUpdates
 import eu.kanade.tachiyomi.data.library.anime.AnimeLibraryUpdateJob
 import eu.kanade.tachiyomi.data.library.manga.MangaLibraryUpdateJob
 import eu.kanade.tachiyomi.ui.category.CategoriesTab
@@ -254,6 +255,18 @@ object SettingsLibraryScreen : SearchableSettings {
                         ContextCompat.getMainExecutor(context).execute {
                             MangaLibraryUpdateJob.setupTask(context)
                             AnimeLibraryUpdateJob.setupTask(context)
+                        }
+                        true
+                    },
+                ),
+                // AniTenshi: the "updates failed" notification, also switched from the notification itself
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = libraryPreferences.notifyFailedUpdates,
+                    title = stringResource(TLMR.strings.anitenshi_failed_updates_notify),
+                    onValueChanged = {
+                        // After the preference has its new value
+                        ContextCompat.getMainExecutor(context).execute {
+                            FailedUpdates.refreshNotification(context)
                         }
                         true
                     },

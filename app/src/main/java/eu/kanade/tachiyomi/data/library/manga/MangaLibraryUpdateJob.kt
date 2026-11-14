@@ -27,6 +27,8 @@ import eu.kanade.domain.items.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.items.chapter.model.toSChapter
 import eu.kanade.tachiyomi.data.cache.MangaCoverCache
 import eu.kanade.tachiyomi.data.download.manga.MangaDownloadManager
+import eu.kanade.tachiyomi.data.library.FailedUpdate
+import eu.kanade.tachiyomi.data.library.FailedUpdates
 import eu.kanade.tachiyomi.data.library.retryOnceOnTimeout
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
@@ -34,8 +36,6 @@ import eu.kanade.tachiyomi.data.track.TrackStatus
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
-import eu.kanade.tachiyomi.util.storage.getUriCompat
-import eu.kanade.tachiyomi.util.system.createFileInCacheDir
 import eu.kanade.tachiyomi.util.system.isConnectedToWifi
 import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.workManager
@@ -65,7 +65,6 @@ import tachiyomi.domain.entries.manga.interactor.MangaFetchInterval
 import tachiyomi.domain.entries.manga.model.Manga
 import tachiyomi.domain.items.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.items.chapter.model.Chapter
-import tachiyomi.domain.items.chapter.model.NoChaptersException
 import tachiyomi.domain.library.manga.LibraryManga
 import tachiyomi.domain.library.manga.model.MangaGroupLibraryMode
 import tachiyomi.domain.library.manga.model.MangaLibraryGroup
@@ -77,11 +76,9 @@ import tachiyomi.domain.library.service.LibraryPreferences.Companion.ENTRY_HAS_U
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.ENTRY_NON_COMPLETED
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.ENTRY_NON_VIEWED
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.ENTRY_OUTSIDE_RELEASE_PERIOD
-import tachiyomi.domain.source.manga.model.SourceNotInstalledException
 import tachiyomi.domain.source.manga.service.MangaSourceManager
 import tachiyomi.domain.track.manga.interactor.GetMangaTracks
 import tachiyomi.i18n.MR
-import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -151,7 +148,15 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
         val group = inputData.getInt(KEY_GROUP, MangaLibraryGroup.BY_DEFAULT)
         val groupExtra = inputData.getString(KEY_GROUP_EXTRA)
         // SY <--
-        addMangaToQueue(categoryId, group, groupExtra)
+        // AniTenshi: "Retry" on the failed updates tries those titles alone
+        if (inputData.getBoolean(KEY_ONLY_FAILED, false)) {
+            val failedIds = FailedUpdates.read(libraryPreferences.failedMangaUpdates).items.mapTo(HashSet()) { it.id }
+            mangaToUpdate = getLibraryManga.await()
+                .filter { it.manga.id in failedIds }
+                .distinctBy { it.manga.id }
+        } else {
+            addMangaToQueue(categoryId, group, groupExtra)
+        }
 
         return withIOContext {
             try {
@@ -356,7 +361,7 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
         val progressCount = AtomicInteger(0)
         val currentlyUpdatingManga = CopyOnWriteArrayList<Manga>()
         val newUpdates = CopyOnWriteArrayList<Pair<Manga, Array<Chapter>>>()
-        val failedUpdates = CopyOnWriteArrayList<Pair<Manga, String?>>()
+        val failedUpdates = CopyOnWriteArrayList<FailedUpdate>()
         val hasDownloads = AtomicBoolean(false)
         val timeZone = TimeZone.currentSystemDefault()
         val fetchWindow = mangaFetchInterval.getWindow(Clock.System.now().toLocalDateTime(timeZone).date, timeZone)
@@ -399,19 +404,16 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
                                             newUpdates.add(manga to newChapters.toTypedArray())
                                         }
                                     } catch (e: Throwable) {
-                                        val errorMessage = when (e) {
-                                            is NoChaptersException -> context.stringResource(
-                                                MR.strings.no_chapters_error,
-                                            )
-
-                                            // failedUpdates will already have the source, don't need to copy it into the message
-                                            is SourceNotInstalledException -> context.stringResource(
-                                                MR.strings.loader_not_implemented_error,
-                                            )
-
-                                            else -> e.message
-                                        }
-                                        failedUpdates.add(manga to errorMessage)
+                                        // AniTenshi: kept for the app to show, with a reason it can explain
+                                        failedUpdates.add(
+                                            FailedUpdates.of(
+                                                id = manga.id,
+                                                title = manga.title,
+                                                sourceId = manga.source,
+                                                sourceName = sourceManager.getOrStub(manga.source).name,
+                                                e = e,
+                                            ),
+                                        )
                                     }
                                 }
                             }
@@ -430,13 +432,14 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
             }
         }
 
-        if (failedUpdates.isNotEmpty()) {
-            val errorFile = writeErrorFile(failedUpdates)
-            notifier.showUpdateErrorNotification(
-                failedUpdates.size,
-                errorFile.getUriCompat(context),
-            )
-        }
+        // AniTenshi: the failures go in the app's own list instead of a text file; a title that worked this time
+        // leaves it. The notification counts anime and manga together.
+        FailedUpdates.record(
+            preference = libraryPreferences.failedMangaUpdates,
+            attemptedIds = mangaToUpdate.map { it.manga.id },
+            failures = failedUpdates,
+        )
+        FailedUpdates.refreshNotification(context)
     }
 
     private suspend fun downloadChapters(manga: Manga, chapters: List<Chapter>) {
@@ -499,44 +502,11 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
         )
     }
 
-    /**
-     * Writes basic file of update errors to cache dir.
-     */
-    private suspend fun writeErrorFile(errors: List<Pair<Manga, String?>>): File {
-        try {
-            if (errors.isNotEmpty()) {
-                val file = context.createFileInCacheDir("animetail_update_errors.txt")
-                file.bufferedWriter().use { out ->
-                    out.write(
-                        context.stringResource(MR.strings.library_errors_help, ERROR_LOG_HELP_URL) + "\n\n",
-                    )
-                    // Error file format:
-                    // ! Error
-                    //   # Source
-                    //     - Manga
-                    errors.groupBy({ it.second }, { it.first }).forEach { (error, mangas) ->
-                        out.write("\n! ${error}\n")
-                        mangas.groupBy { it.source }.forEach { (srcId, mangas) ->
-                            val source = sourceManager.getOrStub(srcId)
-                            out.write("  # $source\n")
-                            mangas.forEach { manga ->
-                                out.write("    - ${manga.title}\n")
-                            }
-                        }
-                    }
-                }
-                return file
-            }
-        } catch (_: Exception) {}
-        return File("")
-    }
-
     companion object {
         private const val TAG = "LibraryUpdate"
         private const val WORK_NAME_AUTO = "LibraryUpdate-auto"
         private const val WORK_NAME_MANUAL = "LibraryUpdate-manual"
 
-        private const val ERROR_LOG_HELP_URL = "https://aniyomi.org/help/guides/troubleshooting"
         private const val MANGA_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 60
 
         /**
@@ -550,6 +520,9 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
          */
         const val KEY_GROUP = "group"
         const val KEY_GROUP_EXTRA = "group_extra"
+
+        // AniTenshi
+        private const val KEY_ONLY_FAILED = "only_failed"
         // SY <--
 
         fun cancelAllWorks(context: Context) {
@@ -615,6 +588,8 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
             group: Int = MangaLibraryGroup.BY_DEFAULT,
             groupExtra: String? = null,
             // SY <--
+            // AniTenshi: only the titles whose last update failed
+            onlyFailed: Boolean = false,
         ): Boolean {
             val wm = context.workManager
             // Check if the MangaLibraryUpdateJob is already running
@@ -629,6 +604,7 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
                 KEY_GROUP to group,
                 KEY_GROUP_EXTRA to groupExtra,
                 // SY <--
+                KEY_ONLY_FAILED to onlyFailed,
             )
 
             // AniTenshi: sync first when the account is connected; a sync already running no longer

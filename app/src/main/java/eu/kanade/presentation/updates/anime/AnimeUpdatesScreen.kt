@@ -20,6 +20,7 @@ import eu.kanade.tachiyomi.data.download.anime.model.AnimeDownload
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
 import eu.kanade.tachiyomi.ui.updates.anime.AnimeUpdatesItem
 import eu.kanade.tachiyomi.ui.updates.anime.AnimeUpdatesViewModel
+import eu.kanade.tachiyomi.ui.updates.failed.FailedUpdatesRow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -96,6 +97,9 @@ fun AnimeUpdateScreen(
                     FastScrollLazyColumn(
                         contentPadding = contentPadding,
                     ) {
+                        // AniTenshi: failed updates, when their notification is switched off
+                        item(key = "failed-updates") { FailedUpdatesRow() }
+
                         animeUpdatesLastUpdatedItem(lastUpdated)
 
                         animeUpdatesUiItems(

@@ -25,12 +25,12 @@ import eu.kanade.tachiyomi.animesource.model.AnimeUpdateStrategy
 import eu.kanade.tachiyomi.animesource.model.FetchType
 import eu.kanade.tachiyomi.animesource.model.SAnime
 import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
+import eu.kanade.tachiyomi.data.library.FailedUpdate
+import eu.kanade.tachiyomi.data.library.FailedUpdates
 import eu.kanade.tachiyomi.data.library.retryOnceOnTimeout
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.data.track.TrackStatus
-import eu.kanade.tachiyomi.util.storage.getUriCompat
-import eu.kanade.tachiyomi.util.system.createFileInCacheDir
 import eu.kanade.tachiyomi.util.system.isConnectedToWifi
 import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.workManager
@@ -58,7 +58,6 @@ import tachiyomi.domain.entries.anime.interactor.GetAnime
 import tachiyomi.domain.entries.anime.interactor.GetLibraryAnime
 import tachiyomi.domain.entries.anime.model.Anime
 import tachiyomi.domain.items.episode.model.Episode
-import tachiyomi.domain.items.episode.model.NoEpisodesException
 import tachiyomi.domain.items.season.interactor.GetAnimeSeasonsByParentId
 import tachiyomi.domain.library.anime.LibraryAnime
 import tachiyomi.domain.library.anime.model.AnimeGroupLibraryMode
@@ -71,12 +70,9 @@ import tachiyomi.domain.library.service.LibraryPreferences.Companion.ENTRY_HAS_U
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.ENTRY_NON_COMPLETED
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.ENTRY_NON_VIEWED
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.ENTRY_OUTSIDE_RELEASE_PERIOD
-import tachiyomi.domain.source.anime.model.AnimeSourceNotInstalledException
 import tachiyomi.domain.source.anime.service.AnimeSourceManager
 import tachiyomi.domain.track.anime.interactor.GetAnimeTracks
 import tachiyomi.i18n.MR
-import tachiyomi.i18n.aniyomi.AYMR
-import java.io.File
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.concurrent.CopyOnWriteArrayList
@@ -138,7 +134,15 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
         val group = inputData.getInt(KEY_GROUP, AnimeLibraryGroup.BY_DEFAULT)
         val groupExtra = inputData.getString(KEY_GROUP_EXTRA)
         // SY <--
-        addAnimeToQueue(categoryId, group, groupExtra)
+        // AniTenshi: "Retry" on the failed updates tries those titles alone
+        if (inputData.getBoolean(KEY_ONLY_FAILED, false)) {
+            val failedIds = FailedUpdates.read(libraryPreferences.failedAnimeUpdates).items.mapTo(HashSet()) { it.id }
+            animeToUpdate = getLibraryAnime.await()
+                .filter { it.anime.id in failedIds }
+                .distinctBy { it.anime.id }
+        } else {
+            addAnimeToQueue(categoryId, group, groupExtra)
+        }
 
         return withIOContext {
             try {
@@ -359,7 +363,7 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
         val progressCount = AtomicInteger(0)
         val currentlyUpdatingAnime = CopyOnWriteArrayList<Anime>()
         val newUpdates = CopyOnWriteArrayList<Pair<Anime, Array<Episode>>>()
-        val failedUpdates = CopyOnWriteArrayList<Pair<Anime, String?>>()
+        val failedUpdates = CopyOnWriteArrayList<FailedUpdate>()
         val hasDownloads = AtomicBoolean(false)
         val fetchWindow = animeFetchInterval.getWindow(ZonedDateTime.now())
 
@@ -402,19 +406,16 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
                                             newUpdates.add(anime to newEpisodes.toTypedArray())
                                         }
                                     } catch (e: Throwable) {
-                                        val errorMessage = when (e) {
-                                            is NoEpisodesException -> context.stringResource(
-                                                AYMR.strings.no_episodes_error,
-                                            )
-
-                                            // failedUpdates will already have the source, don't need to copy it into the message
-                                            is AnimeSourceNotInstalledException -> context.stringResource(
-                                                MR.strings.loader_not_implemented_error,
-                                            )
-
-                                            else -> e.message
-                                        }
-                                        failedUpdates.add(anime to errorMessage)
+                                        // AniTenshi: kept for the app to show, with a reason it can explain
+                                        failedUpdates.add(
+                                            FailedUpdates.of(
+                                                id = anime.id,
+                                                title = anime.title,
+                                                sourceId = anime.source,
+                                                sourceName = sourceManager.getOrStub(anime.source).name,
+                                                e = e,
+                                            ),
+                                        )
                                     }
                                 }
                             }
@@ -433,13 +434,14 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
             }
         }
 
-        if (failedUpdates.isNotEmpty()) {
-            val errorFile = writeErrorFile(failedUpdates)
-            notifier.showUpdateErrorNotification(
-                failedUpdates.size,
-                errorFile.getUriCompat(context),
-            )
-        }
+        // AniTenshi: the failures go in the app's own list instead of a text file; a title that worked this time
+        // leaves it. The notification counts anime and manga together.
+        FailedUpdates.record(
+            preference = libraryPreferences.failedAnimeUpdates,
+            attemptedIds = animeToUpdate.map { it.anime.id },
+            failures = failedUpdates,
+        )
+        FailedUpdates.refreshNotification(context)
     }
 
     private fun downloadEpisodes(anime: Anime, episodes: List<Episode>) {
@@ -497,44 +499,11 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
         )
     }
 
-    /**
-     * Writes basic file of update errors to cache dir.
-     */
-    private fun writeErrorFile(errors: List<Pair<Anime, String?>>): File {
-        try {
-            if (errors.isNotEmpty()) {
-                val file = context.createFileInCacheDir("animetail_update_errors.txt")
-                file.bufferedWriter().use { out ->
-                    out.write(
-                        context.stringResource(MR.strings.library_errors_help, ERROR_LOG_HELP_URL) + "\n\n",
-                    )
-                    // Error file format:
-                    // ! Error
-                    //   # Source
-                    //     - Anime
-                    errors.groupBy({ it.second }, { it.first }).forEach { (error, animes) ->
-                        out.write("\n! ${error}\n")
-                        animes.groupBy { it.source }.forEach { (srcId, animes) ->
-                            val source = sourceManager.getOrStub(srcId)
-                            out.write("  # $source\n")
-                            animes.forEach {
-                                out.write("    - ${it.title}\n")
-                            }
-                        }
-                    }
-                }
-                return file
-            }
-        } catch (_: Exception) {}
-        return File("")
-    }
-
     companion object {
         private const val TAG = "AnimeLibraryUpdate"
         private const val WORK_NAME_AUTO = "AnimeLibraryUpdate-auto"
         private const val WORK_NAME_MANUAL = "AnimeLibraryUpdate-manual"
 
-        private const val ERROR_LOG_HELP_URL = "https://aniyomi.org/docs/guides/troubleshooting/"
 
         private const val ANIME_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 60
 
@@ -550,6 +519,9 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
          */
         const val KEY_GROUP = "group"
         const val KEY_GROUP_EXTRA = "group_extra"
+
+        // AniTenshi
+        private const val KEY_ONLY_FAILED = "only_failed"
         // SY <--
 
         fun cancelAllWorks(context: Context) {
@@ -613,6 +585,8 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
             group: Int = AnimeLibraryGroup.BY_DEFAULT,
             groupExtra: String? = null,
             // SY <--
+            // AniTenshi: only the titles whose last update failed
+            onlyFailed: Boolean = false,
         ): Boolean {
             val wm = context.workManager
             // Check if the AnimeLibraryUpdateJob is already running
@@ -627,6 +601,7 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
                 KEY_GROUP to group,
                 KEY_GROUP_EXTRA to groupExtra,
                 // SY <--
+                KEY_ONLY_FAILED to onlyFailed,
             )
 
             // AniTenshi: sync first when the account is connected; a sync already running no longer

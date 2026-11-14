@@ -36,4 +36,8 @@
     <item quantity="one">Riprova %d titolo</item>
     <item quantity="other">Riprova i %d titoli</item>
   </plurals>
+  <plurals name="anitenshi_migration_sources_chosen">
+    <item quantity="one">%1$d di %2$d scelta</item>
+    <item quantity="other">%1$d di %2$d scelte</item>
+  </plurals>
 </resources>

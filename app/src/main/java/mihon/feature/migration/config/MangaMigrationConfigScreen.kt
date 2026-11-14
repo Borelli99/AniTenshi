@@ -9,9 +9,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.Deselect
 import androidx.compose.material.icons.outlined.DragHandle
-import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
@@ -39,13 +37,10 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.presentation.browse.manga.components.MangaSourceIcon
-import eu.kanade.presentation.components.AppBar
-import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.browse.manga.migration.search.MigrateMangaSearchScreen
 import eu.kanade.tachiyomi.util.system.LocaleHelper
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.update
 import mihon.feature.migration.list.MangaMigrationListScreen
 import sh.calvin.reorderable.ReorderableCollectionItemScope
@@ -97,33 +92,26 @@ class MangaMigrationConfigScreen(private val mangaIds: Collection<Long>) : Scree
             return
         }
 
+        val chosenCount = state.sources.count { it.id in state.includedSourceIds }
+        val selection = migrationSourcesSelection(
+            sourceIds = state.sources.map { it.id },
+            pinnedSourceIds = state.pinnedSourceIds,
+            includedSourceIds = state.includedSourceIds,
+        )
+
         Scaffold(
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = stringResource(MR.strings.migrationConfigScreen_selectedHeader),
+            // AniTenshi: a plain title with how many sources are ticked, and labelled chips in place of the
+            // three look-alike icons (select enabled / select pinned / select none)
+            topBar = {
+                MigrationSourcesTopBar(
+                    chosenCount = chosenCount,
+                    totalCount = state.sources.size,
+                    selection = selection,
+                    hasPinnedSources = state.sources.any { it.id in state.pinnedSourceIds },
                     navigateUp = navigator::pop,
-                    actions = {
-                        AppBarActions(
-                            persistentListOf(
-                                AppBar.Action(
-                                    title = stringResource(MR.strings.migrationConfigScreen_selectEnabledLabel),
-                                    icon = Icons.Outlined.SelectAll,
-                                    onClick = { screenModel.selectAllEnabled() },
-                                ),
-                                AppBar.Action(
-                                    title = stringResource(MR.strings.migrationConfigScreen_selectPinnedLabel),
-                                    icon = Icons.Outlined.SelectAll,
-                                    onClick = { screenModel.selectAllPinned() },
-                                ),
-                                AppBar.Action(
-                                    title = stringResource(MR.strings.migrationConfigScreen_selectNoneLabel),
-                                    icon = Icons.Outlined.Deselect,
-                                    onClick = { screenModel.unselectAll() },
-                                ),
-                            ),
-                        )
-                    },
-                    scrollBehavior = scrollBehavior,
+                    onSelectAll = screenModel::selectAll,
+                    onSelectPinned = screenModel::selectOnlyPinned,
+                    onSelectNone = screenModel::unselectAll,
                 )
             },
             floatingActionButton = {
@@ -163,6 +151,7 @@ class MangaMigrationConfigScreen(private val mangaIds: Collection<Long>) : Scree
                             MigrationSourceItem(
                                 source = source,
                                 isSelected = source.id in state.includedSourceIds,
+                                isPinned = source.id in state.pinnedSourceIds,
                                 onSelect = { screenModel.toggleSource(source.id) },
                             )
                         }
@@ -212,6 +201,7 @@ class MangaMigrationConfigScreen(private val mangaIds: Collection<Long>) : Scree
                 it.copy(
                     sources = sources,
                     includedSourceIds = includedSources,
+                    pinnedSourceIds = pinnedSources.toSet(),
                 )
             }
         }
@@ -228,28 +218,20 @@ class MangaMigrationConfigScreen(private val mangaIds: Collection<Long>) : Scree
             }
         }
 
-        fun selectAllEnabled() {
-            screenModelScope.launchIO {
-                val languages = sourcePreferences.enabledLanguages.get()
-                val disabledSources = sourcePreferences.disabledMangaSources.get()
-                    .mapNotNull { it.toLongOrNull() }
-                val enabledSourceIds = sourceManager.getCatalogueSources()
-                    .filterIsInstance<HttpSource>()
-                    .filter { it.lang in languages && it.id !in disabledSources }
-                    .map { it.id }
-
-                mutableState.update { state ->
-                    val includedSourceIds = (state.includedSourceIds + enabledSourceIds).distinct()
-                    sourcePreferences.migrationMangaSources.set(includedSourceIds)
-                    state.copy(includedSourceIds = includedSourceIds)
-                }
+        // AniTenshi: "All" ticks every source on the list, "Only pinned" ticks the pinned ones and nothing
+        // else, so that what is ticked always matches the chip. Both keep the order of the list, which is
+        // the order the sources are searched in.
+        fun selectAll() {
+            mutableState.update { state ->
+                val includedSourceIds = state.sources.map { it.id }
+                sourcePreferences.migrationMangaSources.set(includedSourceIds)
+                state.copy(includedSourceIds = includedSourceIds)
             }
         }
 
-        fun selectAllPinned() {
-            val pinnedSources = sourcePreferences.pinnedMangaSources.get().mapNotNull { it.toLongOrNull() }
+        fun selectOnlyPinned() {
             mutableState.update { state ->
-                val includedSourceIds = (state.includedSourceIds + pinnedSources).distinct()
+                val includedSourceIds = state.sources.map { it.id }.filter { it in state.pinnedSourceIds }
                 sourcePreferences.migrationMangaSources.set(includedSourceIds)
                 state.copy(includedSourceIds = includedSourceIds)
             }
@@ -282,6 +264,7 @@ class MangaMigrationConfigScreen(private val mangaIds: Collection<Long>) : Scree
             val isLoading: Boolean = false,
             val sources: List<Source> = emptyList(),
             val includedSourceIds: List<Long> = emptyList(),
+            val pinnedSourceIds: Set<Long> = emptySet(),
         )
     }
 }
@@ -290,6 +273,7 @@ class MangaMigrationConfigScreen(private val mangaIds: Collection<Long>) : Scree
 private fun ReorderableCollectionItemScope.MigrationSourceItem(
     source: Source,
     isSelected: Boolean,
+    isPinned: Boolean,
     onSelect: () -> Unit,
 ) {
     ListItem(
@@ -329,7 +313,6 @@ private fun ReorderableCollectionItemScope.MigrationSourceItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
             ) {
-                val icon = if (isSelected) Icons.Outlined.Deselect else Icons.Outlined.SelectAll
                 Icon(
                     imageVector = Icons.Outlined.DragHandle,
                     contentDescription = null,
@@ -341,11 +324,7 @@ private fun ReorderableCollectionItemScope.MigrationSourceItem(
             containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent,
         ),
         content = {
-            Text(
-                text = source.name,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            MigrationSourceName(name = source.name, isPinned = isPinned)
         },
     )
 }

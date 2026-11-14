@@ -530,4 +530,10 @@
   <string name="anitenshi_failed_reason_site_error">Il sito ha risposto con un errore (%s).</string>
   <string name="anitenshi_failed_reason_nothing_found">Il sito non ha restituito capitoli o episodi.</string>
   <string name="anitenshi_failed_reason_other">Aggiornamento non riuscito.</string>
+  <!-- Migrazione: scelta delle fonti -->
+  <string name="anitenshi_migration_sources_title">Fonti per la migrazione</string>
+  <string name="anitenshi_migration_sources_none_chosen">Nessuna fonte scelta</string>
+  <string name="anitenshi_migration_sources_all">Tutte</string>
+  <string name="anitenshi_migration_sources_pinned">Solo fissate</string>
+  <string name="anitenshi_migration_sources_none">Nessuna</string>
 </resources>

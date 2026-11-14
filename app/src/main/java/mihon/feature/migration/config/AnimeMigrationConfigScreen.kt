@@ -9,9 +9,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.Deselect
 import androidx.compose.material.icons.outlined.DragHandle
-import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
@@ -38,13 +36,10 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.presentation.browse.anime.components.AnimeSourceIcon
-import eu.kanade.presentation.components.AppBar
-import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.ui.browse.anime.migration.search.MigrateAnimeSearchScreen
 import eu.kanade.tachiyomi.util.system.LocaleHelper
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.update
 import mihon.feature.migration.list.AnimeMigrationListScreen
 import sh.calvin.reorderable.ReorderableCollectionItemScope
@@ -95,33 +90,26 @@ class AnimeMigrationConfigScreen(private val animeIds: Collection<Long>) : Scree
             return
         }
 
+        val chosenCount = state.sources.count { it.id in state.includedSourceIds }
+        val selection = migrationSourcesSelection(
+            sourceIds = state.sources.map { it.id },
+            pinnedSourceIds = state.pinnedSourceIds,
+            includedSourceIds = state.includedSourceIds,
+        )
+
         Scaffold(
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = stringResource(MR.strings.migrationConfigScreen_selectedHeader),
+            // AniTenshi: a plain title with how many sources are ticked, and labelled chips in place of the
+            // three look-alike icons (select enabled / select pinned / select none)
+            topBar = {
+                MigrationSourcesTopBar(
+                    chosenCount = chosenCount,
+                    totalCount = state.sources.size,
+                    selection = selection,
+                    hasPinnedSources = state.sources.any { it.id in state.pinnedSourceIds },
                     navigateUp = navigator::pop,
-                    actions = {
-                        AppBarActions(
-                            persistentListOf(
-                                AppBar.Action(
-                                    title = stringResource(MR.strings.migrationConfigScreen_selectEnabledLabel),
-                                    icon = Icons.Outlined.SelectAll,
-                                    onClick = { screenModel.selectAllEnabled() },
-                                ),
-                                AppBar.Action(
-                                    title = stringResource(MR.strings.migrationConfigScreen_selectPinnedLabel),
-                                    icon = Icons.Outlined.SelectAll,
-                                    onClick = { screenModel.selectAllPinned() },
-                                ),
-                                AppBar.Action(
-                                    title = stringResource(MR.strings.migrationConfigScreen_selectNoneLabel),
-                                    icon = Icons.Outlined.Deselect,
-                                    onClick = { screenModel.unselectAll() },
-                                ),
-                            ),
-                        )
-                    },
-                    scrollBehavior = scrollBehavior,
+                    onSelectAll = screenModel::selectAll,
+                    onSelectPinned = screenModel::selectOnlyPinned,
+                    onSelectNone = screenModel::unselectAll,
                 )
             },
             floatingActionButton = {
@@ -161,6 +149,7 @@ class AnimeMigrationConfigScreen(private val animeIds: Collection<Long>) : Scree
                             MigrationSourceItem(
                                 source = source,
                                 isSelected = source.id in state.includedSourceIds,
+                                isPinned = source.id in state.pinnedSourceIds,
                                 onSelect = { screenModel.toggleSource(source.id) },
                             )
                         }
@@ -208,6 +197,7 @@ class AnimeMigrationConfigScreen(private val animeIds: Collection<Long>) : Scree
                 it.copy(
                     sources = sources,
                     includedSourceIds = includedSources,
+                    pinnedSourceIds = pinnedSources.toSet(),
                 )
             }
         }
@@ -224,26 +214,20 @@ class AnimeMigrationConfigScreen(private val animeIds: Collection<Long>) : Scree
             }
         }
 
-        fun selectAllEnabled() {
-            val languages = sourcePreferences.enabledLanguages.get()
-            val disabledSources = sourcePreferences.disabledAnimeSources.get()
-                .mapNotNull { it.toLongOrNull() }
-            val enabledSourceIds = sourceManager.getCatalogueSources()
-                .filterIsInstance<AnimeHttpSource>()
-                .filter { it.lang in languages && it.id !in disabledSources }
-                .map { it.id }
-
+        // AniTenshi: "All" ticks every source on the list, "Only pinned" ticks the pinned ones and nothing
+        // else, so that what is ticked always matches the chip. Both keep the order of the list, which is
+        // the order the sources are searched in.
+        fun selectAll() {
             mutableState.update { state ->
-                val includedSourceIds = (state.includedSourceIds + enabledSourceIds).distinct()
+                val includedSourceIds = state.sources.map { it.id }
                 sourcePreferences.migrationAnimeSources.set(includedSourceIds)
                 state.copy(includedSourceIds = includedSourceIds)
             }
         }
 
-        fun selectAllPinned() {
-            val pinnedSources = sourcePreferences.pinnedAnimeSources.get().mapNotNull { it.toLongOrNull() }
+        fun selectOnlyPinned() {
             mutableState.update { state ->
-                val includedSourceIds = (state.includedSourceIds + pinnedSources).distinct()
+                val includedSourceIds = state.sources.map { it.id }.filter { it in state.pinnedSourceIds }
                 sourcePreferences.migrationAnimeSources.set(includedSourceIds)
                 state.copy(includedSourceIds = includedSourceIds)
             }
@@ -276,6 +260,7 @@ class AnimeMigrationConfigScreen(private val animeIds: Collection<Long>) : Scree
             val isLoading: Boolean = false,
             val sources: List<AnimeSource> = emptyList(),
             val includedSourceIds: List<Long> = emptyList(),
+            val pinnedSourceIds: Set<Long> = emptySet(),
         )
     }
 }
@@ -284,6 +269,7 @@ class AnimeMigrationConfigScreen(private val animeIds: Collection<Long>) : Scree
 private fun ReorderableCollectionItemScope.MigrationSourceItem(
     source: AnimeSource,
     isSelected: Boolean,
+    isPinned: Boolean,
     onSelect: () -> Unit,
 ) {
     ListItem(
@@ -334,11 +320,7 @@ private fun ReorderableCollectionItemScope.MigrationSourceItem(
             containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent,
         ),
         content = {
-            Text(
-                text = source.name,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            MigrationSourceName(name = source.name, isPinned = isPinned)
         },
     )
 }

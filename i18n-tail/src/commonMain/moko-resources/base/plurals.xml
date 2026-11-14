@@ -37,4 +37,8 @@
         <item quantity="one">Retry %d title</item>
         <item quantity="other">Retry %d titles</item>
     </plurals>
+    <plurals name="anitenshi_migration_sources_chosen">
+        <item quantity="one">%1$d of %2$d chosen</item>
+        <item quantity="other">%1$d of %2$d chosen</item>
+    </plurals>
 </resources>

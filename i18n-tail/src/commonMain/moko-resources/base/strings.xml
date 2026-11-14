@@ -613,4 +613,10 @@
     <string name="anitenshi_failed_reason_site_error">The site answered with an error (%s).</string>
     <string name="anitenshi_failed_reason_nothing_found">The site returned no chapters or episodes.</string>
     <string name="anitenshi_failed_reason_other">The update failed.</string>
+    <!-- Migration: choosing the sources -->
+    <string name="anitenshi_migration_sources_title">Sources for migration</string>
+    <string name="anitenshi_migration_sources_none_chosen">No sources chosen</string>
+    <string name="anitenshi_migration_sources_all">All</string>
+    <string name="anitenshi_migration_sources_pinned">Only pinned</string>
+    <string name="anitenshi_migration_sources_none">None</string>
 </resources>

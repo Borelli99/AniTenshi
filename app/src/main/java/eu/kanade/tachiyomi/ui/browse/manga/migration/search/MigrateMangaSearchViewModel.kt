@@ -52,6 +52,8 @@ class MigrateMangaSearchViewModel(
                 it.copy(
                     fromSourceId = manga.source,
                     searchQuery = manga.title,
+                    // AniTenshi: a migration looks for the title everywhere, not only in the pinned sources
+                    sourceFilter = MangaSourceFilter.All,
                 )
             }
 

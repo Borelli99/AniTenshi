@@ -52,6 +52,8 @@ class MigrateAnimeSearchViewModel(
                 it.copy(
                     fromSourceId = anime.source,
                     searchQuery = anime.title,
+                    // AniTenshi: a migration looks for the title everywhere, not only in the pinned sources
+                    sourceFilter = AnimeSourceFilter.All,
                 )
             }
 

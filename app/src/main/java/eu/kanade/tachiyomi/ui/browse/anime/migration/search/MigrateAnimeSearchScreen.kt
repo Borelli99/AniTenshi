@@ -33,7 +33,7 @@ class MigrateAnimeSearchScreen(private val animeId: Long) : Screen() {
         MigrateAnimeSearchScreen(
             state = state,
             fromSourceId = dialogState.anime?.source,
-            pinnedSourceIds = screenModel.pinnedSourceIds,
+            pinnedSourceIds = viewModel.pinnedSourceIds,
             navigateUp = navigator::pop,
             onChangeSearchQuery = viewModel::updateSearchQuery,
             onSearch = { viewModel.search() },

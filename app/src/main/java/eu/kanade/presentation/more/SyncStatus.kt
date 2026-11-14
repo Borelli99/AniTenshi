@@ -1,7 +1,6 @@
 package eu.kanade.presentation.more
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
@@ -13,7 +12,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,15 +21,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import eu.kanade.presentation.more.settings.widget.BasePreferenceWidget
-import eu.kanade.presentation.more.settings.widget.PrefsHorizontalPadding
+import eu.kanade.presentation.components.CardEntry
 import eu.kanade.presentation.util.relativeTimeSpanString
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.data.sync.SyncManager
 import mihon.app.di.appGraph
 import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.i18n.stringResource
-import tachiyomi.presentation.core.util.secondaryItemAlpha
 import tachiyomi.presentation.core.util.collectAsState as collectPreferenceAsState
 
 /**
@@ -81,8 +77,8 @@ fun rememberSyncStatus(): SyncStatus {
 }
 
 /**
- * The row itself. Tapping it opens the sync settings; while nothing is wrong it also carries a round button to
- * sync right away.
+ * The row itself, an entry of a [eu.kanade.presentation.components.CardGroup]. Tapping it opens the sync
+ * settings; while nothing is wrong it also carries a round button to sync right away.
  */
 @Composable
 fun SyncStatusRow(
@@ -117,28 +113,14 @@ fun SyncStatusRow(
         else -> null
     }
 
-    BasePreferenceWidget(
+    CardEntry(
         title = stringResource(TLMR.strings.anitenshi_sync_status_title),
-        subcomponent = {
-            Text(
-                text = status.summary(),
-                modifier = Modifier
-                    .padding(horizontal = PrefsHorizontalPadding)
-                    .then(if (problem) Modifier else Modifier.secondaryItemAlpha()),
-                color = if (problem) MaterialTheme.colorScheme.error else Color.Unspecified,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 3,
-            )
-        },
-        icon = {
-            Icon(
-                imageVector = status.icon(),
-                tint = iconTint,
-                contentDescription = null,
-            )
-        },
+        subtitle = status.summary(),
+        subtitleColor = if (problem) MaterialTheme.colorScheme.error else Color.Unspecified,
+        icon = status.icon(),
+        iconTint = iconTint,
         onClick = onClick,
-        widget = widget,
+        trailing = widget,
     )
 }
 

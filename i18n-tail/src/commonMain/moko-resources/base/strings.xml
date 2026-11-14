@@ -641,4 +641,16 @@
     <string name="anitenshi_settings_value_trackers_none">No service connected</string>
     <string name="anitenshi_settings_value_discord_on">Discord: connected</string>
     <string name="anitenshi_settings_value_discord_off">Discord: not connected</string>
+    <!-- The "More" page -->
+    <string name="anitenshi_more_settings_summary">Look, library, reader, player…</string>
+    <string name="anitenshi_more_group_modes">Modes</string>
+    <string name="anitenshi_more_group_library">Library</string>
+    <string name="anitenshi_more_group_data">Data</string>
+    <string name="anitenshi_more_group_tools">Tools</string>
+    <string name="anitenshi_more_group_app">App</string>
+    <string name="anitenshi_more_downloaded_only_summary">Show only what you have downloaded in the library</string>
+    <string name="anitenshi_more_incognito_summary">Keeps no history while you read or watch</string>
+    <string name="anitenshi_more_open_link">Open a video link</string>
+    <string name="anitenshi_more_open_link_summary">Watch a video from a link, in the app\'s player</string>
+    <string name="anitenshi_more_categories_summary">%1$d anime · %2$d manga</string>
 </resources>

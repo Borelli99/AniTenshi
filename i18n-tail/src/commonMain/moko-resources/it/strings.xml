@@ -558,4 +558,16 @@
   <string name="anitenshi_settings_value_trackers_none">Nessun servizio collegato</string>
   <string name="anitenshi_settings_value_discord_on">Discord: collegato</string>
   <string name="anitenshi_settings_value_discord_off">Discord: non collegato</string>
+  <!-- La pagina "Altro" -->
+  <string name="anitenshi_more_settings_summary">Aspetto, libreria, lettore, player…</string>
+  <string name="anitenshi_more_group_modes">Modalità</string>
+  <string name="anitenshi_more_group_library">Libreria</string>
+  <string name="anitenshi_more_group_data">Dati</string>
+  <string name="anitenshi_more_group_tools">Strumenti</string>
+  <string name="anitenshi_more_group_app">App</string>
+  <string name="anitenshi_more_downloaded_only_summary">Mostra in libreria solo quello che hai scaricato</string>
+  <string name="anitenshi_more_incognito_summary">Non salva la cronologia mentre leggi o guardi</string>
+  <string name="anitenshi_more_open_link">Apri un link video</string>
+  <string name="anitenshi_more_open_link_summary">Guarda un video da un link, nel player dell\'app</string>
+  <string name="anitenshi_more_categories_summary">%1$d anime · %2$d manga</string>
 </resources>

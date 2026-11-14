@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
@@ -39,7 +40,6 @@ import eu.kanade.tachiyomi.ui.category.CategoriesTab
 import eu.kanade.tachiyomi.ui.download.DownloadsTab
 import eu.kanade.tachiyomi.ui.history.HistoriesTab
 import eu.kanade.tachiyomi.ui.main.MainActivity
-import eu.kanade.tachiyomi.ui.setting.PlayerSettingsScreen
 import eu.kanade.tachiyomi.ui.setting.SettingsScreen
 import eu.kanade.tachiyomi.ui.stats.StatsTab
 import eu.kanade.tachiyomi.ui.storage.StorageTab
@@ -48,12 +48,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import mihon.app.di.appGraph
 import mihon.feature.support.AniTenshiDonations
 import mihon.feature.support.SupportUsScreen
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.util.collectAsState as collectPreferenceAsState
 
 data object MoreTab : Tab {
 
@@ -94,7 +96,19 @@ data object MoreTab : Tab {
         } else {
             null
         }
-        MoreScreen(
+        // AniTenshi: what the entries say under their name: how many categories there are (the one every
+        // library has from the start is not counted) and when the last automatic backup was made
+        val categoryCounts by remember {
+            combine(
+                context.appGraph.getAnimeCategories.subscribe(),
+                context.appGraph.getMangaCategories.subscribe(),
+            ) { anime, manga ->
+                anime.count { !it.isSystemCategory } to manga.count { !it.isSystemCategory }
+            }
+        }.collectAsState(initial = null)
+        val lastAutoBackup by remember { context.appGraph.backupPreferences.lastAutoBackupTimestamp }
+            .collectPreferenceAsState()
+                MoreScreen(
             downloadQueueStateProvider = { downloadQueueState },
             downloadedOnly = viewModel.downloadedOnly,
             onDownloadedOnlyChange = { viewModel.downloadedOnly = it },
@@ -107,7 +121,6 @@ data object MoreTab : Tab {
             onClickNetworkStream = { navigator.push(NetworkStreamScreen) },
             onClickStorage = { navigator.push(StorageTab) },
             onClickDataAndStorage = { navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage)) },
-            onClickPlayerSettings = { navigator.push(PlayerSettingsScreen(mainSettings = false)) },
             onClickSettings = { navigator.push(SettingsScreen()) },
             onClickAbout = { navigator.push(SettingsScreen(SettingsScreen.Destination.About)) },
             navigateUp = navigateUp,
@@ -118,6 +131,8 @@ data object MoreTab : Tab {
                 navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage))
             },
             onClickSyncNow = { SyncDataJob.startNow(context) },
+            categoryCounts = categoryCounts,
+            lastAutoBackup = lastAutoBackup,
         )
 
         LaunchedEffect(Unit) {

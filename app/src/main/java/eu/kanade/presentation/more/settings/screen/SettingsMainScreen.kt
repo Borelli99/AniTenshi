@@ -2,17 +2,14 @@ package eu.kanade.presentation.more.settings.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,25 +28,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.components.AppBar
+import eu.kanade.presentation.components.CardEntry
+import eu.kanade.presentation.components.CardEntryArrow
+import eu.kanade.presentation.components.CardGroup
 import eu.kanade.presentation.more.settings.screen.about.AboutScreen
 import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.presentation.util.Screen
@@ -64,7 +57,6 @@ import mihon.icons.materialsymbols.rounded.CollectionsBookmark
 import mihon.icons.materialsymbols.rounded.Download
 import mihon.icons.materialsymbols.rounded.Explore
 import mihon.icons.materialsymbols.rounded.Info
-import mihon.icons.materialsymbols.rounded.KeyboardArrowRight
 import mihon.icons.materialsymbols.rounded.Palette
 import mihon.icons.materialsymbols.rounded.Search
 import mihon.icons.materialsymbols.rounded.Security
@@ -162,18 +154,19 @@ object SettingsMainScreen : Screen() {
                         key = { it },
                     ) { index ->
                         val group = groups[index]
-                        SettingsGroup(
+                        CardGroup(
                             title = stringResource(group.titleRes),
                         ) {
                             group.items.forEach { item ->
-                                SettingsEntry(
+                                CardEntry(
                                     title = stringResource(item.titleRes),
                                     subtitle = item.subtitle(),
                                     icon = item.icon,
-                                    // Phones open the page over this one; tablets show it beside the list
-                                    isSelected = twoPane && item.screen::class == openScreen,
-                                    isSelectable = twoPane,
                                     onClick = { navigator.navigate(item.screen, twoPane) },
+                                    // Phones open the page over this one; tablets show it beside the list,
+                                    // so there the entry of the open page is marked and the arrow is left out
+                                    selected = if (twoPane) item.screen::class == openScreen else null,
+                                    trailing = if (twoPane) null else ({ CardEntryArrow() }),
                                 )
                             }
                         }
@@ -217,111 +210,6 @@ object SettingsMainScreen : Screen() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun SettingsGroup(
-        title: String,
-        content: @Composable () -> Unit,
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = title,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .semantics { heading() },
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.secondary,
-            )
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-            ) {
-                Column(
-                    modifier = Modifier.padding(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    content()
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun SettingsEntry(
-        title: String,
-        subtitle: String?,
-        icon: ImageVector,
-        isSelected: Boolean,
-        isSelectable: Boolean,
-        onClick: () -> Unit,
-    ) {
-        val colors = MaterialTheme.colorScheme
-        val titleColor = if (isSelected) colors.onSecondaryContainer else colors.onSurface
-        val subtitleColor = if (isSelected) colors.onSecondaryContainer.copy(alpha = 0.8f) else colors.onSurfaceVariant
-        val iconBoxColor = if (isSelected) {
-            colors.onSecondaryContainer.copy(alpha = 0.12f)
-        } else {
-            colors.surfaceContainerHigh
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(if (isSelected) colors.secondaryContainer else Color.Transparent)
-                .clickable(role = Role.Button, onClick = onClick)
-                .semantics { if (isSelectable) selected = isSelected }
-                .heightIn(min = 60.dp)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(iconBoxColor),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(22.dp),
-                    tint = colors.primary,
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = titleColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp,
-                        color = subtitleColor,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            // The arrow says "this opens a page": on tablets the page is already open beside the list
-            if (!isSelectable) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.KeyboardArrowRight,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = colors.outline,
                 )
             }
         }

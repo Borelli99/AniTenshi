@@ -88,7 +88,8 @@ object NetworkStreamScreen : Screen() {
             topBarScrollBehavior = scrollBehavior,
             topBar = { behavior ->
                 AppBar(
-                    title = stringResource(TLMR.strings.network_stream),
+                    // AniTenshi: the name this page has on the "More" page
+                    title = stringResource(TLMR.strings.anitenshi_more_open_link),
                     navigateUp = navigator::pop,
                     scrollBehavior = behavior,
                 )
@@ -251,7 +252,7 @@ object NetworkStreamScreen : Screen() {
                 }
 
                 Text(
-                    text = stringResource(TLMR.strings.network_stream_summary),
+                    text = stringResource(TLMR.strings.anitenshi_more_open_link_summary),
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)

@@ -39,9 +39,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
 import mihon.app.di.AppGraph
 import mihon.app.di.appGraph
@@ -79,6 +81,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerParameters) :
     CoroutineWorker(context, workerParams) {
@@ -134,6 +137,12 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
         val group = inputData.getInt(KEY_GROUP, AnimeLibraryGroup.BY_DEFAULT)
         val groupExtra = inputData.getString(KEY_GROUP_EXTRA)
         // SY <--
+        // AniTenshi: an automatic update can be what starts the app, and it then gets here before the extensions
+        // have loaded. Until they have, every source looks missing (the manga side waits by itself, see
+        // AndroidMangaSourceManager), so the first titles tried were reported as "extension not installed" with
+        // the extension right there. Not waited for ever, in case the load never ends.
+        withTimeoutOrNull(SOURCES_LOAD_TIMEOUT) { sourceManager.isInitialized.first { it } }
+
         // AniTenshi: "Retry" on the failed updates tries those titles alone
         if (inputData.getBoolean(KEY_ONLY_FAILED, false)) {
             val failedIds = FailedUpdates.read(libraryPreferences.failedAnimeUpdates).items.mapTo(HashSet()) { it.id }
@@ -441,6 +450,8 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
             attemptedIds = animeToUpdate.map { it.anime.id },
             failures = failedUpdates,
         )
+        // The titles that left the library since they failed are never tried again: they go here
+        FailedUpdates.prune(context)
         FailedUpdates.refreshNotification(context)
     }
 
@@ -522,6 +533,9 @@ class AnimeLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
 
         // AniTenshi
         private const val KEY_ONLY_FAILED = "only_failed"
+
+        // AniTenshi: how long an update waits for the extensions to load before it goes on without them
+        private val SOURCES_LOAD_TIMEOUT = 30.seconds
         // SY <--
 
         fun cancelAllWorks(context: Context) {

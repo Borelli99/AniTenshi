@@ -79,11 +79,15 @@ data class FailedUpdatesState(
  * text file opened from the notification) and retry them.
  *
  * Anime and manga each have their list, in [LibraryPreferences.failedAnimeUpdates] and
- * [LibraryPreferences.failedMangaUpdates]. A title leaves its list when a later update of it works.
+ * [LibraryPreferences.failedMangaUpdates]. A title leaves its list when a later update of it works, or when what
+ * is written about it no longer holds (see [prune]).
  */
 object FailedUpdates {
 
     private val json = Json { ignoreUnknownKeys = true }
+
+    // The lists are read, changed and written back by the two update jobs and by [prune]
+    private val lock = Any()
 
     fun decode(value: String): FailedUpdatesState {
         if (value.isBlank()) return FailedUpdatesState()
@@ -101,13 +105,85 @@ object FailedUpdates {
      * replace what was known of the titles tried, and the titles not tried stay as they were.
      */
     fun record(preference: Preference<String>, attemptedIds: Collection<Long>, failures: List<FailedUpdate>) {
-        val old = read(preference)
         val attempted = attemptedIds.toSet()
-        val state = FailedUpdatesState(
-            time = if (failures.isNotEmpty()) System.currentTimeMillis() else old.time,
-            items = old.items.filter { it.id !in attempted } + failures.distinctBy { it.id },
-        )
-        preference.set(json.encodeToString(FailedUpdatesState.serializer(), state))
+        synchronized(lock) {
+            val old = read(preference)
+            val state = FailedUpdatesState(
+                time = if (failures.isNotEmpty()) System.currentTimeMillis() else old.time,
+                items = old.items.filter { it.id !in attempted } + failures.distinctBy { it.id },
+            )
+            preference.set(json.encodeToString(FailedUpdatesState.serializer(), state))
+        }
+    }
+
+    /**
+     * Takes off the lists what no longer holds:
+     * - the titles that are no longer in the library. Removing a title, or moving it to another source (which
+     *   makes a new title of it), leaves the old one out of every later update, so it would never leave its
+     *   list by itself and would be reported as failed for good;
+     * - "extension missing" for an extension that is there now.
+     *
+     * The titles the person silenced are forgotten too once they leave the library.
+     */
+    suspend fun prune(context: Context) {
+        val graph = context.appGraph
+        val preferences = graph.libraryPreferences
+        val getAnime = graph.getAnime
+        val getManga = graph.getManga
+        val animeSources = graph.animeSourceManager
+        val mangaSources = graph.mangaSourceManager
+
+        // A season is updated with the title it belongs to, without being in the library itself
+        suspend fun animeInLibrary(id: Long): Boolean {
+            val anime = getAnime.await(id) ?: return false
+            return anime.favorite || anime.parentId?.let { getAnime.await(it)?.favorite } == true
+        }
+        suspend fun mangaInLibrary(id: Long): Boolean = getManga.await(id)?.favorite == true
+
+        val animeGone = read(preferences.failedAnimeUpdates).items
+            .filter { failed ->
+                !animeInLibrary(failed.id) ||
+                    (
+                        failed.reason == FailedUpdateReason.EXTENSION_MISSING &&
+                            // Until the extensions have loaded every source looks missing
+                            animeSources.isInitialized.value &&
+                            animeSources.get(failed.sourceId) != null
+                        )
+            }
+            .mapTo(HashSet()) { it.id }
+        val mangaGone = read(preferences.failedMangaUpdates).items
+            .filter { failed ->
+                !mangaInLibrary(failed.id) ||
+                    (
+                        failed.reason == FailedUpdateReason.EXTENSION_MISSING &&
+                            mangaSources.get(failed.sourceId) != null
+                        )
+            }
+            .mapTo(HashSet()) { it.id }
+        val mutedAnimeGone = preferences.mutedFailedAnimeUpdates.get()
+            .filterTo(HashSet()) { id -> id.toLongOrNull()?.let { animeInLibrary(it) } != true }
+        val mutedMangaGone = preferences.mutedFailedMangaUpdates.get()
+            .filterTo(HashSet()) { id -> id.toLongOrNull()?.let { mangaInLibrary(it) } != true }
+
+        synchronized(lock) {
+            drop(preferences.failedAnimeUpdates, animeGone)
+            drop(preferences.failedMangaUpdates, mangaGone)
+            if (mutedAnimeGone.isNotEmpty()) {
+                preferences.mutedFailedAnimeUpdates.set(preferences.mutedFailedAnimeUpdates.get() - mutedAnimeGone)
+            }
+            if (mutedMangaGone.isNotEmpty()) {
+                preferences.mutedFailedMangaUpdates.set(preferences.mutedFailedMangaUpdates.get() - mutedMangaGone)
+            }
+        }
+    }
+
+    private fun drop(preference: Preference<String>, ids: Set<Long>) {
+        if (ids.isEmpty()) return
+        val old = read(preference)
+        val items = old.items.filterNot { it.id in ids }
+        if (items.size != old.items.size) {
+            preference.set(json.encodeToString(FailedUpdatesState.serializer(), old.copy(items = items)))
+        }
     }
 
     /** What went wrong with a title, from the exception its update ended with. */

@@ -34,6 +34,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -96,6 +97,15 @@ class FailedUpdatesScreen : Screen() {
         val mutedAnime by preferences.mutedFailedAnimeUpdates.collectAsState()
         val mutedManga by preferences.mutedFailedMangaUpdates.collectAsState()
         val notify by preferences.notifyFailedUpdates.collectAsState()
+
+        // AniTenshi: what no longer holds leaves the list as soon as it is looked at, without waiting for the next
+        // update: titles moved to another source or removed from the library, extensions installed since
+        LaunchedEffect(Unit) {
+            withIOContext {
+                FailedUpdates.prune(context)
+                FailedUpdates.refreshNotification(context)
+            }
+        }
 
         val animeState = remember(animeJson) { FailedUpdates.decode(animeJson) }
         val mangaState = remember(mangaJson) { FailedUpdates.decode(mangaJson) }

@@ -439,6 +439,8 @@ class MangaLibraryUpdateJob(private val context: Context, workerParams: WorkerPa
             attemptedIds = mangaToUpdate.map { it.manga.id },
             failures = failedUpdates,
         )
+        // The titles that left the library since they failed are never tried again: they go here
+        FailedUpdates.prune(context)
         FailedUpdates.refreshNotification(context)
     }
 

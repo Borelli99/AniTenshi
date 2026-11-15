@@ -1,5 +1,7 @@
 package eu.kanade.presentation.more.settings.screen
 
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
@@ -22,8 +24,12 @@ import eu.kanade.tachiyomi.data.library.FailedUpdates
 import eu.kanade.tachiyomi.data.library.anime.AnimeLibraryUpdateJob
 import eu.kanade.tachiyomi.data.library.manga.MangaLibraryUpdateJob
 import eu.kanade.tachiyomi.ui.category.CategoriesTab
+import eu.kanade.tachiyomi.ui.updates.failed.FailedUpdatesScreen
+import eu.kanade.tachiyomi.ui.updates.failed.rememberFailedUpdatesCount
 import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
+import mihon.icons.materialsymbols.MaterialSymbols
+import mihon.icons.materialsymbols.rounded.KeyboardArrowRight
 import tachiyomi.domain.category.anime.interactor.GetAnimeCategories
 import tachiyomi.domain.category.manga.interactor.GetMangaCategories
 import tachiyomi.domain.category.manga.interactor.ResetMangaCategoryFlags
@@ -162,6 +168,8 @@ object SettingsLibraryScreen : SearchableSettings {
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
+        val navigator = LocalNavigator.currentOrThrow
+        val failedUpdatesCount = rememberFailedUpdatesCount()
 
         val autoUpdateIntervalPref = libraryPreferences.autoUpdateInterval
         val autoUpdateInterval by autoUpdateIntervalPref.collectAsState()
@@ -270,6 +278,28 @@ object SettingsLibraryScreen : SearchableSettings {
                         }
                         true
                     },
+                ),
+                // AniTenshi: always here, so the list can be opened even when the notification is off or gone
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(TLMR.strings.anitenshi_failed_updates_title),
+                    subtitle = if (failedUpdatesCount > 0) {
+                        pluralStringResource(
+                            TLMR.plurals.anitenshi_failed_updates_count,
+                            count = failedUpdatesCount,
+                            failedUpdatesCount,
+                        )
+                    } else {
+                        stringResource(TLMR.strings.anitenshi_failed_updates_none)
+                    },
+                    subtitleColor = if (failedUpdatesCount > 0) MaterialTheme.colorScheme.error else null,
+                    widget = {
+                        Icon(
+                            imageVector = MaterialSymbols.Rounded.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.outline,
+                        )
+                    },
+                    onClick = { navigator.push(FailedUpdatesScreen()) },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(AYMR.strings.anime_categories),

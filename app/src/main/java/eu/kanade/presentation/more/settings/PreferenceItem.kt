@@ -177,6 +177,7 @@ internal fun PreferenceItem(
                 TextPreferenceWidget(
                     title = item.title,
                     subtitle = item.subtitle,
+                    subtitleColor = item.subtitleColor,
                     icon = item.icon,
                     widget = item.widget,
                     onPreferenceClick = item.onClick,

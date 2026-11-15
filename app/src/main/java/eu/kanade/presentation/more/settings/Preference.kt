@@ -7,6 +7,7 @@ import androidx.annotation.IntRange
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import eu.kanade.core.preference.asState
 import eu.kanade.tachiyomi.data.connections.ConnectionsService
@@ -40,6 +41,8 @@ sealed class Preference {
             override val enabled: Boolean = true,
             val widget: @Composable (() -> Unit)? = null,
             val onClick: (() -> Unit)? = null,
+            // AniTenshi: a color for the subtitle when it reports something to notice, such as an error
+            val subtitleColor: Color? = null,
         ) : PreferenceItem<String>() {
             override val onValueChanged: suspend (value: String) -> Boolean = { true }
         }

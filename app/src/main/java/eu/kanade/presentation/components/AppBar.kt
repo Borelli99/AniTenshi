@@ -324,6 +324,18 @@ fun AppBarActions(
                     } else {
                         null
                     },
+                    trailingIcon = if (action.badge > 0) {
+                        {
+                            Badge(
+                                containerColor = AniTenshiPalette.Gold,
+                                contentColor = AniTenshiPalette.Navy,
+                            ) {
+                                Text(text = action.badge.toString())
+                            }
+                        }
+                    } else {
+                        null
+                    },
                 )
             }
         }
@@ -528,6 +540,8 @@ sealed interface AppBar {
         val icon: ImageVector? = null,
         val iconTint: Color? = null,
         val dividerBefore: Boolean = false,
+        // AniTenshi: a number at the end of the item, in a gold pill like the one on the bell; none when 0
+        val badge: Int = 0,
     ) : AppBarAction
 }
 

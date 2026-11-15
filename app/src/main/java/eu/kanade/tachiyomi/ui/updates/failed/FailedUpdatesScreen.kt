@@ -498,14 +498,7 @@ fun FailedUpdatesRow(modifier: Modifier = Modifier) {
     val navigator = LocalNavigator.currentOrThrow
     val preferences = remember { context.appGraph.libraryPreferences }
     val notify by preferences.notifyFailedUpdates.collectAsState()
-    val animeJson by preferences.failedAnimeUpdates.collectAsState()
-    val mangaJson by preferences.failedMangaUpdates.collectAsState()
-    val mutedAnime by preferences.mutedFailedAnimeUpdates.collectAsState()
-    val mutedManga by preferences.mutedFailedMangaUpdates.collectAsState()
-    val count = remember(animeJson, mangaJson, mutedAnime, mutedManga) {
-        FailedUpdates.decode(animeJson).items.count { it.id.toString() !in mutedAnime } +
-            FailedUpdates.decode(mangaJson).items.count { it.id.toString() !in mutedManga }
-    }
+    val count = rememberFailedUpdatesCount()
     if (notify || count == 0) return
 
     Surface(
@@ -532,5 +525,23 @@ fun FailedUpdatesRow(modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
             )
         }
+    }
+}
+
+/**
+ * AniTenshi: how many titles failed to update, anime and manga together, leaving out the ones the person silenced
+ * (the same count as the notification's). Follows the lists as they change.
+ */
+@Composable
+fun rememberFailedUpdatesCount(): Int {
+    val context = LocalContext.current
+    val preferences = remember { context.appGraph.libraryPreferences }
+    val animeJson by preferences.failedAnimeUpdates.collectAsState()
+    val mangaJson by preferences.failedMangaUpdates.collectAsState()
+    val mutedAnime by preferences.mutedFailedAnimeUpdates.collectAsState()
+    val mutedManga by preferences.mutedFailedMangaUpdates.collectAsState()
+    return remember(animeJson, mangaJson, mutedAnime, mutedManga) {
+        FailedUpdates.decode(animeJson).items.count { it.id.toString() !in mutedAnime } +
+            FailedUpdates.decode(mangaJson).items.count { it.id.toString() !in mutedManga }
     }
 }

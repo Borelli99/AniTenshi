@@ -29,6 +29,8 @@ fun TextPreferenceWidget(
     // AniTenshi: true when the subtitle is what the setting is set to now, not a description of it.
     // It is then written in the accent color, so the choice made stands out from the explanations.
     subtitleIsValue: Boolean = false,
+    // AniTenshi: a subtitle that reports something to notice (an error, say) gets its own color
+    subtitleColor: Color? = null,
     icon: ImageVector? = null,
     iconTint: Color = MaterialTheme.colorScheme.primary,
     widget: @Composable (() -> Unit)? = null,
@@ -40,7 +42,15 @@ fun TextPreferenceWidget(
         title = title,
         subcomponent = if (!subtitle.isNullOrBlank()) {
             {
-                if (subtitleIsValue) {
+                if (subtitleColor != null) {
+                    Text(
+                        text = subtitle,
+                        modifier = Modifier.padding(horizontal = PrefsHorizontalPadding),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = subtitleColor,
+                        maxLines = 10,
+                    )
+                } else if (subtitleIsValue) {
                     Text(
                         text = subtitle,
                         modifier = Modifier.padding(horizontal = PrefsHorizontalPadding),

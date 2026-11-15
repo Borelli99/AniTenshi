@@ -3,9 +3,11 @@ package eu.kanade.tachiyomi.ui.updates.anime
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FlipToBack
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.SelectAll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +33,8 @@ import eu.kanade.tachiyomi.ui.home.HomeScreen
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
 import eu.kanade.tachiyomi.ui.setting.SettingsScreen
+import eu.kanade.tachiyomi.ui.updates.failed.FailedUpdatesScreen
+import eu.kanade.tachiyomi.ui.updates.failed.rememberFailedUpdatesCount
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -72,6 +76,8 @@ fun Screen.animeUpdatesTab(
         val extPlayer = playerPreferences.alwaysUseExternalPlayer().get() != altPlayer
         MainActivity.startPlayerActivity(context, update.animeId, update.episodeId, extPlayer, update.sourceId)
     }
+
+    val failedUpdatesCount = rememberFailedUpdatesCount()
 
     return TabContent(
         titleRes = AYMR.strings.label_anime_updates,
@@ -181,7 +187,7 @@ fun Screen.animeUpdatesTab(
                 ),
             )
         } else {
-            persistentListOf(
+            listOfNotNull(
                 AppBar.Action(
                     title = stringResource(MR.strings.action_view_upcoming),
                     icon = Icons.Outlined.CalendarMonth,
@@ -192,6 +198,18 @@ fun Screen.animeUpdatesTab(
                     icon = Icons.Outlined.Refresh,
                     onClick = { viewModel.updateLibrary() },
                 ),
+                // AniTenshi: only while titles failed to update, with how many (the same count as the notification)
+                if (failedUpdatesCount > 0) {
+                    AppBar.OverflowAction(
+                        title = stringResource(TLMR.strings.anitenshi_failed_updates_title),
+                        icon = Icons.Outlined.ErrorOutline,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        badge = failedUpdatesCount,
+                        onClick = { navigator.push(FailedUpdatesScreen()) },
+                    )
+                } else {
+                    null
+                },
                 // AniTenshi: the automatic updates are in the library's page of the settings
                 settingsOverflowAction(
                     title = stringResource(TLMR.strings.anitenshi_settings_updates),

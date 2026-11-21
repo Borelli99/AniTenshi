@@ -681,4 +681,7 @@
     <string name="anitenshi_updates_next_manga">Up next</string>
     <string name="anitenshi_updates_watch">Watch</string>
     <string name="anitenshi_updates_read">Read</string>
+    <!-- History -->
+    <string name="anitenshi_history_continue_anime">Continue watching</string>
+    <string name="anitenshi_history_continue_manga">Continue reading</string>
 </resources>

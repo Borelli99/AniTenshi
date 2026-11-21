@@ -3,6 +3,7 @@ package eu.kanade.presentation.history.anime
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -13,10 +14,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.dp
 import eu.kanade.domain.ui.UiPreferences
-import eu.kanade.presentation.components.relativeDateText
+import eu.kanade.presentation.history.anime.components.AnimeHistoryContinueCard
 import eu.kanade.presentation.history.anime.components.AnimeHistoryItem
 import eu.kanade.presentation.theme.TachiyomiPreviewTheme
+import eu.kanade.presentation.updates.UpdatesCardRow
+import eu.kanade.presentation.updates.UpdatesDayHeader
+import eu.kanade.presentation.updates.updatesRowPlaces
 import eu.kanade.presentation.util.rememberIs24HourSystem
 import eu.kanade.tachiyomi.ui.history.anime.AnimeHistoryViewModel
 import kotlinx.datetime.LocalDate
@@ -25,11 +30,11 @@ import tachiyomi.domain.history.anime.model.AnimeHistoryWithRelations
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.presentation.core.components.FastScrollLazyColumn
-import tachiyomi.presentation.core.components.ListGroupHeader
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.LoadingScreen
 import tachiyomi.presentation.core.util.collectAsState
+import tachiyomi.presentation.core.util.plus
 
 @Composable
 fun AnimeHistoryScreen(
@@ -61,6 +66,8 @@ fun AnimeHistoryScreen(
                 AnimeHistoryScreenContent(
                     history = it,
                     contentPadding = contentPadding,
+                    // AniTenshi: the "go on" card is for the whole history, not for search results
+                    showContinue = searchQuery.isNullOrEmpty(),
                     onClickCover = { history -> onClickCover(history.animeId) },
                     onClickResume = { history -> onClickResume(history.animeId, history.episodeId) },
                     onClickDelete = { item -> onDialogChange(AnimeHistoryViewModel.Dialog.Delete(item)) },
@@ -75,6 +82,7 @@ fun AnimeHistoryScreen(
 private fun AnimeHistoryScreenContent(
     history: List<AnimeHistoryUiModel>,
     contentPadding: PaddingValues,
+    showContinue: Boolean,
     onClickCover: (AnimeHistoryWithRelations) -> Unit,
     onClickResume: (AnimeHistoryWithRelations) -> Unit,
     onClickDelete: (AnimeHistoryWithRelations) -> Unit,
@@ -89,37 +97,57 @@ private fun AnimeHistoryScreenContent(
     }
 
     FastScrollLazyColumn(
-        contentPadding = contentPadding,
+        contentPadding = contentPadding + PaddingValues(top = 8.dp, bottom = 16.dp),
     ) {
-        items(
+        // AniTenshi: the last title opened comes first, in a card with a button to go on
+        val last = history.firstNotNullOfOrNull { (it as? AnimeHistoryUiModel.Item)?.item }
+        if (showContinue && last != null) {
+            item(key = "history-continue") {
+                AnimeHistoryContinueCard(
+                    history = last,
+                    onClick = { onClickResume(last) },
+                    onClickCover = { onClickCover(last) },
+                    modifier = Modifier.animateItem(),
+                )
+            }
+        }
+
+        // AniTenshi: each day is a card, drawn row by row, as on the Updates screens
+        val places = updatesRowPlaces(history) { it is AnimeHistoryUiModel.Header }
+        itemsIndexed(
             items = history,
-            key = { "history-${it.hashCode()}" },
-            contentType = {
+            key = { _, it -> "history-${it.hashCode()}" },
+            contentType = { _, it ->
                 when (it) {
                     is AnimeHistoryUiModel.Header -> "header"
                     is AnimeHistoryUiModel.Item -> "item"
                 }
             },
-        ) { item ->
+        ) { index, item ->
             when (item) {
                 is AnimeHistoryUiModel.Header -> {
-                    ListGroupHeader(
+                    UpdatesDayHeader(
+                        date = item.date,
+                        newCount = 0,
                         modifier = Modifier.animateItem(),
-                        text = relativeDateText(item.date),
                     )
                 }
 
                 is AnimeHistoryUiModel.Item -> {
                     val value = item.item
-                    AnimeHistoryItem(
+                    UpdatesCardRow(
+                        place = places[index]!!,
                         modifier = Modifier.animateItem(),
-                        history = value,
-                        timeFormatter = timeFormatter,
-                        onClickCover = { onClickCover(value) },
-                        onClickResume = { onClickResume(value) },
-                        onClickDelete = { onClickDelete(value) },
-                        onClickFavorite = { onClickFavorite(value) },
-                    )
+                    ) {
+                        AnimeHistoryItem(
+                            history = value,
+                            timeFormatter = timeFormatter,
+                            onClickCover = { onClickCover(value) },
+                            onClickResume = { onClickResume(value) },
+                            onClickDelete = { onClickDelete(value) },
+                            onClickFavorite = { onClickFavorite(value) },
+                        )
+                    }
                 }
             }
         }

@@ -598,4 +598,7 @@
   <string name="anitenshi_updates_next_manga">Da leggere</string>
   <string name="anitenshi_updates_watch">Guarda</string>
   <string name="anitenshi_updates_read">Leggi</string>
+  <!-- Cronologia -->
+  <string name="anitenshi_history_continue_anime">Continua a guardare</string>
+  <string name="anitenshi_history_continue_manga">Continua a leggere</string>
 </resources>

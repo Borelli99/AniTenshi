@@ -49,4 +49,8 @@
         <item quantity="one">Preferred language: %s</item>
         <item quantity="other">Preferred languages: %s</item>
     </plurals>
+    <plurals name="anitenshi_updates_new_count">
+        <item quantity="one">%d new</item>
+        <item quantity="other">%d new</item>
+    </plurals>
 </resources>

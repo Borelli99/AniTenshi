@@ -593,4 +593,9 @@
   <string name="anitenshi_player_no_language">Nessuna lingua preferita</string>
   <string name="anitenshi_player_custom_button_summary">Pulsanti tuoi nel player, con script Lua</string>
   <string name="anitenshi_player_editor_summary">Crea e modifica gli script del player</string>
+  <!-- Novità -->
+  <string name="anitenshi_updates_next_anime">Da guardare</string>
+  <string name="anitenshi_updates_next_manga">Da leggere</string>
+  <string name="anitenshi_updates_watch">Guarda</string>
+  <string name="anitenshi_updates_read">Leggi</string>
 </resources>

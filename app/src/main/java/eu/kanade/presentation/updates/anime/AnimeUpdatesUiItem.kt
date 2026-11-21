@@ -1,22 +1,27 @@
 package eu.kanade.presentation.updates.anime
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,18 +33,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import eu.kanade.presentation.components.relativeDateText
+import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.entries.anime.components.EpisodeDownloadAction
 import eu.kanade.presentation.entries.anime.components.EpisodeDownloadIndicator
-import eu.kanade.presentation.entries.components.DotSeparatorText
 import eu.kanade.presentation.entries.components.ItemCover
-import eu.kanade.presentation.util.relativeTimeSpanString
+import eu.kanade.presentation.updates.UpdatesCardRow
+import eu.kanade.presentation.updates.UpdatesDayHeader
+import eu.kanade.presentation.updates.UpdatesLastUpdatedLine
+import eu.kanade.presentation.updates.UpdatesNextCard
+import eu.kanade.presentation.updates.UpdatesProgress
+import eu.kanade.presentation.updates.updatesNewCounts
+import eu.kanade.presentation.updates.updatesRowPlaces
 import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadProvider
 import eu.kanade.tachiyomi.data.download.anime.model.AnimeDownload
 import eu.kanade.tachiyomi.ui.updates.anime.AnimeUpdatesItem
@@ -49,7 +63,7 @@ import tachiyomi.domain.storage.service.StoragePreferences
 import tachiyomi.domain.updates.anime.model.AnimeUpdatesWithRelations
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
-import tachiyomi.presentation.core.components.ListGroupHeader
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.material.DISABLED_ALPHA
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
@@ -61,19 +75,44 @@ internal fun LazyListScope.animeUpdatesLastUpdatedItem(
     lastUpdated: Long,
 ) {
     item(key = "animeUpdates-lastUpdated") {
-        Box(
-            modifier = Modifier
-                .animateItem(fadeInSpec = null, fadeOutSpec = null)
-                .padding(
-                    horizontal = MaterialTheme.padding.medium,
-                    vertical = MaterialTheme.padding.small,
-                ),
-        ) {
-            Text(
-                text = stringResource(MR.strings.updates_last_update_info, relativeTimeSpanString(lastUpdated)),
-                fontStyle = FontStyle.Italic,
-            )
-        }
+        UpdatesLastUpdatedLine(
+            lastUpdated = lastUpdated,
+            modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
+        )
+    }
+}
+
+/**
+ * AniTenshi: the latest episode not watched yet, first on the screen, with a button to watch it or go on.
+ */
+internal fun LazyListScope.animeUpdatesNextItem(
+    next: AnimeUpdatesItem?,
+    onClickCover: (AnimeUpdatesItem) -> Unit,
+    onOpenEpisode: (AnimeUpdatesItem, altPlayer: Boolean) -> Unit,
+) {
+    if (next == null) return
+    item(key = "animeUpdates-next") {
+        val update = next.update
+        val started = !update.seen && update.lastSecondSeen > 0L && update.totalSeconds > 0L
+        UpdatesNextCard(
+            label = stringResource(TLMR.strings.anitenshi_updates_next_anime),
+            title = update.animeTitle,
+            subtitle = update.episodeName,
+            coverData = update.coverData,
+            progress = if (started) update.lastSecondSeen.toFloat() / update.totalSeconds else null,
+            progressText = if (started) {
+                "${formatProgress(update.lastSecondSeen)} / ${formatProgress(update.totalSeconds)}"
+            } else {
+                null
+            },
+            buttonText = stringResource(
+                if (started) MR.strings.action_resume else TLMR.strings.anitenshi_updates_watch,
+            ),
+            buttonIcon = Icons.Filled.PlayArrow,
+            onClick = { onOpenEpisode(next, false) },
+            onClickCover = { onClickCover(next) },
+            modifier = Modifier.animateItem(),
+        )
     }
 }
 
@@ -85,69 +124,87 @@ internal fun LazyListScope.animeUpdatesUiItems(
     onClickUpdate: (AnimeUpdatesItem, altPlayer: Boolean) -> Unit,
     onDownloadEpisode: (List<AnimeUpdatesItem>, EpisodeDownloadAction) -> Unit,
 ) {
-    items(
+    // AniTenshi: each day is a card, drawn row by row, and its header says how many episodes are new
+    val isHeader = { model: AnimeUpdatesUiModel -> model is AnimeUpdatesUiModel.Header }
+    val places = updatesRowPlaces(uiModels, isHeader)
+    val newCounts = updatesNewCounts(uiModels, isHeader) { model ->
+        (model as AnimeUpdatesUiModel.Item).item.update.seen.not()
+    }
+    itemsIndexed(
         items = uiModels,
-        contentType = {
+        contentType = { _, it ->
             when (it) {
                 is AnimeUpdatesUiModel.Header -> "header"
                 is AnimeUpdatesUiModel.Item -> "item"
             }
         },
-        key = {
+        key = { _, it ->
             when (it) {
                 is AnimeUpdatesUiModel.Header -> "animeUpdatesHeader-${it.hashCode()}"
                 is AnimeUpdatesUiModel.Item -> "animeUpdates-${it.item.update.animeId}-${it.item.update.episodeId}"
             }
         },
-    ) { item ->
+    ) { index, item ->
         when (item) {
             is AnimeUpdatesUiModel.Header -> {
-                ListGroupHeader(
+                UpdatesDayHeader(
+                    date = item.date,
+                    newCount = newCounts[index],
                     modifier = Modifier.animateItem(),
-                    text = relativeDateText(item.date),
                 )
             }
 
             is AnimeUpdatesUiModel.Item -> {
                 val updatesItem = item.item
-                AnimeUpdatesUiItem(
+                val update = updatesItem.update
+                val started = !update.seen && update.lastSecondSeen > 0L
+                UpdatesCardRow(
+                    place = places[index]!!,
                     modifier = Modifier.animateItem(),
-                    update = updatesItem.update,
-                    selected = updatesItem.selected,
-                    watchProgress = updatesItem.update.lastSecondSeen
-                        .takeIf { !updatesItem.update.seen && it > 0L }
-                        ?.let {
+                ) {
+                    AnimeUpdatesUiItem(
+                        update = update,
+                        selected = updatesItem.selected,
+                        watchProgress = if (started) {
                             stringResource(
                                 AYMR.strings.episode_progress,
-                                formatProgress(it),
-                                formatProgress(updatesItem.update.totalSeconds),
+                                formatProgress(update.lastSecondSeen),
+                                formatProgress(update.totalSeconds),
                             )
+                        } else {
+                            null
                         },
-                    onLongClick = {
-                        onUpdateSelected(updatesItem, !updatesItem.selected, true, true)
-                    },
-                    onClick = {
-                        when {
-                            selectionMode -> onUpdateSelected(
-                                updatesItem,
-                                !updatesItem.selected,
-                                true,
-                                false,
-                            )
+                        watchFraction = if (started && update.totalSeconds > 0L) {
+                            update.lastSecondSeen.toFloat() / update.totalSeconds
+                        } else {
+                            null
+                        },
+                        onLongClick = {
+                            onUpdateSelected(updatesItem, !updatesItem.selected, true, true)
+                        },
+                        onClick = {
+                            when {
+                                selectionMode -> onUpdateSelected(
+                                    updatesItem,
+                                    !updatesItem.selected,
+                                    true,
+                                    false,
+                                )
 
-                            else -> onClickUpdate(updatesItem, false)
-                        }
-                    },
-                    onClickCover = { onClickCover(updatesItem) }.takeIf { !selectionMode },
-                    onDownloadEpisode = { action: EpisodeDownloadAction ->
-                        onDownloadEpisode(listOf(updatesItem), action)
-                    }.takeIf { !selectionMode },
-                    downloadStateProvider = updatesItem.downloadStateProvider,
-                    downloadProgressProvider = updatesItem.downloadProgressProvider,
-                    // AM (FILE_SIZE) -->
-                    updatesItem = updatesItem,
-                    // <-- AM (FILE_SIZE)
-                )
+                                else -> onClickUpdate(updatesItem, false)
+                            }
+                        },
+                        onClickCover = { onClickCover(updatesItem) }.takeIf { !selectionMode },
+                        onDownloadEpisode = { action: EpisodeDownloadAction ->
+                            onDownloadEpisode(listOf(updatesItem), action)
+                        }.takeIf { !selectionMode },
+                        downloadStateProvider = updatesItem.downloadStateProvider,
+                        downloadProgressProvider = updatesItem.downloadProgressProvider,
+                        // AM (FILE_SIZE) -->
+                        updatesItem = updatesItem,
+                        // <-- AM (FILE_SIZE)
+                    )
+                }
             }
         }
     }
@@ -158,6 +215,7 @@ private fun AnimeUpdatesUiItem(
     update: AnimeUpdatesWithRelations,
     selected: Boolean,
     watchProgress: String?,
+    watchFraction: Float?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onClickCover: (() -> Unit)?,
@@ -171,10 +229,13 @@ private fun AnimeUpdatesUiItem(
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
-    val textAlpha = if (update.seen) DISABLED_ALPHA else 1f
+    // AniTenshi: an episode already watched is dimmed, cover included
+    val seenAlpha = if (update.seen) DISABLED_ALPHA else 1f
+    val unreadDescription = stringResource(MR.strings.unread)
 
     Row(
         modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
             .selectedBackground(selected)
             .combinedClickable(
                 onClick = onClick,
@@ -183,40 +244,44 @@ private fun AnimeUpdatesUiItem(
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 },
             )
-            .height(56.dp)
-            .padding(horizontal = MaterialTheme.padding.medium),
+            .heightIn(min = 68.dp)
+            .padding(start = 10.dp, end = 2.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ItemCover.Square(
+        ItemCover.Book(
             modifier = Modifier
-                .padding(vertical = 6.dp)
-                .fillMaxHeight(),
+                .width(40.dp)
+                .alpha(seenAlpha),
             data = update.coverData,
+            shape = RoundedCornerShape(8.dp),
             onClick = onClickCover,
         )
         Column(
             modifier = Modifier
-                .padding(horizontal = MaterialTheme.padding.medium)
-                .weight(1f),
+                .padding(horizontal = 14.dp)
+                .weight(1f)
+                .alpha(seenAlpha),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
                 text = update.animeTitle,
                 maxLines = 1,
-                style = MaterialTheme.typography.bodyMedium,
-                color = LocalContentColor.current.copy(alpha = textAlpha),
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
                 overflow = TextOverflow.Ellipsis,
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 var textHeight by remember { mutableIntStateOf(0) }
                 if (!update.seen) {
-                    Icon(
-                        imageVector = Icons.Filled.Circle,
-                        contentDescription = stringResource(MR.strings.unread),
+                    Box(
                         modifier = Modifier
-                            .height(8.dp)
-                            .padding(end = 4.dp),
-                        tint = MaterialTheme.colorScheme.primary,
+                            .padding(end = 6.dp)
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondary)
+                            .semantics { contentDescription = unreadDescription },
                     )
                 }
                 if (update.bookmark) {
@@ -246,22 +311,22 @@ private fun AnimeUpdatesUiItem(
                 Text(
                     text = update.episodeName,
                     maxLines = 1,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = LocalContentColor.current.copy(alpha = textAlpha),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     overflow = TextOverflow.Ellipsis,
                     onTextLayout = { textHeight = it.size.height },
                     modifier = Modifier
                         .weight(weight = 1f, fill = false),
                 )
-                if (watchProgress != null) {
-                    DotSeparatorText()
-                    Text(
-                        text = watchProgress,
-                        maxLines = 1,
-                        color = LocalContentColor.current.copy(alpha = DISABLED_ALPHA),
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+            }
+            // AniTenshi: how far the episode has got, as a thin gold bar
+            if (watchFraction != null) {
+                UpdatesProgress(
+                    fraction = watchFraction,
+                    text = watchProgress,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
         }
 // AM (FILE_SIZE) -->
@@ -300,7 +365,7 @@ private fun AnimeUpdatesUiItem(
     }
 }
 
-private fun formatProgress(milliseconds: Long): String {
+internal fun formatProgress(milliseconds: Long): String {
     return if (milliseconds > 3600000L) {
         String.format(
             "%d:%02d:%02d",

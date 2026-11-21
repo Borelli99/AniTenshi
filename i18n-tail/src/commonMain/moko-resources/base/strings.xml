@@ -676,4 +676,9 @@
     <string name="anitenshi_player_no_language">No preferred language</string>
     <string name="anitenshi_player_custom_button_summary">Your own buttons in the player, with Lua scripts</string>
     <string name="anitenshi_player_editor_summary">Create and edit the player\'s scripts</string>
+    <!-- Updates -->
+    <string name="anitenshi_updates_next_anime">Up next</string>
+    <string name="anitenshi_updates_next_manga">Up next</string>
+    <string name="anitenshi_updates_watch">Watch</string>
+    <string name="anitenshi_updates_read">Read</string>
 </resources>

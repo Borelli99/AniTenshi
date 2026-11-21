@@ -1,19 +1,26 @@
 package eu.kanade.presentation.updates.manga
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,26 +30,34 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import eu.kanade.presentation.components.relativeDateText
+import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.entries.components.DotSeparatorText
 import eu.kanade.presentation.entries.components.ItemCover
 import eu.kanade.presentation.entries.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.entries.manga.components.ChapterDownloadIndicator
-import eu.kanade.presentation.util.relativeTimeSpanString
+import eu.kanade.presentation.updates.UpdatesCardRow
+import eu.kanade.presentation.updates.UpdatesDayHeader
+import eu.kanade.presentation.updates.UpdatesLastUpdatedLine
+import eu.kanade.presentation.updates.UpdatesNextCard
+import eu.kanade.presentation.updates.updatesNewCounts
+import eu.kanade.presentation.updates.updatesRowPlaces
 import eu.kanade.tachiyomi.data.download.manga.model.MangaDownload
 import eu.kanade.tachiyomi.ui.updates.manga.MangaUpdatesItem
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.roundedfilled.Bookmark
-import mihon.icons.materialsymbols.roundedfilled.Circle
 import tachiyomi.domain.updates.manga.model.MangaUpdatesWithRelations
 import tachiyomi.i18n.MR
-import tachiyomi.presentation.core.components.ListGroupHeader
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.material.DISABLED_ALPHA
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
@@ -52,16 +67,41 @@ internal fun LazyListScope.mangaUpdatesLastUpdatedItem(
     lastUpdated: Long,
 ) {
     item(key = "mangaUpdates-lastUpdated") {
-        Box(
-            modifier = Modifier
-                .animateItem(fadeInSpec = null, fadeOutSpec = null)
-                .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
-        ) {
-            Text(
-                text = stringResource(MR.strings.updates_last_update_info, relativeTimeSpanString(lastUpdated)),
-                fontStyle = FontStyle.Italic,
-            )
-        }
+        UpdatesLastUpdatedLine(
+            lastUpdated = lastUpdated,
+            modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
+        )
+    }
+}
+
+/**
+ * AniTenshi: the latest chapter not read yet, first on the screen, with a button to read it or go on.
+ */
+internal fun LazyListScope.mangaUpdatesNextItem(
+    next: MangaUpdatesItem?,
+    onClickCover: (MangaUpdatesItem) -> Unit,
+    onOpenChapter: (MangaUpdatesItem) -> Unit,
+) {
+    if (next == null) return
+    item(key = "mangaUpdates-next") {
+        val update = next.update
+        val started = !update.read && update.lastPageRead > 0L
+        UpdatesNextCard(
+            label = stringResource(TLMR.strings.anitenshi_updates_next_manga),
+            title = update.mangaTitle,
+            subtitle = update.chapterName,
+            coverData = update.coverData,
+            // The number of pages of a chapter is not known before it is opened: the page reached, without a bar
+            progress = null,
+            progressText = if (started) stringResource(MR.strings.chapter_progress, update.lastPageRead + 1) else null,
+            buttonText = stringResource(
+                if (started) MR.strings.action_resume else TLMR.strings.anitenshi_updates_read,
+            ),
+            buttonIcon = Icons.AutoMirrored.Outlined.MenuBook,
+            onClick = { onOpenChapter(next) },
+            onClickCover = { onClickCover(next) },
+            modifier = Modifier.animateItem(),
+        )
     }
 }
 
@@ -73,59 +113,70 @@ internal fun LazyListScope.mangaUpdatesUiItems(
     onClickUpdate: (MangaUpdatesItem) -> Unit,
     onDownloadChapter: (List<MangaUpdatesItem>, ChapterDownloadAction) -> Unit,
 ) {
-    items(
+    // AniTenshi: each day is a card, drawn row by row, and its header says how many chapters are new
+    val isHeader = { model: MangaUpdatesUiModel -> model is MangaUpdatesUiModel.Header }
+    val places = updatesRowPlaces(uiModels, isHeader)
+    val newCounts = updatesNewCounts(uiModels, isHeader) { model ->
+        (model as MangaUpdatesUiModel.Item).item.update.read.not()
+    }
+    itemsIndexed(
         items = uiModels,
-        contentType = {
+        contentType = { _, it ->
             when (it) {
                 is MangaUpdatesUiModel.Header -> "header"
                 is MangaUpdatesUiModel.Item -> "item"
             }
         },
-        key = {
+        key = { _, it ->
             when (it) {
                 is MangaUpdatesUiModel.Header -> "mangaUpdatesHeader-${it.hashCode()}"
                 is MangaUpdatesUiModel.Item -> "mangaUpdates-${it.item.update.mangaId}-${it.item.update.chapterId}"
             }
         },
-    ) { item ->
+    ) { index, item ->
         when (item) {
             is MangaUpdatesUiModel.Header -> {
-                ListGroupHeader(
+                UpdatesDayHeader(
+                    date = item.date,
+                    newCount = newCounts[index],
                     modifier = Modifier.animateItem(),
-                    text = relativeDateText(item.date),
                 )
             }
 
             is MangaUpdatesUiModel.Item -> {
                 val updatesItem = item.item
-                MangaUpdatesUiItem(
+                UpdatesCardRow(
+                    place = places[index]!!,
                     modifier = Modifier.animateItem(),
-                    update = updatesItem.update,
-                    selected = updatesItem.selected,
-                    readProgress = updatesItem.update.lastPageRead
-                        .takeIf { !updatesItem.update.read && it > 0L }
-                        ?.let {
-                            stringResource(
-                                MR.strings.chapter_progress,
-                                it + 1,
-                            )
+                ) {
+                    MangaUpdatesUiItem(
+                        update = updatesItem.update,
+                        selected = updatesItem.selected,
+                        readProgress = updatesItem.update.lastPageRead
+                            .takeIf { !updatesItem.update.read && it > 0L }
+                            ?.let {
+                                stringResource(
+                                    MR.strings.chapter_progress,
+                                    it + 1,
+                                )
+                            },
+                        onLongClick = {
+                            onUpdateSelected(updatesItem, !updatesItem.selected, true)
                         },
-                    onLongClick = {
-                        onUpdateSelected(updatesItem, !updatesItem.selected, true)
-                    },
-                    onClick = {
-                        when {
-                            selectionMode -> onUpdateSelected(updatesItem, !updatesItem.selected, false)
-                            else -> onClickUpdate(updatesItem)
-                        }
-                    },
-                    onClickCover = { onClickCover(updatesItem) }.takeIf { !selectionMode },
-                    onDownloadChapter = { action: ChapterDownloadAction ->
-                        onDownloadChapter(listOf(updatesItem), action)
-                    }.takeIf { !selectionMode },
-                    downloadStateProvider = updatesItem.downloadStateProvider,
-                    downloadProgressProvider = updatesItem.downloadProgressProvider,
-                )
+                        onClick = {
+                            when {
+                                selectionMode -> onUpdateSelected(updatesItem, !updatesItem.selected, false)
+                                else -> onClickUpdate(updatesItem)
+                            }
+                        },
+                        onClickCover = { onClickCover(updatesItem) }.takeIf { !selectionMode },
+                        onDownloadChapter = { action: ChapterDownloadAction ->
+                            onDownloadChapter(listOf(updatesItem), action)
+                        }.takeIf { !selectionMode },
+                        downloadStateProvider = updatesItem.downloadStateProvider,
+                        downloadProgressProvider = updatesItem.downloadProgressProvider,
+                    )
+                }
             }
         }
     }
@@ -146,10 +197,13 @@ private fun MangaUpdatesUiItem(
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
-    val textAlpha = if (update.read) DISABLED_ALPHA else 1f
+    // AniTenshi: a chapter already read is dimmed, cover included
+    val readAlpha = if (update.read) DISABLED_ALPHA else 1f
+    val unreadDescription = stringResource(MR.strings.unread)
 
     Row(
         modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
             .selectedBackground(selected)
             .combinedClickable(
                 onClick = onClick,
@@ -158,39 +212,43 @@ private fun MangaUpdatesUiItem(
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 },
             )
-            .height(56.dp)
-            .padding(horizontal = MaterialTheme.padding.medium),
+            .heightIn(min = 68.dp)
+            .padding(start = 10.dp, end = 2.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ItemCover.Square(
+        ItemCover.Book(
             modifier = Modifier
-                .padding(vertical = 6.dp)
-                .fillMaxHeight(),
+                .width(40.dp)
+                .alpha(readAlpha),
             data = update.coverData,
+            shape = RoundedCornerShape(8.dp),
             onClick = onClickCover,
         )
         Column(
             modifier = Modifier
-                .padding(horizontal = MaterialTheme.padding.medium)
-                .weight(1f),
+                .padding(horizontal = 14.dp)
+                .weight(1f)
+                .alpha(readAlpha),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
                 text = update.mangaTitle,
                 maxLines = 1,
-                style = MaterialTheme.typography.bodyMedium,
-                color = LocalContentColor.current.copy(alpha = textAlpha),
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
                 overflow = TextOverflow.Ellipsis,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 var textHeight by remember { mutableIntStateOf(0) }
                 if (!update.read) {
-                    Icon(
-                        imageVector = MaterialSymbols.RoundedFilled.Circle,
-                        contentDescription = stringResource(MR.strings.unread),
+                    Box(
                         modifier = Modifier
-                            .height(8.dp)
-                            .padding(end = 4.dp),
-                        tint = MaterialTheme.colorScheme.primary,
+                            .padding(end = 6.dp)
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondary)
+                            .semantics { contentDescription = unreadDescription },
                     )
                 }
                 if (update.bookmark) {
@@ -208,8 +266,9 @@ private fun MangaUpdatesUiItem(
                 Text(
                     text = update.chapterName,
                     maxLines = 1,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = LocalContentColor.current.copy(alpha = textAlpha),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     overflow = TextOverflow.Ellipsis,
                     onTextLayout = { textHeight = it.size.height },
                     modifier = Modifier
@@ -220,7 +279,9 @@ private fun MangaUpdatesUiItem(
                     Text(
                         text = readProgress,
                         maxLines = 1,
-                        color = LocalContentColor.current.copy(alpha = DISABLED_ALPHA),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }

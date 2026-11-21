@@ -601,4 +601,13 @@
   <!-- Cronologia -->
   <string name="anitenshi_history_continue_anime">Continua a guardare</string>
   <string name="anitenshi_history_continue_manga">Continua a leggere</string>
+  <!-- Coda download -->
+  <string name="anitenshi_downloads_running">Download in corso</string>
+  <string name="anitenshi_downloads_paused">In pausa</string>
+  <string name="anitenshi_downloads_state_downloading">In download</string>
+  <string name="anitenshi_downloads_state_starting">Avvio…</string>
+  <string name="anitenshi_downloads_state_queued">In coda</string>
+  <string name="anitenshi_downloads_state_failed">Non riuscito</string>
+  <string name="anitenshi_downloads_pages">%1$d/%2$d pagine</string>
+  <string name="anitenshi_downloads_cancel_title">Annulla tutti</string>
 </resources>

@@ -27,8 +27,9 @@ class MangaDownloadQueueViewModel(
 ) : ViewModel() {
     val composeState: StateFlow<List<DownloadQueueSection>> = downloadManager.queueState
         .map { downloads ->
-            downloads.groupBy { it.source }.map { (source, entries) ->
-                DownloadQueueSection(source.id, source.name, entries.map(DownloadQueueEntry::Manga))
+            // AniTenshi: grouped by title, in the order each title first appears in the queue
+            downloads.groupBy { it.manga.id }.map { (id, entries) ->
+                DownloadQueueSection(id, entries.map(DownloadQueueEntry::Manga))
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), emptyList())

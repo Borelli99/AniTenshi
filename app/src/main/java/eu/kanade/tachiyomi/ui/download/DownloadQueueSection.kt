@@ -8,9 +8,12 @@ sealed interface DownloadQueueEntry {
     data class Anime(val download: AnimeDownload) : DownloadQueueEntry
 }
 
+/**
+ * AniTenshi: the downloads of one title, in queue order. [id] is the title's id; its name, cover and source are read
+ * from the downloads themselves.
+ */
 data class DownloadQueueSection(
     val id: Long,
-    val name: String,
     val downloads: List<DownloadQueueEntry>,
 )
 

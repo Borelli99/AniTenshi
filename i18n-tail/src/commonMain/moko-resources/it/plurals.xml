@@ -52,4 +52,16 @@
     <item quantity="one">%d nuovo</item>
     <item quantity="other">%d nuovi</item>
   </plurals>
+  <plurals name="anitenshi_downloads_titles">
+    <item quantity="one">%d titolo</item>
+    <item quantity="other">%d titoli</item>
+  </plurals>
+  <plurals name="anitenshi_downloads_episodes">
+    <item quantity="one">%d episodio</item>
+    <item quantity="other">%d episodi</item>
+  </plurals>
+  <plurals name="anitenshi_downloads_chapters">
+    <item quantity="one">%d capitolo</item>
+    <item quantity="other">%d capitoli</item>
+  </plurals>
 </resources>

@@ -11,11 +11,19 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -35,19 +43,33 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.components.DropdownMenu
+import eu.kanade.presentation.entries.components.ItemCover
+import eu.kanade.presentation.updates.UpdatesColumnItem
+import eu.kanade.presentation.updates.UpdatesProgress
 import eu.kanade.tachiyomi.data.download.anime.model.AnimeDownload
+import eu.kanade.tachiyomi.data.download.manga.model.MangaDownload
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.ui.download.DownloadQueueEntry
 import eu.kanade.tachiyomi.ui.download.DownloadQueueSection
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -58,10 +80,13 @@ import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import sh.calvin.reorderable.rememberScroller
+import tachiyomi.domain.entries.anime.model.asAnimeCover
+import tachiyomi.domain.entries.manga.model.asMangaCover
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
-import tachiyomi.presentation.core.components.ListGroupHeader
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.material.padding
+import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 
 @Composable
@@ -138,9 +163,6 @@ fun DownloadQueueList(
         onReorder(sectionsState.flatMap { it.downloads })
     }
 
-    val firstDownload = sectionsState.firstOrNull()?.downloads?.firstOrNull()
-    val lastDownload = sectionsState.lastOrNull()?.downloads?.lastOrNull()
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -148,22 +170,28 @@ fun DownloadQueueList(
         state = lazyListState,
         contentPadding = contentPadding,
     ) {
-        sectionsState.forEach { section ->
+        sectionsState.forEachIndexed { sectionIndex, section ->
             item(key = section.key) {
                 ReorderableItem(reorderableState, section.key, enabled = draggingSectionId == null) { isDragging ->
                     DownloadQueueHeader(
                         section = section,
                         isDragging = isDragging,
+                        // While a title is dragged the downloads are hidden, so each title's card is its header alone
+                        isAlone = isSectionDragging,
+                        canMoveToTop = sectionIndex > 0,
+                        canMoveToBottom = sectionIndex < sectionsState.lastIndex,
                         onDragStarted = { isSectionDragging = true },
                         onDragStopped = onDragStopped,
+                        onMoveSeries = { toTop -> onMoveSeries(section.downloads.first(), toTop) },
+                        onCancelSeries = { onCancelSeries(section.downloads.first()) },
                     )
                 }
             }
             if (!isSectionDragging) {
-                items(
+                itemsIndexed(
                     items = section.downloads,
-                    key = { it.key },
-                ) { download ->
+                    key = { _, download -> download.key },
+                ) { index, download ->
                     ReorderableItem(
                         state = reorderableState,
                         key = download.key,
@@ -172,6 +200,8 @@ fun DownloadQueueList(
                         DownloadQueueItem(
                             download = download,
                             isDragging = isDragging,
+                            isFirst = index == 0,
+                            isLast = index == section.downloads.lastIndex,
                             modifier = if (isDragging || download.key == lastDraggedKey) {
                                 Modifier.keepInSection(
                                     lazyListState = lazyListState,
@@ -182,17 +212,15 @@ fun DownloadQueueList(
                             } else {
                                 Modifier
                             },
-                            canMoveToTop = download != firstDownload,
-                            canMoveToBottom = download != lastDownload,
+                            canMoveToTop = index > 0,
+                            canMoveToBottom = index < section.downloads.lastIndex,
                             onDragStarted = {
                                 draggingSectionId = section.id
                                 lastDraggedKey = download.key
                             },
                             onDragStopped = onDragStopped,
                             onMove = { toTop -> onMove(download, toTop) },
-                            onMoveSeries = { toTop -> onMoveSeries(download, toTop) },
                             onCancel = { onCancel(download) },
-                            onCancelSeries = { onCancelSeries(download) },
                         )
                     }
                 }
@@ -277,27 +305,101 @@ private fun Modifier.keepInSection(
         .graphicsLayer { translationY = correction }
 }
 
+/*
+ * AniTenshi: each title is a card, its header with the cover, the source and how many are left, then its episodes
+ * or chapters. Only the one being downloaded has a bar; the others just say they are queued, or that they failed.
+ */
+
+private val CardRadius = 20.dp
+
 @Composable
 private fun ReorderableCollectionItemScope.DownloadQueueHeader(
     section: DownloadQueueSection,
     isDragging: Boolean,
+    isAlone: Boolean,
+    canMoveToTop: Boolean,
+    canMoveToBottom: Boolean,
     onDragStarted: () -> Unit,
     onDragStopped: () -> Unit,
+    onMoveSeries: (toTop: Boolean) -> Unit,
+    onCancelSeries: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.padding(top = MaterialTheme.padding.small),
-        color = listItemContainerColor(isDragging),
-        shadowElevation = listItemElevation(isDragging),
-    ) {
-        Row(
-            modifier = Modifier.padding(end = MaterialTheme.padding.small),
-            verticalAlignment = Alignment.CenterVertically,
+    val colors = MaterialTheme.colorScheme
+    val first = section.downloads.first()
+    val coverData = remember(first) { first.coverData }
+    val count = section.downloads.size
+    val countText = when (first) {
+        is DownloadQueueEntry.Anime -> pluralStringResource(TLMR.plurals.anitenshi_downloads_episodes, count, count)
+        is DownloadQueueEntry.Manga -> pluralStringResource(TLMR.plurals.anitenshi_downloads_chapters, count, count)
+    }
+    val shape = if (isAlone || isDragging) {
+        RoundedCornerShape(CardRadius)
+    } else {
+        RoundedCornerShape(topStart = CardRadius, topEnd = CardRadius)
+    }
+    UpdatesColumnItem(modifier = Modifier.padding(top = 14.dp)) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = shape,
+            color = if (isDragging) {
+                colors.surfaceContainerHighest
+            } else {
+                lerp(colors.surfaceContainer, colors.surfaceContainerHigh, 0.5f)
+            },
+            shadowElevation = listItemElevation(isDragging),
         ) {
-            ListGroupHeader(
-                text = "${section.name} (${section.downloads.size})",
-                modifier = Modifier.weight(1f),
-            )
-            DragHandle(onDragStarted = onDragStarted, onDragStopped = onDragStopped)
+            Row(
+                modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                ItemCover.Book(
+                    data = coverData,
+                    modifier = Modifier.width(40.dp),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Text(
+                        text = first.title,
+                        modifier = Modifier.semantics { heading() },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colors.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = buildAnnotatedString {
+                            append(first.sourceName)
+                            append(" · ")
+                            withStyle(SpanStyle(color = colors.secondary, fontWeight = FontWeight.Medium)) {
+                                append(countText)
+                            }
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    DragHandle(
+                        onDragStarted = onDragStarted,
+                        onDragStopped = onDragStopped,
+                        tint = colors.onSurfaceVariant,
+                    )
+                    DownloadQueueMenu(
+                        canMoveToTop = canMoveToTop,
+                        canMoveToBottom = canMoveToBottom,
+                        cancelText = stringResource(TLMR.strings.anitenshi_downloads_cancel_title),
+                        onMove = onMoveSeries,
+                        onCancel = onCancelSeries,
+                    )
+                }
+            }
         }
     }
 }
@@ -306,97 +408,165 @@ private fun ReorderableCollectionItemScope.DownloadQueueHeader(
 private fun ReorderableCollectionItemScope.DownloadQueueItem(
     download: DownloadQueueEntry,
     isDragging: Boolean,
+    isFirst: Boolean,
+    isLast: Boolean,
     canMoveToTop: Boolean,
     canMoveToBottom: Boolean,
     onDragStarted: () -> Unit,
     onDragStopped: () -> Unit,
     onMove: (toTop: Boolean) -> Unit,
-    onMoveSeries: (toTop: Boolean) -> Unit,
     onCancel: () -> Unit,
-    onCancelSeries: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val progress by remember(download) { download.progressFlow() }.collectAsState(null)
-    val animatedProgress by animateFloatAsState(progress?.fraction ?: 0f, label = "progress")
-
-    Surface(
-        modifier = modifier,
-        color = listItemContainerColor(isDragging),
-        shadowElevation = listItemElevation(isDragging),
-    ) {
-        Row(
-            modifier = Modifier.padding(
-                start = MaterialTheme.padding.small,
-                end = MaterialTheme.padding.extraSmall,
-            ),
-            verticalAlignment = Alignment.CenterVertically,
+    val colors = MaterialTheme.colorScheme
+    val state by remember(download) { download.stateFlow() }.collectAsState(DownloadRowState.Queued)
+    // The shape alone changes while rows are dragged, never the height, so the list doesn't jump
+    val shape = when {
+        isDragging -> RoundedCornerShape(14.dp)
+        isLast -> RoundedCornerShape(bottomStart = CardRadius, bottomEnd = CardRadius)
+        else -> RectangleShape
+    }
+    UpdatesColumnItem(modifier = modifier) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = shape,
+            color = if (isDragging) colors.surfaceContainerHigh else colors.surfaceContainer,
+            shadowElevation = listItemElevation(isDragging),
         ) {
-            DragHandle(onDragStarted = onDragStarted, onDragStopped = onDragStopped)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(vertical = MaterialTheme.padding.small),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small)) {
-                    Text(
-                        text = when (download) {
-                            is DownloadQueueEntry.Manga -> download.download.manga.title
-                            is DownloadQueueEntry.Anime -> download.download.anime.title
-                        },
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    progress?.let {
-                        Text(
-                            text = when (download) {
-                                is DownloadQueueEntry.Manga -> "${it.downloadedPages}/${it.pageCount}"
-
-                                is DownloadQueueEntry.Anime -> if (it.indeterminate) {
-                                    stringResource(AYMR.strings.downloading)
-                                } else {
-                                    stringResource(AYMR.strings.episode_download_progress, it.totalProgress)
-                                }
-                            },
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                }
-                Text(
-                    text = when (download) {
-                        is DownloadQueueEntry.Manga -> download.download.chapter.name
-                        is DownloadQueueEntry.Anime -> download.download.episode.name
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
+            Column {
+                HorizontalDivider(
+                    modifier = Modifier.padding(start = 44.dp, end = 12.dp),
+                    color = if (isFirst || isDragging) Color.Transparent else colors.surfaceContainerHigh,
                 )
-                val progressModifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = MaterialTheme.padding.extraSmall)
-                if (progress?.indeterminate == true) {
-                    LinearProgressIndicator(modifier = progressModifier)
-                } else {
-                    LinearProgressIndicator(progress = { animatedProgress }, modifier = progressModifier)
+                Row(
+                    modifier = Modifier
+                        .heightIn(min = 60.dp)
+                        .padding(start = 2.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    DragHandle(
+                        onDragStarted = onDragStarted,
+                        onDragStopped = onDragStopped,
+                        tint = colors.outline,
+                    )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(
+                            text = download.itemName,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = colors.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        DownloadStateLine(download = download, state = state)
+                    }
+                    DownloadQueueMenu(
+                        canMoveToTop = canMoveToTop,
+                        canMoveToBottom = canMoveToBottom,
+                        cancelText = stringResource(MR.strings.action_cancel),
+                        onMove = onMove,
+                        onCancel = onCancel,
+                    )
                 }
             }
-            DownloadQueueItemMenu(
-                canMoveToTop = canMoveToTop,
-                canMoveToBottom = canMoveToBottom,
-                onMove = onMove,
-                onMoveSeries = onMoveSeries,
-                onCancel = onCancel,
-                onCancelSeries = onCancelSeries,
+        }
+    }
+}
+
+/** What a row says under its name, with the gold bar while it downloads. */
+@Composable
+private fun DownloadStateLine(download: DownloadQueueEntry, state: DownloadRowState) {
+    val colors = MaterialTheme.colorScheme
+    when (state) {
+        DownloadRowState.Queued -> Text(
+            text = stringResource(TLMR.strings.anitenshi_downloads_state_queued),
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.onSurfaceVariant,
+        )
+
+        DownloadRowState.Failed -> Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.ErrorOutline,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = colors.error,
             )
+            Text(
+                text = stringResource(TLMR.strings.anitenshi_downloads_state_failed),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                color = colors.error,
+            )
+        }
+
+        DownloadRowState.Starting -> {
+            DownloadingLabel(stringResource(TLMR.strings.anitenshi_downloads_state_starting))
+            IndeterminateBar()
+        }
+
+        is DownloadRowState.Downloading -> {
+            DownloadingLabel(stringResource(TLMR.strings.anitenshi_downloads_state_downloading))
+            if (state.fraction == null) {
+                IndeterminateBar()
+            } else {
+                val fraction by animateFloatAsState(state.fraction, label = "progress")
+                UpdatesProgress(
+                    fraction = fraction,
+                    text = when (download) {
+                        is DownloadQueueEntry.Anime -> stringResource(
+                            AYMR.strings.episode_download_progress,
+                            (state.fraction * 100).toInt(),
+                        )
+
+                        is DownloadQueueEntry.Manga -> stringResource(
+                            TLMR.strings.anitenshi_downloads_pages,
+                            state.downloadedPages,
+                            state.pageCount,
+                        )
+                    },
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ReorderableCollectionItemScope.DragHandle(onDragStarted: () -> Unit, onDragStopped: () -> Unit) {
+private fun DownloadingLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.secondary,
+    )
+}
+
+@Composable
+private fun IndeterminateBar() {
+    LinearProgressIndicator(
+        modifier = Modifier
+            .padding(top = 4.dp)
+            .fillMaxWidth()
+            .height(4.dp)
+            .clip(RoundedCornerShape(2.dp)),
+        color = MaterialTheme.colorScheme.secondary,
+        trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+    )
+}
+
+@Composable
+private fun ReorderableCollectionItemScope.DragHandle(
+    onDragStarted: () -> Unit,
+    onDragStopped: () -> Unit,
+    tint: Color,
+) {
     Icon(
         imageVector = MaterialSymbols.Rounded.DragHandle,
         contentDescription = null,
@@ -406,17 +576,18 @@ private fun ReorderableCollectionItemScope.DragHandle(onDragStarted: () -> Unit,
                 onDragStopped = onDragStopped,
             )
             .padding(MaterialTheme.padding.small),
+        tint = tint,
     )
 }
 
+/** The ⋮ of a title (for all its downloads) or of a single download. */
 @Composable
-private fun DownloadQueueItemMenu(
+private fun DownloadQueueMenu(
     canMoveToTop: Boolean,
     canMoveToBottom: Boolean,
+    cancelText: String,
     onMove: (toTop: Boolean) -> Unit,
-    onMoveSeries: (toTop: Boolean) -> Unit,
     onCancel: () -> Unit,
-    onCancelSeries: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val closeMenu = { expanded = false }
@@ -425,6 +596,7 @@ private fun DownloadQueueItemMenu(
             Icon(
                 imageVector = MaterialSymbols.Rounded.MoreVert,
                 contentDescription = stringResource(MR.strings.action_menu),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = closeMenu) {
@@ -437,13 +609,6 @@ private fun DownloadQueueItemMenu(
                     },
                 )
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(MR.strings.action_move_to_top_all_for_series)) },
-                onClick = {
-                    closeMenu()
-                    onMoveSeries(true)
-                },
-            )
             if (canMoveToBottom) {
                 DropdownMenuItem(
                     text = { Text(stringResource(MR.strings.action_move_to_bottom)) },
@@ -454,34 +619,14 @@ private fun DownloadQueueItemMenu(
                 )
             }
             DropdownMenuItem(
-                text = { Text(stringResource(MR.strings.action_move_to_bottom_all_for_series)) },
-                onClick = {
-                    closeMenu()
-                    onMoveSeries(false)
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(MR.strings.action_cancel)) },
+                text = { Text(cancelText) },
                 onClick = {
                     closeMenu()
                     onCancel()
                 },
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(MR.strings.cancel_all_for_series)) },
-                onClick = {
-                    closeMenu()
-                    onCancelSeries()
-                },
-            )
         }
     }
-}
-
-// A neutral lifted surface while dragged, rather than Material's tertiaryContainer list tint
-@Composable
-private fun listItemContainerColor(isDragging: Boolean): Color {
-    return if (isDragging) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.background
 }
 
 @Composable
@@ -490,46 +635,100 @@ private fun listItemElevation(isDragging: Boolean): Dp {
     return if (isDragging) elevation.draggedElevation else elevation.elevation
 }
 
+private val DownloadQueueEntry.title: String
+    get() = when (this) {
+        is DownloadQueueEntry.Manga -> download.manga.title
+        is DownloadQueueEntry.Anime -> download.anime.title
+    }
+
+private val DownloadQueueEntry.sourceName: String
+    get() = when (this) {
+        is DownloadQueueEntry.Manga -> download.source.name
+        is DownloadQueueEntry.Anime -> download.source.name
+    }
+
+private val DownloadQueueEntry.coverData: Any
+    get() = when (this) {
+        is DownloadQueueEntry.Manga -> download.manga.asMangaCover()
+        is DownloadQueueEntry.Anime -> download.anime.asAnimeCover()
+    }
+
+private val DownloadQueueEntry.itemName: String
+    get() = when (this) {
+        is DownloadQueueEntry.Manga -> download.chapter.name
+        is DownloadQueueEntry.Anime -> download.episode.name
+    }
+
+private sealed interface DownloadRowState {
+    data object Queued : DownloadRowState
+    data object Starting : DownloadRowState
+    data object Failed : DownloadRowState
+
+    /**
+     * @param fraction how much is done, null when the size isn't known.
+     * @param pageCount the chapter's pages, 0 for an episode.
+     */
+    data class Downloading(
+        val fraction: Float?,
+        val downloadedPages: Int = 0,
+        val pageCount: Int = 0,
+    ) : DownloadRowState
+}
+
 private class PagesProgress(
     val pageCount: Int,
     val downloadedPages: Int,
     val totalProgress: Int,
-    val indeterminate: Boolean = false,
 ) {
     val fraction = if (pageCount == 0) 0f else totalProgress / (pageCount * 100f)
 }
 
 /**
- * Progress of the pages of this download, or null until its pages are known.
+ * Progress of the pages of this chapter, or null until its pages are known.
  */
-private fun DownloadQueueEntry.progressFlow() = when (this) {
-    is DownloadQueueEntry.Manga -> download.pagesFlow.flatMapLatest { pages ->
-        when {
-            pages == null -> flowOf(null)
+private fun MangaDownload.pagesProgressFlow() = pagesFlow.flatMapLatest { pages ->
+    if (pages.isNullOrEmpty()) {
+        flowOf(null)
+    } else {
+        combine(pages.map { page -> combine(page.statusFlow, page.progressFlow, ::Pair) }) { states ->
+            PagesProgress(
+                pageCount = pages.size,
+                downloadedPages = states.count { (status, _) -> status == Page.State.READY },
+                totalProgress = states.sumOf { (_, progress) -> progress },
+            )
+        }
+    }
+}
 
-            pages.isEmpty() -> flowOf(PagesProgress(pageCount = 0, downloadedPages = 0, totalProgress = 0))
+private fun DownloadQueueEntry.stateFlow(): Flow<DownloadRowState> = when (this) {
+    is DownloadQueueEntry.Manga -> combine(download.statusFlow, download.pagesProgressFlow()) { status, pages ->
+        when (status) {
+            MangaDownload.State.ERROR -> DownloadRowState.Failed
 
-            else ->
-                combine(pages.map { page -> combine(page.statusFlow, page.progressFlow, ::Pair) }) { states ->
-                    PagesProgress(
-                        pageCount = pages.size,
-                        downloadedPages = states.count { (status, _) -> status == Page.State.READY },
-                        totalProgress = states.sumOf { (_, progress) -> progress },
-                    )
-                }
+            MangaDownload.State.DOWNLOADING, MangaDownload.State.DOWNLOADED -> if (pages == null) {
+                DownloadRowState.Starting
+            } else {
+                DownloadRowState.Downloading(pages.fraction, pages.downloadedPages, pages.pageCount)
+            }
+
+            else -> DownloadRowState.Queued
         }
     }
 
     is DownloadQueueEntry.Anime -> combine(download.progressFlow, download.statusFlow) { progress, status ->
-        if (status == AnimeDownload.State.NOT_DOWNLOADED || status == AnimeDownload.State.QUEUE) {
-            null
-        } else {
-            PagesProgress(
-                pageCount = 1,
-                downloadedPages = 0,
-                totalProgress = progress.coerceIn(0, 100),
-                indeterminate = status == AnimeDownload.State.DOWNLOADING && progress <= 0,
-            )
+        when (status) {
+            AnimeDownload.State.ERROR -> DownloadRowState.Failed
+
+            AnimeDownload.State.DOWNLOADING -> when {
+                // -1: the size of the video isn't known, so there's no way to say how far it has got
+                progress < 0 -> DownloadRowState.Downloading(fraction = null)
+                progress == 0 -> DownloadRowState.Starting
+                else -> DownloadRowState.Downloading(progress.coerceAtMost(100) / 100f)
+            }
+
+            AnimeDownload.State.DOWNLOADED -> DownloadRowState.Downloading(1f)
+
+            else -> DownloadRowState.Queued
         }
     }
 }

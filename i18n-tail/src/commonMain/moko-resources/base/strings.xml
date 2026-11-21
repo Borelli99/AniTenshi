@@ -684,4 +684,13 @@
     <!-- History -->
     <string name="anitenshi_history_continue_anime">Continue watching</string>
     <string name="anitenshi_history_continue_manga">Continue reading</string>
+    <!-- Download queue -->
+    <string name="anitenshi_downloads_running">Downloading</string>
+    <string name="anitenshi_downloads_paused">Paused</string>
+    <string name="anitenshi_downloads_state_downloading">Downloading</string>
+    <string name="anitenshi_downloads_state_starting">Starting…</string>
+    <string name="anitenshi_downloads_state_queued">Queued</string>
+    <string name="anitenshi_downloads_state_failed">Failed</string>
+    <string name="anitenshi_downloads_pages">%1$d/%2$d pages</string>
+    <string name="anitenshi_downloads_cancel_title">Cancel all</string>
 </resources>

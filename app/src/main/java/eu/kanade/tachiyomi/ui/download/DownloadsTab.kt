@@ -1,28 +1,26 @@
 package eu.kanade.tachiyomi.ui.download
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SnackbarHostState
@@ -39,17 +37,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
@@ -72,9 +66,7 @@ import kotlinx.coroutines.launch
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.i18n.tail.TLMR
-import tachiyomi.presentation.core.components.Pill
 import tachiyomi.presentation.core.components.material.Scaffold
-import tachiyomi.presentation.core.components.material.TabText
 import tachiyomi.presentation.core.i18n.stringResource
 
 data object DownloadsTab : Tab {
@@ -110,52 +102,13 @@ data object DownloadsTab : Tab {
         val snackbarHostState = remember { SnackbarHostState() }
 
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-        var fabExpanded by remember { mutableStateOf(true) }
-        val nestedScrollConnection = remember {
-            // All this lines just for fab state :/
-            object : NestedScrollConnection {
-                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                    fabExpanded = available.y >= 0
-                    return scrollBehavior.nestedScrollConnection.onPreScroll(available, source)
-                }
-
-                override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                    return scrollBehavior.nestedScrollConnection.onPostScroll(consumed, available, source)
-                }
-
-                override suspend fun onPreFling(available: Velocity): Velocity {
-                    return scrollBehavior.nestedScrollConnection.onPreFling(available)
-                }
-
-                override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                    return scrollBehavior.nestedScrollConnection.onPostFling(consumed, available)
-                }
-            }
-        }
+        // AniTenshi: no floating button any more (pause and resume are at the top of each list)
+        val nestedScrollConnection = scrollBehavior.nestedScrollConnection
 
         Scaffold(
             topBar = {
                 AppBar(
-                    titleContent = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(MR.strings.label_download_queue),
-                                maxLines = 1,
-                                modifier = Modifier.weight(1f, false),
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            if (animeDownloadCount > 0) {
-                                val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
-                                Pill(
-                                    text = "$animeDownloadCount",
-                                    modifier = Modifier.padding(start = 4.dp),
-                                    color = MaterialTheme.colorScheme.onBackground
-                                        .copy(alpha = pillAlpha),
-                                    fontSize = 14.sp,
-                                )
-                            }
-                        }
-                    },
+                    title = stringResource(MR.strings.label_download_queue),
                     navigateUp = navigator::pop,
                     actions = {
                         when (state.currentPage) {
@@ -165,74 +118,6 @@ data object DownloadsTab : Tab {
                     },
                     scrollBehavior = scrollBehavior,
                 )
-            },
-            floatingActionButton = {
-                AnimatedVisibility(
-                    visible = when (state.currentPage) {
-                        0 -> animeDownloadList.isNotEmpty()
-                        1 -> mangaDownloadList.isNotEmpty()
-                        else -> false
-                    },
-                    enter = fadeIn(),
-                    exit = fadeOut(),
-                ) {
-                    val animeIsRunning by animeViewModel.isDownloaderRunning.collectAsStateWithLifecycle()
-                    val mangaIsRunning by mangaScreenModel.isDownloaderRunning.collectAsStateWithLifecycle()
-                    ExtendedFloatingActionButton(
-                        text = {
-                            val id = when (state.currentPage) {
-                                0 -> if (animeIsRunning) {
-                                    AYMR.strings.action_stop
-                                } else {
-                                    AYMR.strings.action_continue
-                                }
-
-                                1 -> if (mangaIsRunning) {
-                                    MR.strings.action_pause
-                                } else {
-                                    MR.strings.action_resume
-                                }
-
-                                else -> MR.strings.action_pause
-                            }
-                            Text(text = stringResource(id))
-                        },
-                        icon = {
-                            val icon = when (state.currentPage) {
-                                0 -> if (animeIsRunning) {
-                                    Icons.Outlined.Pause
-                                } else {
-                                    Icons.Filled.PlayArrow
-                                }
-
-                                1 -> if (mangaIsRunning) {
-                                    Icons.Outlined.Pause
-                                } else {
-                                    Icons.Filled.PlayArrow
-                                }
-
-                                else -> Icons.Filled.PlayArrow
-                            }
-                            Icon(imageVector = icon, contentDescription = null)
-                        },
-                        onClick = {
-                            when (state.currentPage) {
-                                0 -> if (animeIsRunning) {
-                                    animeViewModel.pauseDownloads()
-                                } else {
-                                    animeViewModel.startDownloads()
-                                }
-
-                                1 -> if (mangaIsRunning) {
-                                    mangaScreenModel.pauseDownloads()
-                                } else {
-                                    mangaScreenModel.startDownloads()
-                                }
-                            }
-                        },
-                        expanded = fabExpanded,
-                    )
-                }
             },
         ) { contentPadding ->
             Column(
@@ -251,9 +136,10 @@ data object DownloadsTab : Tab {
                             selected = state.currentPage == 0,
                             onClick = { scope.launch { state.animateScrollToPage(0) } },
                             text = {
-                                TabText(
+                                DownloadTabText(
                                     text = stringResource(AYMR.strings.label_anime),
-                                    badgeCount = animeDownloadCount,
+                                    count = animeDownloadCount,
+                                    selected = state.currentPage == 0,
                                 )
                             },
                             unselectedContentColor = MaterialTheme.colorScheme.onSurface,
@@ -262,9 +148,10 @@ data object DownloadsTab : Tab {
                             selected = state.currentPage == 1,
                             onClick = { scope.launch { state.animateScrollToPage(1) } },
                             text = {
-                                TabText(
+                                DownloadTabText(
                                     text = stringResource(AYMR.strings.manga),
-                                    badgeCount = mangaDownloadCount,
+                                    count = mangaDownloadCount,
+                                    selected = state.currentPage == 1,
                                 )
                             },
                             unselectedContentColor = MaterialTheme.colorScheme.onSurface,
@@ -503,6 +390,41 @@ data object DownloadsTab : Tab {
         } else {
             // AniTenshi: the settings are there with an empty queue too
             AppBarActions(persistentListOf(settingsAction))
+        }
+    }
+
+    /** AniTenshi: a tab's name with how many are queued, in gold on the tab that is open. */
+    @Composable
+    private fun DownloadTabText(text: String, count: Int, selected: Boolean) {
+        val colors = MaterialTheme.colorScheme
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = text,
+                modifier = Modifier.weight(1f, fill = false),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (count > 0) {
+                Box(
+                    modifier = Modifier
+                        .heightIn(min = 20.dp)
+                        .widthIn(min = 20.dp)
+                        .clip(CircleShape)
+                        .background(if (selected) colors.secondary else colors.surfaceContainerHighest)
+                        .padding(horizontal = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "$count",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (selected) colors.onSecondary else colors.onSurface,
+                    )
+                }
+            }
         }
     }
 }

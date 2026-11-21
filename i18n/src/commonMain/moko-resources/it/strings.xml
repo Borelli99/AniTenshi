@@ -940,4 +940,13 @@
     <string name="refresh_tracker_profile">Aggiorna il profilo del tracker</string>
     <string name="refresh_tracker_success">Profilo di %s aggiornato</string>
     <string name="notification_update_error">Aggiornamenti non riusciti: %1$d</string>
+    <string name="pref_crop_instead_of_zoom">Ritaglia invece di zoomare</string>
+    <string name="pref_fast_rendering_only">Disattiva i riquadri</string>
+    <string name="pref_hold_until_final">Mostra tutti i riquadri insieme</string>
+    <string name="pref_upscaler">Filtro di ingrandimento</string>
+    <string name="pref_downscaler">Filtro di riduzione</string>
+    <string name="action_choose_shader">Scegli lo shader</string>
+    <string name="shader_parameters">Parametri</string>
+    <string name="shader_param_range">Da %1$s a %2$s, predefinito %3$s</string>
+    <string name="shader_param_default">Predefinito %1$s</string>
 </resources>

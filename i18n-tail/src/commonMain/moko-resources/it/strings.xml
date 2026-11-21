@@ -641,4 +641,13 @@
   <string name="anitenshi_stats_days">%d g</string>
   <string name="anitenshi_stats_hours">%d h</string>
   <string name="anitenshi_stats_minutes">%d min</string>
+  <!-- Svuotare la cronologia, aprire dalla Home -->
+  <string name="anitenshi_history_clear_title">Svuotare la cronologia?</string>
+  <string name="anitenshi_history_clear_anime">Verrà cancellata tutta la cronologia degli anime. Gli episodi visti restano segnati come visti.</string>
+  <string name="anitenshi_history_clear_manga">Verrà cancellata tutta la cronologia dei manga. I capitoli letti restano segnati come letti.</string>
+  <string name="anitenshi_history_clear_stats_title">Cambiano anche le Statistiche</string>
+  <string name="anitenshi_history_clear_stats_anime">Il grafico «Ultimi 7 giorni» ripartirà da zero.</string>
+  <string name="anitenshi_history_clear_stats_manga">Il grafico «Ultimi 7 giorni» e il tempo di lettura ripartiranno da zero.</string>
+  <string name="anitenshi_history_clear_confirm">Svuota</string>
+  <string name="anitenshi_home_open_failed">Impossibile aprire questo titolo</string>
 </resources>

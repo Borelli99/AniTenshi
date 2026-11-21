@@ -110,6 +110,7 @@ fun Screen.mangaHistoryTab(
                     HistoryDeleteAllDialog(
                         onDismissRequest = onDismissRequest,
                         onDelete = viewModel::removeAllHistory,
+                        isManga = true,
                     )
                 }
 

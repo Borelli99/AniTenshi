@@ -118,6 +118,7 @@ fun Screen.animeHistoryTab(
                     HistoryDeleteAllDialog(
                         onDismissRequest = onDismissRequest,
                         onDelete = viewModel::removeAllHistory,
+                        isManga = false,
                     )
                 }
 

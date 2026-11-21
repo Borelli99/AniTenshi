@@ -1,20 +1,31 @@
 package tachiyomi.domain.entries.manga.interactor
 
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import tachiyomi.domain.entries.manga.model.Manga
 import tachiyomi.domain.entries.manga.model.MangaRemoteUpdate
 import tachiyomi.domain.entries.manga.repository.MangaRepository
+import kotlin.coroutines.cancellation.CancellationException
 
 @Inject
 class NetworkToLocalManga(
     private val mangaRepository: MangaRepository,
 ) {
 
-    suspend fun await(manga: Manga): Manga {
+    // AniTenshi: one save at a time. The same title opened twice at once (a double tap) found it missing both times
+    // and was added twice: the second broke the rule of one entry per source and address, and the app closed.
+    suspend fun await(manga: Manga): Manga = saveLock.withLock {
         val localManga = getManga(manga.url, manga.source)
-        return when {
+        when {
             localManga == null -> {
-                val id = insertManga(manga)
+                val id = try {
+                    insertManga(manga)
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    // Saved meanwhile by something that doesn't go through here (a restore): take that one
+                    return@withLock getManga(manga.url, manga.source) ?: throw e
+                }
                 manga.copy(id = id!!)
             }
 
@@ -89,5 +100,7 @@ class NetworkToLocalManga(
 
     private companion object {
         const val LOCAL_MANGA_SOURCE_ID = 0L
+
+        val saveLock = Mutex()
     }
 }

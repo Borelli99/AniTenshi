@@ -1,6 +1,8 @@
 package tachiyomi.domain.entries.anime.interactor
 
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import tachiyomi.domain.entries.anime.model.Anime
 import tachiyomi.domain.entries.anime.model.AnimeUpdate
 import tachiyomi.domain.entries.anime.repository.AnimeRepository
@@ -12,9 +14,10 @@ class NetworkToLocalAnime(
     private val sourceManager: AnimeSourceManager,
 ) {
 
-    suspend fun await(anime: Anime): Anime {
+    // AniTenshi: one save at a time, so the same title opened twice at once (a double tap) isn't added twice
+    suspend fun await(anime: Anime): Anime = saveLock.withLock {
         val localAnime = getAnime(anime.url, anime.source)
-        return when {
+        when {
             localAnime == null -> {
                 val id = insertAnime(anime)
                 anime.copy(id = id!!)
@@ -100,5 +103,7 @@ class NetworkToLocalAnime(
 
     private companion object {
         const val LOCAL_ANIME_SOURCE_ID = 0L
+
+        val saveLock = Mutex()
     }
 }

@@ -4,8 +4,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,11 +25,16 @@ import eu.kanade.tachiyomi.ui.entries.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.more.MoreTab
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
+import eu.kanade.tachiyomi.util.system.toast
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import logcat.LogPriority
 import mihon.app.di.appGraph
+import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.source.anime.interactor.GetRemoteAnime
 import tachiyomi.domain.source.manga.interactor.GetRemoteManga
 import tachiyomi.i18n.MR
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.i18n.stringResource
 
 /**
@@ -54,6 +61,26 @@ data object HomeTab : Tab {
         val viewModel = metroViewModel<HomeViewModel>()
         val state by viewModel.state.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
+
+        // AniTenshi: a title from a source is saved before its page opens. A second tap while that happens is
+        // ignored, and if saving fails a message says so instead of the app closing.
+        var isOpening by remember { mutableStateOf(false) }
+        fun openFromSource(open: suspend () -> Unit) {
+            if (isOpening) return
+            isOpening = true
+            scope.launch {
+                try {
+                    open()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logcat(LogPriority.ERROR, e)
+                    context.toast(TLMR.strings.anitenshi_home_open_failed)
+                } finally {
+                    isOpening = false
+                }
+            }
+        }
 
         HomeContent(
             state = state,
@@ -106,13 +133,13 @@ data object HomeTab : Tab {
                 )
             },
             onClickAnime = { anime ->
-                scope.launch {
+                openFromSource {
                     val local = viewModel.localAnime(anime)
                     navigator.push(AnimeScreen(local.id, true))
                 }
             },
             onClickManga = { manga ->
-                scope.launch {
+                openFromSource {
                     val local = viewModel.localManga(manga)
                     navigator.push(MangaScreen(local.id, true))
                 }

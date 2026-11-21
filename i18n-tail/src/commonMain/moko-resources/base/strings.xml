@@ -653,4 +653,27 @@
     <string name="anitenshi_more_open_link">Open a video link</string>
     <string name="anitenshi_more_open_link_summary">Watch a video from a link, in the app\'s player</string>
     <string name="anitenshi_more_categories_summary">%1$d anime · %2$d manga</string>
+    <!-- The "About" page -->
+    <string name="anitenshi_about_version">Version %s</string>
+    <string name="anitenshi_about_built">Built on %s</string>
+    <string name="anitenshi_about_check_updates">Check for updates</string>
+    <string name="anitenshi_about_whats_new">What\'s new in this version</string>
+    <string name="anitenshi_about_group_help">Help</string>
+    <string name="anitenshi_about_copy_info">Copy device information</string>
+    <string name="anitenshi_about_copy_info_summary">To send along when you report a problem</string>
+    <string name="anitenshi_about_group_project">Project</string>
+    <string name="anitenshi_about_github">Code on GitHub</string>
+    <string name="anitenshi_about_releases">All versions</string>
+    <string name="anitenshi_about_releases_summary">Notes and files of every version</string>
+    <string name="anitenshi_about_group_legal">Legal</string>
+    <!-- The list of the player's settings pages -->
+    <string name="anitenshi_player_search">Search player settings</string>
+    <string name="anitenshi_player_group_playback">Playback</string>
+    <string name="anitenshi_player_group_audio_subtitles">Audio and subtitles</string>
+    <string name="anitenshi_player_group_expert">For experts</string>
+    <string name="anitenshi_player_hwdec_on">Hardware decoding: on</string>
+    <string name="anitenshi_player_hwdec_off">Hardware decoding: off</string>
+    <string name="anitenshi_player_no_language">No preferred language</string>
+    <string name="anitenshi_player_custom_button_summary">Your own buttons in the player, with Lua scripts</string>
+    <string name="anitenshi_player_editor_summary">Create and edit the player\'s scripts</string>
 </resources>

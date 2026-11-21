@@ -44,4 +44,8 @@
     <item quantity="one">%d servizio collegato</item>
     <item quantity="other">%d servizi collegati</item>
   </plurals>
+  <plurals name="anitenshi_player_languages">
+    <item quantity="one">Lingua preferita: %s</item>
+    <item quantity="other">Lingue preferite: %s</item>
+  </plurals>
 </resources>

@@ -570,4 +570,27 @@
   <string name="anitenshi_more_open_link">Apri un link video</string>
   <string name="anitenshi_more_open_link_summary">Guarda un video da un link, nel player dell\'app</string>
   <string name="anitenshi_more_categories_summary">%1$d anime · %2$d manga</string>
+  <!-- La pagina "Info" -->
+  <string name="anitenshi_about_version">Versione %s</string>
+  <string name="anitenshi_about_built">Compilata il %s</string>
+  <string name="anitenshi_about_check_updates">Cerca aggiornamenti</string>
+  <string name="anitenshi_about_whats_new">Novità di questa versione</string>
+  <string name="anitenshi_about_group_help">Aiuto</string>
+  <string name="anitenshi_about_copy_info">Copia informazioni sul dispositivo</string>
+  <string name="anitenshi_about_copy_info_summary">Da mandare quando segnali un problema</string>
+  <string name="anitenshi_about_group_project">Progetto</string>
+  <string name="anitenshi_about_github">Codice su GitHub</string>
+  <string name="anitenshi_about_releases">Tutte le versioni</string>
+  <string name="anitenshi_about_releases_summary">Note e file di ogni versione</string>
+  <string name="anitenshi_about_group_legal">Note legali</string>
+  <!-- L'elenco delle pagine del player -->
+  <string name="anitenshi_player_search">Cerca nelle impostazioni del player</string>
+  <string name="anitenshi_player_group_playback">Riproduzione</string>
+  <string name="anitenshi_player_group_audio_subtitles">Audio e sottotitoli</string>
+  <string name="anitenshi_player_group_expert">Per esperti</string>
+  <string name="anitenshi_player_hwdec_on">Decodifica hardware: attiva</string>
+  <string name="anitenshi_player_hwdec_off">Decodifica hardware: disattivata</string>
+  <string name="anitenshi_player_no_language">Nessuna lingua preferita</string>
+  <string name="anitenshi_player_custom_button_summary">Pulsanti tuoi nel player, con script Lua</string>
+  <string name="anitenshi_player_editor_summary">Crea e modifica gli script del player</string>
 </resources>

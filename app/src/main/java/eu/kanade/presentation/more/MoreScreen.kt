@@ -270,9 +270,8 @@ fun MoreScreen(
                 ) {
                     CardEntry(
                         title = stringResource(MR.strings.pref_category_about),
-                        subtitle = "${stringResource(MR.strings.app_name)} ${
-                            AboutScreen.getVersionName(withBuildDate = false)
-                        }",
+                        // getVersionName already starts with the app's name
+                        subtitle = AboutScreen.getVersionName(withBuildDate = false),
                         icon = MaterialSymbols.Rounded.Info,
                         onClick = onClickAbout,
                     )

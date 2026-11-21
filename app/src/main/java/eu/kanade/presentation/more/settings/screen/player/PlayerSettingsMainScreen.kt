@@ -2,11 +2,12 @@ package eu.kanade.presentation.more.settings.screen.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Audiotrack
 import androidx.compose.material.icons.outlined.Code
@@ -14,22 +15,19 @@ import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Gesture
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.PlayCircleOutline
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Subtitles
 import androidx.compose.material.icons.outlined.Terminal
-import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -37,21 +35,25 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.components.AppBar
-import eu.kanade.presentation.components.AppBarActions
+import eu.kanade.presentation.components.CardEntry
+import eu.kanade.presentation.components.CardEntryArrow
+import eu.kanade.presentation.components.CardGroup
+import eu.kanade.presentation.components.CardSearchBar
 import eu.kanade.presentation.more.settings.screen.SettingsSearchScreen
 import eu.kanade.presentation.more.settings.screen.player.custombutton.PlayerSettingsCustomButtonScreen
 import eu.kanade.presentation.more.settings.screen.player.editor.PlayerSettingsEditorScreen
-import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.presentation.util.Screen
-import kotlinx.collections.immutable.persistentListOf
-import tachiyomi.i18n.MR
+import mihon.app.di.appGraph
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.material.Scaffold
+import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.icons.CustomIcons
 import tachiyomi.presentation.core.icons.Magnet
+import tachiyomi.presentation.core.util.collectAsState
+import tachiyomi.presentation.core.util.plus
 import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 
 class PlayerSettingsMainScreen(private val mainSettings: Boolean) : Screen() {
@@ -76,94 +78,83 @@ class PlayerSettingsMainScreen(private val mainSettings: Boolean) : Screen() {
         }
     }
 
+    /**
+     * AniTenshi: the player's pages in named groups, one card each, as on the first page of the settings, with a
+     * search bar under the title. A few entries say what they are set to.
+     */
     @Composable
     fun Content(twoPane: Boolean) {
         val navigator = LocalNavigator.currentOrThrow
         val backPress = LocalBackPress.currentOrThrow
         val containerColor = if (twoPane) getPalerSurface() else MaterialTheme.colorScheme.surface
-        val topBarState = rememberTopAppBarState()
+        val state = rememberLazyListState()
 
         Scaffold(
-            topBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(topBarState),
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = stringResource(
-                        if (mainSettings) {
-                            // AniTenshi: "Anime player", the name it has on the first page of the settings
-                            TLMR.strings.anitenshi_settings_player_anime
+            // The search bar stays under the title while the list scrolls, as on the first page of the settings
+            topBar = {
+                Column(modifier = Modifier.background(containerColor)) {
+                    AppBar(
+                        title = stringResource(
+                            if (mainSettings) {
+                                // AniTenshi: "Anime player", the name it has on the first page of the settings
+                                TLMR.strings.anitenshi_settings_player_anime
+                            } else {
+                                AYMR.strings.label_player_settings
+                            },
+                        ),
+                        backgroundColor = containerColor,
+                        navigateUp = backPress::invoke,
+                    )
+                    CardSearchBar(
+                        text = stringResource(TLMR.strings.anitenshi_player_search),
+                        onClick = { navigator.navigate(SettingsSearchScreen(true), twoPane) },
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 8.dp),
+                    )
+                    HorizontalDivider(
+                        color = if (state.canScrollBackward) {
+                            MaterialTheme.colorScheme.outlineVariant
                         } else {
-                            AYMR.strings.label_player_settings
+                            Color.Transparent
                         },
-                    ),
-                    navigateUp = backPress::invoke,
-                    actions = {
-                        AppBarActions(
-                            persistentListOf(
-                                AppBar.Action(
-                                    title = stringResource(MR.strings.action_search),
-                                    icon = Icons.Outlined.Search,
-                                    onClick = { navigator.navigate(SettingsSearchScreen(true), twoPane) },
-                                ),
-                            ),
-                        )
-                    },
-                    scrollBehavior = scrollBehavior,
-                )
+                    )
+                }
             },
             containerColor = containerColor,
             content = { contentPadding ->
-                val state = rememberLazyListState()
-                val indexSelected = if (twoPane) {
-                    items.indexOfFirst { it.screen::class == navigator.items.first()::class }
-                        .also {
-                            LaunchedEffect(Unit) {
-                                state.animateScrollToItem(it)
-                                if (it > 0) {
-                                    // Lift scroll
-                                    topBarState.contentOffset = topBarState.heightOffsetLimit
-                                }
-                            }
+                // On tablets the page shown on the right is marked on this list
+                val openScreen = if (twoPane) navigator.items.first()::class else null
+                if (twoPane) {
+                    LaunchedEffect(Unit) {
+                        val groupIndex = groups.indexOfFirst { group ->
+                            group.items.any { it.screen::class == openScreen }
                         }
-                } else {
-                    null
+                        if (groupIndex > 0) state.animateScrollToItem(groupIndex)
+                    }
                 }
 
                 LazyColumn(
                     state = state,
-                    contentPadding = contentPadding,
+                    contentPadding = contentPadding +
+                        PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                    itemsIndexed(
-                        items = items,
-                        key = { _, item -> item.hashCode() },
-                    ) { index, item ->
-                        val selected = indexSelected == index
-                        var modifier: Modifier = Modifier
-                        var contentColor = LocalContentColor.current
-                        if (twoPane) {
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp)
-                                .clip(RoundedCornerShape(24.dp))
-                                .then(
-                                    if (selected) {
-                                        Modifier.background(
-                                            MaterialTheme.colorScheme.surfaceVariant,
-                                        )
-                                    } else {
-                                        Modifier
-                                    },
+                    items(
+                        count = groups.size,
+                        key = { it },
+                    ) { index ->
+                        val group = groups[index]
+                        CardGroup(title = stringResource(group.titleRes)) {
+                            group.items.forEach { item ->
+                                CardEntry(
+                                    title = stringResource(item.titleRes),
+                                    subtitle = item.subtitle(),
+                                    icon = item.icon,
+                                    onClick = { navigator.navigate(item.screen, twoPane) },
+                                    // Phones open the page over this one; tablets show it beside the list
+                                    selected = if (twoPane) item.screen::class == openScreen else null,
+                                    trailing = if (twoPane) null else ({ CardEntryArrow() }),
                                 )
-                            if (selected) {
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                             }
-                        }
-                        CompositionLocalProvider(LocalContentColor provides contentColor) {
-                            TextPreferenceWidget(
-                                modifier = modifier,
-                                title = stringResource(item.titleRes),
-                                subtitle = item.formatSubtitle(),
-                                icon = item.icon,
-                                onPreferenceClick = { navigator.navigate(item.screen, twoPane) },
-                            )
                         }
                     }
                 }
@@ -176,68 +167,125 @@ class PlayerSettingsMainScreen(private val mainSettings: Boolean) : Screen() {
     }
 
     private companion object {
-        data class Item(
+        data class Group(
             val titleRes: StringResource,
-            val subtitleRes: StringResource? = null,
-            val formatSubtitle: @Composable () -> String? = { subtitleRes?.let { stringResource(it) } },
-            val icon: ImageVector,
-            val screen: VoyagerScreen,
+            val items: List<Item>,
         )
 
-        val items = listOf(
-            Item(
-                titleRes = AYMR.strings.pref_player_internal,
-                subtitleRes = AYMR.strings.pref_player_internal_summary,
-                icon = Icons.Outlined.PlayCircleOutline,
-                screen = PlayerSettingsPlayerScreen,
+        data class Item(
+            val titleRes: StringResource,
+            val icon: ImageVector,
+            val screen: VoyagerScreen,
+            val subtitle: @Composable () -> String?,
+        )
+
+        // "ita,eng" as the person reads it: "Preferred languages: ita, eng"
+        @Composable
+        fun languagesSubtitle(languages: String): String {
+            val list = languages.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            return if (list.isEmpty()) {
+                stringResource(TLMR.strings.anitenshi_player_no_language)
+            } else {
+                pluralStringResource(
+                    TLMR.plurals.anitenshi_player_languages,
+                    count = list.size,
+                    list.joinToString(", "),
+                )
+            }
+        }
+
+        val groups = listOf(
+            Group(
+                titleRes = TLMR.strings.anitenshi_player_group_playback,
+                items = listOf(
+                    Item(
+                        titleRes = AYMR.strings.pref_player_internal,
+                        icon = Icons.Outlined.PlayCircleOutline,
+                        screen = PlayerSettingsPlayerScreen,
+                        subtitle = { stringResource(AYMR.strings.pref_player_internal_summary) },
+                    ),
+                    Item(
+                        titleRes = AYMR.strings.pref_player_gestures,
+                        icon = Icons.Outlined.Gesture,
+                        screen = PlayerSettingsGesturesScreen,
+                        subtitle = { stringResource(AYMR.strings.pref_player_gestures_summary) },
+                    ),
+                    Item(
+                        titleRes = AYMR.strings.pref_player_decoder,
+                        icon = Icons.Outlined.Memory,
+                        screen = PlayerSettingsDecoderScreen,
+                        subtitle = {
+                            val context = LocalContext.current
+                            val hardware by remember { context.appGraph.decoderPreferences.tryHWDecoding() }
+                                .collectAsState()
+                            stringResource(
+                                if (hardware) {
+                                    TLMR.strings.anitenshi_player_hwdec_on
+                                } else {
+                                    TLMR.strings.anitenshi_player_hwdec_off
+                                },
+                            )
+                        },
+                    ),
+                ),
             ),
-            Item(
-                titleRes = AYMR.strings.pref_player_gestures,
-                subtitleRes = AYMR.strings.pref_player_gestures_summary,
-                icon = Icons.Outlined.Gesture,
-                screen = PlayerSettingsGesturesScreen,
+            Group(
+                titleRes = TLMR.strings.anitenshi_player_group_audio_subtitles,
+                items = listOf(
+                    Item(
+                        titleRes = AYMR.strings.pref_player_subtitle,
+                        icon = Icons.Outlined.Subtitles,
+                        screen = PlayerSettingsSubtitleScreen,
+                        subtitle = {
+                            val context = LocalContext.current
+                            val languages by remember {
+                                context.appGraph.subtitlePreferences.preferredSubLanguages()
+                            }.collectAsState()
+                            languagesSubtitle(languages)
+                        },
+                    ),
+                    Item(
+                        titleRes = AYMR.strings.pref_player_audio,
+                        icon = Icons.Outlined.Audiotrack,
+                        screen = PlayerSettingsAudioScreen,
+                        subtitle = {
+                            val context = LocalContext.current
+                            val languages by remember {
+                                context.appGraph.audioPreferences.preferredAudioLanguages()
+                            }.collectAsState()
+                            languagesSubtitle(languages)
+                        },
+                    ),
+                ),
             ),
-            Item(
-                titleRes = AYMR.strings.pref_player_decoder,
-                subtitleRes = AYMR.strings.pref_player_decoder_summary,
-                icon = Icons.Outlined.Memory,
-                screen = PlayerSettingsDecoderScreen,
-            ),
-            Item(
-                titleRes = AYMR.strings.pref_player_subtitle,
-                subtitleRes = AYMR.strings.pref_player_subtitle_summary,
-                icon = Icons.Outlined.Subtitles,
-                screen = PlayerSettingsSubtitleScreen,
-            ),
-            Item(
-                titleRes = AYMR.strings.pref_player_audio,
-                subtitleRes = AYMR.strings.pref_player_audio_summary,
-                icon = Icons.Outlined.Audiotrack,
-                screen = PlayerSettingsAudioScreen,
-            ),
-            Item(
-                titleRes = AYMR.strings.pref_player_custom_button,
-                subtitleRes = AYMR.strings.pref_player_custom_button_summary,
-                icon = Icons.Outlined.Terminal,
-                screen = PlayerSettingsCustomButtonScreen,
-            ),
-            Item(
-                titleRes = AYMR.strings.pref_player_editor,
-                subtitleRes = AYMR.strings.pref_player_editor_summary,
-                icon = Icons.Outlined.EditNote,
-                screen = PlayerSettingsEditorScreen,
-            ),
-            Item(
-                titleRes = AYMR.strings.pref_player_torrents,
-                subtitleRes = AYMR.strings.pref_player_torrents_summary,
-                icon = CustomIcons.Magnet,
-                screen = PlayerSettingsTorrentScreen,
-            ),
-            Item(
-                titleRes = AYMR.strings.pref_player_advanced,
-                subtitleRes = AYMR.strings.pref_player_advanced_summary,
-                icon = Icons.Outlined.Code,
-                screen = PlayerSettingsAdvancedScreen,
+            Group(
+                titleRes = TLMR.strings.anitenshi_player_group_expert,
+                items = listOf(
+                    Item(
+                        titleRes = AYMR.strings.pref_player_custom_button,
+                        icon = Icons.Outlined.Terminal,
+                        screen = PlayerSettingsCustomButtonScreen,
+                        subtitle = { stringResource(TLMR.strings.anitenshi_player_custom_button_summary) },
+                    ),
+                    Item(
+                        titleRes = AYMR.strings.pref_player_editor,
+                        icon = Icons.Outlined.EditNote,
+                        screen = PlayerSettingsEditorScreen,
+                        subtitle = { stringResource(TLMR.strings.anitenshi_player_editor_summary) },
+                    ),
+                    Item(
+                        titleRes = AYMR.strings.pref_player_torrents,
+                        icon = CustomIcons.Magnet,
+                        screen = PlayerSettingsTorrentScreen,
+                        subtitle = { stringResource(AYMR.strings.pref_player_torrents_summary) },
+                    ),
+                    Item(
+                        titleRes = AYMR.strings.pref_player_advanced,
+                        icon = Icons.Outlined.Code,
+                        screen = PlayerSettingsAdvancedScreen,
+                        subtitle = { stringResource(AYMR.strings.pref_player_advanced_summary) },
+                    ),
+                ),
             ),
         )
     }

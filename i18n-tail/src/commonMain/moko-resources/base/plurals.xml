@@ -65,4 +65,12 @@
         <item quantity="one">%d chapter</item>
         <item quantity="other">%d chapters</item>
     </plurals>
+    <plurals name="anitenshi_categories_titles">
+        <item quantity="one">%d title</item>
+        <item quantity="other">%d titles</item>
+    </plurals>
+    <plurals name="anitenshi_categories_delete_titles">
+        <item quantity="one">Its title stays in your library: if it has no other category, it goes to \"Default\".</item>
+        <item quantity="other">Its %d titles stay in your library: those with no other category go to \"Default\".</item>
+    </plurals>
 </resources>

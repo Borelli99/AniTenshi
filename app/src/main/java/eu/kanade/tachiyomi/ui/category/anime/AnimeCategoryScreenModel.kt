@@ -7,12 +7,15 @@ import dev.icerock.moko.resources.StringResource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.WhileSubscribed
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -25,6 +28,8 @@ import tachiyomi.domain.category.anime.interactor.HideAnimeCategory
 import tachiyomi.domain.category.anime.interactor.RenameAnimeCategory
 import tachiyomi.domain.category.anime.interactor.ReorderAnimeCategory
 import tachiyomi.domain.category.model.Category
+import tachiyomi.domain.entries.anime.interactor.GetLibraryAnime
+import tachiyomi.domain.library.anime.LibraryAnime
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.i18n.MR
 import uy.kohesive.injekt.Injekt
@@ -40,6 +45,7 @@ class AnimeCategoryScreenModel(
     private val reorderCategory: ReorderAnimeCategory = Injekt.get(),
     private val renameCategory: RenameAnimeCategory = Injekt.get(),
     private val libraryPreferences: LibraryPreferences = Injekt.get(),
+    private val getLibraryAnime: GetLibraryAnime = Injekt.get(),
 ) : ScreenModel {
 
     private val _events: Channel<AnimeCategoryEvent> = Channel()
@@ -47,19 +53,28 @@ class AnimeCategoryScreenModel(
 
     private val dialog = MutableStateFlow<AnimeCategoryDialog?>(null)
 
+    // AniTenshi: how many titles of the library each category has (null until the library is read)
+    private val titleCounts: Flow<Map<Long, Int>?> = getLibraryAnime.subscribe()
+        .map<List<LibraryAnime>, Map<Long, Int>?> { library ->
+            library.groupBy({ it.category }, { it.anime.id }).mapValues { (_, ids) -> ids.distinct().size }
+        }
+        .onStart { emit(null) }
+
     val state: StateFlow<AnimeCategoryScreenState> = combine(
         if (libraryPreferences.hideHiddenCategoriesSettings.get()) {
             getVisibleCategories.subscribe()
         } else {
             getAllCategories.subscribe()
         },
+        titleCounts,
         dialog,
-    ) { categories, dialog ->
+    ) { categories, titleCounts, dialog ->
         AnimeCategoryScreenState.Success(
             categories = categories
                 .filterNot(Category::isSystemCategory)
                 .toImmutableList(),
             dialog = dialog,
+            titleCounts = titleCounts,
         )
     }
         .stateIn(screenModelScope, SharingStarted.WhileSubscribed(5.seconds), AnimeCategoryScreenState.Loading)
@@ -153,6 +168,8 @@ sealed interface AnimeCategoryScreenState {
     data class Success(
         val categories: ImmutableList<Category>,
         val dialog: AnimeCategoryDialog? = null,
+        /** AniTenshi: titles of the library in each category, by category id; null until the library is read. */
+        val titleCounts: Map<Long, Int>? = null,
     ) : AnimeCategoryScreenState {
 
         val isEmpty: Boolean

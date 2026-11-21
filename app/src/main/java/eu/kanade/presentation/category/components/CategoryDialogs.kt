@@ -30,7 +30,9 @@ import eu.kanade.presentation.category.visualName
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.domain.category.model.Category
 import tachiyomi.i18n.MR
+import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.material.padding
+import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 
 @Composable
@@ -155,12 +157,29 @@ fun CategoryRenameDialog(
     }
 }
 
+/**
+ * @param titleCount AniTenshi: the titles of the library in it, to say they stay in the library; null if not known.
+ */
 @Composable
 fun CategoryDeleteDialog(
     onDismissRequest: () -> Unit,
     onDelete: () -> Unit,
     category: String,
+    titleCount: Int? = null,
 ) {
+    val text: (@Composable () -> Unit)? = if (titleCount == null) {
+        null
+    } else {
+        @Composable {
+            Text(
+                text = if (titleCount == 0) {
+                    stringResource(TLMR.strings.anitenshi_categories_delete_empty)
+                } else {
+                    pluralStringResource(TLMR.plurals.anitenshi_categories_delete_titles, titleCount, titleCount)
+                },
+            )
+        }
+    }
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = {
@@ -168,7 +187,10 @@ fun CategoryDeleteDialog(
                 onDelete()
                 onDismissRequest()
             }) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(
+                    text = stringResource(TLMR.strings.anitenshi_categories_delete),
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
         },
         dismissButton = {
@@ -177,11 +199,9 @@ fun CategoryDeleteDialog(
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.delete_category))
+            Text(text = stringResource(TLMR.strings.anitenshi_categories_delete_title, category))
         },
-        text = {
-            Text(text = stringResource(MR.strings.delete_category_confirmation, category))
-        },
+        text = text,
     )
 }
 

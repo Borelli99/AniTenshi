@@ -693,4 +693,15 @@
     <string name="anitenshi_downloads_state_failed">Failed</string>
     <string name="anitenshi_downloads_pages">%1$d/%2$d pages</string>
     <string name="anitenshi_downloads_cancel_title">Cancel all</string>
+    <!-- Categories -->
+    <string name="anitenshi_categories_hint">Tap a category to rename it, drag ≡ to change the order it has in the library.</string>
+    <string name="anitenshi_categories_no_titles">No titles</string>
+    <string name="anitenshi_categories_hidden">Hidden</string>
+    <string name="anitenshi_categories_hide">Hide in the library</string>
+    <string name="anitenshi_categories_show">Show in the library</string>
+    <string name="anitenshi_categories_new">New category</string>
+    <string name="anitenshi_categories_rename">Rename</string>
+    <string name="anitenshi_categories_delete">Delete</string>
+    <string name="anitenshi_categories_delete_title">Delete \"%s\"?</string>
+    <string name="anitenshi_categories_delete_empty">It has no titles.</string>
 </resources>

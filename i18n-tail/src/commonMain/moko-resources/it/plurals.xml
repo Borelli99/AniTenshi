@@ -64,4 +64,12 @@
     <item quantity="one">%d capitolo</item>
     <item quantity="other">%d capitoli</item>
   </plurals>
+  <plurals name="anitenshi_categories_titles">
+    <item quantity="one">%d titolo</item>
+    <item quantity="other">%d titoli</item>
+  </plurals>
+  <plurals name="anitenshi_categories_delete_titles">
+    <item quantity="one">Il suo titolo resta nella libreria: se non ha altre categorie va in «Predefinita».</item>
+    <item quantity="other">I suoi %d titoli restano nella libreria: quelli che non hanno altre categorie vanno in «Predefinita».</item>
+  </plurals>
 </resources>

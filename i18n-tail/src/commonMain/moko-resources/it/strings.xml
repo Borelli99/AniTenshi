@@ -610,4 +610,15 @@
   <string name="anitenshi_downloads_state_failed">Non riuscito</string>
   <string name="anitenshi_downloads_pages">%1$d/%2$d pagine</string>
   <string name="anitenshi_downloads_cancel_title">Annulla tutti</string>
+  <!-- Categorie -->
+  <string name="anitenshi_categories_hint">Tocca una categoria per rinominarla, trascina ≡ per cambiare l\'ordine in cui compare nella libreria.</string>
+  <string name="anitenshi_categories_no_titles">Nessun titolo</string>
+  <string name="anitenshi_categories_hidden">Nascosta</string>
+  <string name="anitenshi_categories_hide">Nascondi nella libreria</string>
+  <string name="anitenshi_categories_show">Mostra nella libreria</string>
+  <string name="anitenshi_categories_new">Nuova categoria</string>
+  <string name="anitenshi_categories_rename">Rinomina</string>
+  <string name="anitenshi_categories_delete">Elimina</string>
+  <string name="anitenshi_categories_delete_title">Elimina «%s»?</string>
+  <string name="anitenshi_categories_delete_empty">Non contiene titoli.</string>
 </resources>

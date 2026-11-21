@@ -73,4 +73,16 @@
         <item quantity="one">Its title stays in your library: if it has no other category, it goes to \"Default\".</item>
         <item quantity="other">Its %d titles stay in your library: those with no other category go to \"Default\".</item>
     </plurals>
+    <plurals name="anitenshi_stats_episodes">
+        <item quantity="one">%s episode</item>
+        <item quantity="other">%s episodes</item>
+    </plurals>
+    <plurals name="anitenshi_stats_chapters">
+        <item quantity="one">%s chapter</item>
+        <item quantity="other">%s chapters</item>
+    </plurals>
+    <plurals name="anitenshi_stats_titles">
+        <item quantity="one">%s title</item>
+        <item quantity="other">%s titles</item>
+    </plurals>
 </resources>

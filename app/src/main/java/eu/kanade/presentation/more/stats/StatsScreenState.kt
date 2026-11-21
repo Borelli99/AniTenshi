@@ -13,6 +13,8 @@ sealed interface StatsScreenState {
         val titles: StatsData.MangaTitles,
         val chapters: StatsData.Chapters,
         val trackers: StatsData.Trackers,
+        val week: StatsData.Week,
+        val progress: StatsData.LibraryProgress,
     ) : StatsScreenState
 
     @Immutable
@@ -21,5 +23,7 @@ sealed interface StatsScreenState {
         val titles: StatsData.AnimeTitles,
         val episodes: StatsData.Episodes,
         val trackers: StatsData.Trackers,
+        val week: StatsData.Week,
+        val progress: StatsData.LibraryProgress,
     ) : StatsScreenState
 }

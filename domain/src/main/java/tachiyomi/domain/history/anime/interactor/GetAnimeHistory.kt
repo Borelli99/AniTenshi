@@ -15,6 +15,11 @@ class GetAnimeHistory(
         return repository.getHistoryByAnimeId(animeId)
     }
 
+    /** AniTenshi: when each episode was last watched, for those watched from [since] (epoch milliseconds) on. */
+    suspend fun awaitSeenTimesSince(since: Long): List<Long> {
+        return repository.getSeenTimesSince(since)
+    }
+
     fun subscribe(query: String): Flow<List<AnimeHistoryWithRelations>> {
         return repository.getAnimeHistory(query)
     }

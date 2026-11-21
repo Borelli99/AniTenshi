@@ -16,6 +16,7 @@ import tachiyomi.domain.history.manga.model.MangaHistory
 import tachiyomi.domain.history.manga.model.MangaHistoryUpdate
 import tachiyomi.domain.history.manga.model.MangaHistoryWithRelations
 import tachiyomi.domain.history.manga.repository.MangaHistoryRepository
+import java.util.Date
 
 @Inject
 @SingleIn(AppScope::class)
@@ -40,6 +41,12 @@ class MangaHistoryRepositoryImpl(
         return database.historyQueries
             .getReadDuration()
             .awaitAsOne()
+    }
+
+    override suspend fun getReadTimesSince(since: Long): List<Long> {
+        return database.historyQueries
+            .getHistorySince(Date(since)) { _, readAt -> readAt?.time ?: 0L }
+            .awaitAsList()
     }
 
     override suspend fun getHistoryByMangaId(mangaId: Long): List<MangaHistory> {

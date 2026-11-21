@@ -17,6 +17,9 @@ interface MangaHistoryRepository {
 
     suspend fun getHistoryByMangaIds(mangaIds: List<Long>): Map<Long, List<MangaHistory>>
 
+    /** AniTenshi: when each chapter was last read, in epoch milliseconds, for those read from [since] on. */
+    suspend fun getReadTimesSince(since: Long): List<Long>
+
     suspend fun resetMangaHistory(historyId: Long)
 
     suspend fun resetHistoryByMangaId(mangaId: Long)

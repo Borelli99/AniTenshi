@@ -621,4 +621,24 @@
   <string name="anitenshi_categories_delete">Elimina</string>
   <string name="anitenshi_categories_delete_title">Elimina «%s»?</string>
   <string name="anitenshi_categories_delete_empty">Non contiene titoli.</string>
+  <!-- Statistiche -->
+  <string name="anitenshi_stats_read_time">Tempo di lettura</string>
+  <string name="anitenshi_stats_episodes_watched">Episodi visti</string>
+  <string name="anitenshi_stats_chapters_read">Capitoli letti</string>
+  <string name="anitenshi_stats_of">di %s</string>
+  <string name="anitenshi_stats_completed">Completati</string>
+  <string name="anitenshi_stats_last_7_days">Ultimi 7 giorni</string>
+  <string name="anitenshi_stats_your_library">La tua libreria</string>
+  <string name="anitenshi_stats_caught_up">In pari</string>
+  <string name="anitenshi_stats_caught_up_anime">Hai visto tutti gli episodi usciti</string>
+  <string name="anitenshi_stats_caught_up_manga">Hai letto tutti i capitoli usciti</string>
+  <string name="anitenshi_stats_started">Iniziati</string>
+  <string name="anitenshi_stats_not_started">Da iniziare</string>
+  <string name="anitenshi_stats_more">Altri dati</string>
+  <string name="anitenshi_stats_episodes_downloaded">Episodi scaricati</string>
+  <string name="anitenshi_stats_chapters_downloaded">Capitoli scaricati</string>
+  <string name="anitenshi_stats_trackers_used">Tracciatori in uso</string>
+  <string name="anitenshi_stats_days">%d g</string>
+  <string name="anitenshi_stats_hours">%d h</string>
+  <string name="anitenshi_stats_minutes">%d min</string>
 </resources>

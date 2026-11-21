@@ -72,4 +72,16 @@
     <item quantity="one">Il suo titolo resta nella libreria: se non ha altre categorie va in «Predefinita».</item>
     <item quantity="other">I suoi %d titoli restano nella libreria: quelli che non hanno altre categorie vanno in «Predefinita».</item>
   </plurals>
+  <plurals name="anitenshi_stats_episodes">
+    <item quantity="one">%s episodio</item>
+    <item quantity="other">%s episodi</item>
+  </plurals>
+  <plurals name="anitenshi_stats_chapters">
+    <item quantity="one">%s capitolo</item>
+    <item quantity="other">%s capitoli</item>
+  </plurals>
+  <plurals name="anitenshi_stats_titles">
+    <item quantity="one">%s titolo</item>
+    <item quantity="other">%s titoli</item>
+  </plurals>
 </resources>

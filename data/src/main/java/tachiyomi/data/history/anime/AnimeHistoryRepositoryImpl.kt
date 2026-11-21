@@ -12,6 +12,7 @@ import tachiyomi.domain.history.anime.model.AnimeHistory
 import tachiyomi.domain.history.anime.model.AnimeHistoryUpdate
 import tachiyomi.domain.history.anime.model.AnimeHistoryWithRelations
 import tachiyomi.domain.history.anime.repository.AnimeHistoryRepository
+import java.util.Date
 
 @Inject
 @SingleIn(AppScope::class)
@@ -48,6 +49,12 @@ class AnimeHistoryRepositoryImpl(
             }
         }
             .groupBy({ it.first }, { it.second })
+    }
+
+    override suspend fun getSeenTimesSince(since: Long): List<Long> {
+        return handler.awaitList {
+            animehistoryQueries.getHistorySince(Date(since)) { _, lastSeen -> lastSeen?.time ?: 0L }
+        }
     }
 
     override suspend fun resetAnimeHistory(historyId: Long) {

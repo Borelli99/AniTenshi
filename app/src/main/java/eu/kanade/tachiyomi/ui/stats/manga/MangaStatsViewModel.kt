@@ -18,11 +18,13 @@ import eu.kanade.tachiyomi.data.download.manga.MangaDownloadManager
 import eu.kanade.tachiyomi.data.track.MangaTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.ui.stats.lastWeek
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.domain.entries.manga.interactor.GetLibraryManga
+import tachiyomi.domain.history.manga.interactor.GetMangaHistory
 import tachiyomi.domain.history.manga.interactor.GetTotalReadDuration
 import tachiyomi.domain.library.manga.LibraryManga
 import tachiyomi.domain.library.service.LibraryPreferences
@@ -39,6 +41,7 @@ import tachiyomi.source.local.entries.manga.isLocal
 class MangaStatsViewModel(
     private val downloadManager: MangaDownloadManager,
     private val getLibraryManga: GetLibraryManga,
+    private val getMangaHistory: GetMangaHistory,
     private val getTotalReadDuration: GetTotalReadDuration,
     private val getTracks: GetMangaTracks,
     private val preferences: LibraryPreferences,
@@ -87,12 +90,22 @@ class MangaStatsViewModel(
                 trackerCount = loggedInTrackers.size,
             )
 
+            // AniTenshi: the chart of the last 7 days and the library by how far you've got
+            val week = lastWeek { since -> getMangaHistory.awaitReadTimesSince(since) }
+            val progress = StatsData.LibraryProgress(
+                caughtUp = distinctLibraryManga.count { it.hasStarted && it.unreadCount <= 0L },
+                started = distinctLibraryManga.count { it.hasStarted && it.unreadCount > 0L },
+                notStarted = distinctLibraryManga.count { !it.hasStarted },
+            )
+
             state.update {
                 StatsScreenState.SuccessManga(
                     overview = overviewStatData,
                     titles = titlesStatData,
                     chapters = chaptersStatData,
                     trackers = trackersStatData,
+                    week = week,
+                    progress = progress,
                 )
             }
         }

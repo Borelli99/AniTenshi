@@ -1,5 +1,7 @@
 package eu.kanade.presentation.more.stats.data
 
+import java.time.LocalDate
+
 sealed interface StatsData {
 
     data class MangaOverview(
@@ -42,5 +44,24 @@ sealed interface StatsData {
         val trackedTitleCount: Int,
         val meanScore: Double,
         val trackerCount: Int,
+    ) : StatsData
+
+    /**
+     * AniTenshi: how many episodes or chapters were last watched or read on each of the last 7 days, the oldest
+     * first and today last.
+     */
+    data class Week(
+        val firstDay: LocalDate,
+        val counts: List<Int>,
+    ) : StatsData
+
+    /**
+     * AniTenshi: the titles of the library by how far you've got: all that is out watched or read ([caughtUp]),
+     * started, or not started yet.
+     */
+    data class LibraryProgress(
+        val caughtUp: Int,
+        val started: Int,
+        val notStarted: Int,
     ) : StatsData
 }

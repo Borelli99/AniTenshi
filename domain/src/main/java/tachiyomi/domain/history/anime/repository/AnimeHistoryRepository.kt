@@ -17,6 +17,9 @@ interface AnimeHistoryRepository {
 
     suspend fun getHistoryByAnimeIds(animeIds: List<Long>): Map<Long, List<AnimeHistory>>
 
+    /** AniTenshi: when each episode was last watched, in epoch milliseconds, for those watched from [since] on. */
+    suspend fun getSeenTimesSince(since: Long): List<Long>
+
     suspend fun resetHistoryByAnimeId(animeId: Long)
 
     suspend fun deleteAllAnimeHistory(): Boolean

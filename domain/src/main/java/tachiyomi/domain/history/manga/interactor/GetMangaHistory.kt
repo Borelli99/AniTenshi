@@ -15,6 +15,11 @@ class GetMangaHistory(
         return repository.getHistoryByMangaId(mangaId)
     }
 
+    /** AniTenshi: when each chapter was last read, for those read from [since] (epoch milliseconds) on. */
+    suspend fun awaitReadTimesSince(since: Long): List<Long> {
+        return repository.getReadTimesSince(since)
+    }
+
     fun subscribe(query: String): Flow<List<MangaHistoryWithRelations>> {
         return repository.getMangaHistory(query)
     }

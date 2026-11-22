@@ -8,6 +8,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,18 +30,25 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -52,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +72,7 @@ import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.entries.components.ItemCover
 import eu.kanade.presentation.theme.AniTenshiPalette
+import eu.kanade.presentation.updates.UpdatesProgress
 import eu.kanade.presentation.util.formatChapterNumber
 import eu.kanade.presentation.util.formatEpisodeNumber
 import eu.kanade.presentation.util.isTabletUi
@@ -264,15 +274,13 @@ fun HomeContent(
     when (val current = dialog) {
         null -> {}
 
-        is HomeDialog.Actions -> ContinueActionsDialog(
+        is HomeDialog.Actions -> ContinueActionsSheet(
             entry = current.entry,
-            hideLabel = stringResource(
-                if (current.anime) {
-                    TLMR.strings.anitenshi_continue_hide_anime
-                } else {
-                    TLMR.strings.anitenshi_continue_hide_manga
-                },
-            ),
+            isAnime = current.anime,
+            onResume = {
+                dialog = null
+                if (current.anime) onClickContinueAnime(current.entry) else onClickContinueManga(current.entry)
+            },
             onOpen = {
                 dialog = null
                 if (current.anime) onOpenAnime(current.entry.id) else onOpenManga(current.entry.id)
@@ -289,7 +297,7 @@ fun HomeContent(
             LaunchedEffect(entries.isEmpty()) {
                 if (entries.isEmpty()) dialog = null
             }
-            HiddenEntriesDialog(
+            HiddenEntriesSheet(
                 title = stringResource(
                     if (current.anime) {
                         TLMR.strings.anitenshi_continue_hidden_anime_title
@@ -704,70 +712,262 @@ private sealed interface HomeDialog {
     data class Hidden(val anime: Boolean) : HomeDialog
 }
 
+/*
+ * AniTenshi: what a long press on a title to continue opens, and the list of hidden titles: panels that come up
+ * from the bottom (narrow and centred on tablets), closed by tapping outside or dragging them down.
+ */
+
 @Composable
-private fun ContinueActionsDialog(
+private fun HomeSheet(
+    onDismissRequest: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetMaxWidth = 560.dp,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            content = content,
+        )
+    }
+}
+
+/**
+ * The title and where you are, the gold button that goes on as a tap does, then "Open the page" and "Hide", with
+ * where hidden titles end up.
+ */
+@Composable
+private fun ContinueActionsSheet(
     entry: ContinueEntry,
-    hideLabel: String,
+    isAnime: Boolean,
+    onResume: () -> Unit,
     onOpen: () -> Unit,
     onHide: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(text = entry.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-        text = {
-            Column {
-                TextButton(onClick = onOpen) {
-                    Text(text = stringResource(TLMR.strings.anitenshi_continue_open_entry))
-                }
-                TextButton(onClick = onHide) {
-                    Text(text = hideLabel)
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
-            }
-        },
+    val colors = MaterialTheme.colorScheme
+    val remaining = entry.remaining.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    val numberLabel = entry.nextNumber?.let { number ->
+        if (isAnime) {
+            stringResource(TLMR.strings.anitenshi_episode_short, formatEpisodeNumber(number))
+        } else {
+            stringResource(TLMR.strings.anitenshi_chapter_short, formatChapterNumber(number))
+        }
+    }
+    val remainingText = pluralStringResource(
+        if (isAnime) TLMR.plurals.anitenshi_episodes_left else TLMR.plurals.anitenshi_chapters_left,
+        count = remaining,
+        remaining,
     )
+    val buttonText = when {
+        numberLabel == null && isAnime -> stringResource(TLMR.strings.anitenshi_continue_go_on_anime)
+        numberLabel == null -> stringResource(TLMR.strings.anitenshi_continue_go_on_manga)
+        !isAnime -> stringResource(TLMR.strings.anitenshi_continue_resume_manga, numberLabel)
+        entry.progress != null -> stringResource(TLMR.strings.anitenshi_continue_resume_anime, numberLabel)
+        else -> stringResource(TLMR.strings.anitenshi_continue_watch_anime, numberLabel)
+    }
+    HomeSheet(onDismissRequest = onDismissRequest) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ItemCover.Book(
+                data = entry.cover,
+                modifier = Modifier.width(64.dp),
+                shape = RoundedCornerShape(12.dp),
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = entry.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onSurface,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = listOfNotNull(numberLabel, remainingText).joinToString(" · "),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSurfaceVariant,
+                )
+                entry.progress?.let { progress ->
+                    UpdatesProgress(
+                        fraction = progress,
+                        text = null,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+        }
+        Button(
+            onClick = onResume,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 10.dp)
+                .heightIn(min = 52.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.secondary,
+                contentColor = colors.onSecondary,
+            ),
+        ) {
+            Icon(
+                painter = painterResource(if (isAnime) R.drawable.ic_nav_anime else R.drawable.ic_nav_manga),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = buttonText,
+                modifier = Modifier.padding(start = 10.dp),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        SheetActionRow(
+            icon = Icons.Outlined.Info,
+            label = stringResource(TLMR.strings.anitenshi_continue_open_entry),
+            hint = null,
+            showArrow = true,
+            onClick = onOpen,
+        )
+        SheetActionRow(
+            icon = Icons.Outlined.VisibilityOff,
+            label = stringResource(
+                if (isAnime) TLMR.strings.anitenshi_continue_hide_anime else TLMR.strings.anitenshi_continue_hide_manga,
+            ),
+            hint = stringResource(TLMR.strings.anitenshi_continue_hide_hint),
+            showArrow = false,
+            onClick = onHide,
+        )
+    }
 }
 
 @Composable
-private fun HiddenEntriesDialog(
+private fun SheetActionRow(
+    icon: ImageVector,
+    label: String,
+    hint: String?,
+    showArrow: Boolean,
+    onClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .heightIn(min = 60.dp)
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = colors.onSurface)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.onSurface,
+            )
+            if (hint != null) {
+                Text(
+                    text = hint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant,
+                )
+            }
+        }
+        if (showArrow) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = colors.outline,
+            )
+        }
+    }
+}
+
+/** The titles hidden from a continue row, each with its cover and a button to show it again. */
+@Composable
+private fun HiddenEntriesSheet(
     title: String,
     entries: List<ContinueEntry>,
     onShow: (ContinueEntry) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(text = title) },
-        text = {
-            // A plain scrolling column: lazy lists are not safe inside dialogs
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                entries.forEach { entry ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = entry.title,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
+    val colors = MaterialTheme.colorScheme
+    HomeSheet(onDismissRequest = onDismissRequest) {
+        Text(
+            text = title,
+            modifier = Modifier.padding(horizontal = 20.dp),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = colors.onSurface,
+        )
+        Text(
+            text = stringResource(TLMR.strings.anitenshi_continue_hidden_hint),
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 8.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.onSurfaceVariant,
+        )
+        // A plain scrolling column: lazy lists are not safe inside sheets that measure their content
+        Column(
+            modifier = Modifier
+                .heightIn(max = 420.dp)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            entries.forEach { entry ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 72.dp)
+                        .padding(horizontal = 20.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    ItemCover.Book(
+                        data = entry.cover,
+                        modifier = Modifier.width(40.dp),
+                        shape = RoundedCornerShape(8.dp),
+                    )
+                    Text(
+                        text = entry.title,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = colors.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    OutlinedButton(
+                        onClick = { onShow(entry) },
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, colors.secondary),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.secondary),
+                        contentPadding = PaddingValues(horizontal = 14.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Visibility,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
                         )
-                        TextButton(onClick = { onShow(entry) }) {
-                            Text(text = stringResource(TLMR.strings.anitenshi_continue_show_again))
-                        }
+                        Text(
+                            text = stringResource(TLMR.strings.anitenshi_continue_show_again),
+                            modifier = Modifier.padding(start = 8.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                        )
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_close))
-            }
-        },
-    )
+        }
+    }
 }
 
 /** Tap and long press on a whole card, with the ripple clipped to the card's corners. */

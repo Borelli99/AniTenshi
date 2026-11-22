@@ -733,4 +733,12 @@
     <string name="anitenshi_history_clear_stats_manga">The \"Last 7 days\" chart and the reading time will start again from zero.</string>
     <string name="anitenshi_history_clear_confirm">Clear</string>
     <string name="anitenshi_home_open_failed">Couldn\'t open this title</string>
+    <!-- Home: the panel of a title to continue -->
+    <string name="anitenshi_continue_resume_anime">Resume %1$s</string>
+    <string name="anitenshi_continue_watch_anime">Watch %1$s</string>
+    <string name="anitenshi_continue_resume_manga">Continue %1$s</string>
+    <string name="anitenshi_continue_go_on_anime">Resume</string>
+    <string name="anitenshi_continue_go_on_manga">Continue reading</string>
+    <string name="anitenshi_continue_hide_hint">You\'ll find it in \"Hidden\", next to the section\'s title</string>
+    <string name="anitenshi_continue_hidden_hint">They come back to the row when you show them again.</string>
 </resources>

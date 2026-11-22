@@ -650,4 +650,12 @@
   <string name="anitenshi_history_clear_stats_manga">Il grafico «Ultimi 7 giorni» e il tempo di lettura ripartiranno da zero.</string>
   <string name="anitenshi_history_clear_confirm">Svuota</string>
   <string name="anitenshi_home_open_failed">Impossibile aprire questo titolo</string>
+  <!-- Home: il pannello di un titolo da continuare -->
+  <string name="anitenshi_continue_resume_anime">Riprendi %1$s</string>
+  <string name="anitenshi_continue_watch_anime">Guarda %1$s</string>
+  <string name="anitenshi_continue_resume_manga">Continua %1$s</string>
+  <string name="anitenshi_continue_go_on_anime">Riprendi</string>
+  <string name="anitenshi_continue_go_on_manga">Continua a leggere</string>
+  <string name="anitenshi_continue_hide_hint">Lo ritrovi in «Nascosti», accanto al titolo della sezione</string>
+  <string name="anitenshi_continue_hidden_hint">Tornano nella fila quando li mostri di nuovo.</string>
 </resources>

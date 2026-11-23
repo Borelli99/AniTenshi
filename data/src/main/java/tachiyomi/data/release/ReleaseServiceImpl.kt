@@ -23,15 +23,11 @@ class ReleaseServiceImpl(
 ) : ReleaseService {
 
     override suspend fun latest(arguments: GetApplicationRelease.Arguments): Release? {
-        val release = if (arguments.includeBeta) {
-            newestRelease(arguments.repository) ?: return null
-        } else {
-            with(json) {
-                networkService.client
-                    .newCall(GET("https://api.github.com/repos/${arguments.repository}/releases/latest"))
-                    .awaitSuccess()
-                    .parseAs<GithubRelease>()
-            }
+        val release = with(json) {
+            networkService.client
+                .newCall(GET("https://api.github.com/repos/${arguments.repository}/releases/latest"))
+                .awaitSuccess()
+                .parseAs<GithubRelease>()
         }
         val downloadLink = getDownloadLink(release = release) ?: return null
 
@@ -45,23 +41,6 @@ class ReleaseServiceImpl(
         )
     }
 
-    /**
-     * AniTenshi: the release with the highest number among the newest ones, stable or test (pre-release), for
-     * beta testers. Only tags like "r1234" count: the number is what the app compares with its own.
-     */
-    private suspend fun newestRelease(repository: String): GithubRelease? {
-        val releases = with(json) {
-            networkService.client
-                .newCall(GET("https://api.github.com/repos/$repository/releases?per_page=20"))
-                .awaitSuccess()
-                .parseAs<List<GithubRelease>>()
-        }
-        return releases
-            // A release still being uploaded has no APK yet: the one before it is offered meanwhile
-            .filter { releaseTagRegex.matches(it.version) && getDownloadLink(it) != null }
-            .maxByOrNull { it.version.drop(1).toLong() }
-    }
-
     private fun getDownloadLink(release: GithubRelease): String? {
         val map = release.assets.associate { asset ->
             BUILD_TYPES.find { "-$it" in asset.name } to asset.downloadLink
@@ -72,8 +51,6 @@ class ReleaseServiceImpl(
 
     companion object {
         private val BUILD_TYPES = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
-
-        private val releaseTagRegex = Regex("""r\d+""")
 
         /**
          * Regular expression that matches a mention to a valid GitHub username, like it's

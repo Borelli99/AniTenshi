@@ -30,9 +30,6 @@ class BasePreferences(
         PackageManager.FEATURE_PICTURE_IN_PICTURE,
     )
 
-    /** AniTenshi: also offer the test versions (GitHub pre-releases) as updates, not only the stable ones. */
-    val betaTester: Preference<Boolean> = preferenceStore.getBoolean("anitenshi_beta_tester", false)
-
     val shownOnboardingFlow: Preference<Boolean> = preferenceStore.getBoolean(
         Preference.appStateKey("onboarding_complete"),
         false,

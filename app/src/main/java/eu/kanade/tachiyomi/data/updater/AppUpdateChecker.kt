@@ -1,7 +1,6 @@
 package eu.kanade.tachiyomi.data.updater
 
 import dev.zacsweers.metro.Inject
-import eu.kanade.domain.base.BasePreferences
 import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.core.common.Constants
 import eu.kanade.tachiyomi.util.system.isFossBuildType
@@ -11,7 +10,6 @@ import tachiyomi.domain.release.interactor.GetApplicationRelease
 @Inject
 class AppUpdateChecker(
     private val getApplicationRelease: GetApplicationRelease,
-    private val basePreferences: BasePreferences,
 ) {
 
     suspend fun checkForUpdate(forceCheck: Boolean = false): GetApplicationRelease.Result {
@@ -31,7 +29,6 @@ class AppUpdateChecker(
                     BuildConfig.VERSION_NAME,
                     GITHUB_REPO,
                     forceCheck,
-                    includeBeta = basePreferences.betaTester.get(),
                 ),
             )
 

@@ -62,8 +62,6 @@ class GetApplicationRelease(
         val versionName: String,
         val repository: String,
         val forceCheck: Boolean = false,
-        // AniTenshi: the newest of stable and test versions (pre-releases), for beta testers
-        val includeBeta: Boolean = false,
     )
 
     sealed interface Result {

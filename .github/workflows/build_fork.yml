@@ -2,8 +2,9 @@ name: Build AniTenshi APK
 
 # Builds a signed APK of AniTenshi (fork of Animetail) and publishes it as a GitHub release,
 # so it can be downloaded straight from the phone (Releases page).
-# Pushes to test/** branches build the same signed APK as a private draft release instead
-# (visible only to repo owners/collaborators, never offered to the app's updater).
+# Pushes to test/** branches build the same signed APK as a public pre-release ("beta") instead:
+# the app offers it only to whoever turned on Settings > Info > Beta tester. When the same commit
+# reaches master, that pre-release becomes the stable release (same tag, same files).
 on:
   push:
     branches:
@@ -159,28 +160,81 @@ jobs:
             echo "[Buy Me a Coffee](https://buymeacoffee.com/anitenshi) · [PayPal](https://paypal.me/Borelli99)"
           } > "${RUNNER_TEMP}/notes.md"
 
-          if [ "${IS_TEST}" = "true" ]; then
-            # Private test build: a draft release (no tag is created until it is published).
-            # Older test drafts are removed so only the newest one is listed.
-            gh api "repos/${{ github.repository }}/releases?per_page=100" \
-              --jq '.[] | select(.draft and (.tag_name | startswith("test-"))) | .id' |
-              while read -r OLD_ID; do gh api -X DELETE "repos/${{ github.repository }}/releases/${OLD_ID}"; done
-            {
-              echo "**Private test build** (branch \`${GITHUB_REF_NAME}\`): only you can see it, the app never offers it to anyone."
-              echo
-              cat "${RUNNER_TEMP}/notes.md"
-            } > "${RUNNER_TEMP}/test-notes.md"
-            gh release create "test-${SHORT_SHA}" signed/*.apk \
-              --draft --prerelease \
-              --target "${{ github.sha }}" \
-              --title "TEST AniTenshi ${VERSION_NAME} (${SHORT_SHA})" \
-              --notes-file "${RUNNER_TEMP}/test-notes.md"
-          elif gh release view "${TAG}" > /dev/null 2>&1; then
-            gh release upload "${TAG}" signed/*.apk --clobber
-          else
+          REPO="${{ github.repository }}"
+          CURRENT="${TAG#r}"
+          # Commit a release's tag points at (empty when the tag doesn't exist).
+          tag_sha() { gh api "repos/${REPO}/git/ref/tags/$1" --jq .object.sha 2>/dev/null || true; }
+          # Betas with a lower number than this build are superseded by it.
+          remove_older_betas() {
+            gh api "repos/${REPO}/releases?per_page=100" \
+              --jq '.[] | select(.prerelease and (.draft | not) and (.tag_name | test("^r[0-9]+$"))) | .tag_name' |
+              while read -r OLD_TAG; do
+                if [ "${OLD_TAG#r}" -lt "${CURRENT}" ]; then
+                  gh release delete "${OLD_TAG}" --yes --cleanup-tag
+                fi
+              done
+          }
+          create_stable() {
             gh release create "${TAG}" signed/*.apk \
               --target "${{ github.sha }}" \
               --title "AniTenshi ${VERSION_NAME} (${TAG})" \
               --notes-file "${RUNNER_TEMP}/notes.md" \
               --latest
+          }
+
+          if [ "${IS_TEST}" = "true" ]; then
+            # Private test drafts from before betas went public are no longer used.
+            gh api "repos/${REPO}/releases?per_page=100" \
+              --jq '.[] | select(.draft and (.tag_name | startswith("test-"))) | .id' |
+              while read -r OLD_ID; do gh api -X DELETE "repos/${REPO}/releases/${OLD_ID}"; done
+            {
+              echo "**Beta** (branch \`${GITHUB_REF_NAME}\`): a test version for beta testers (Settings › Info › Beta tester). When it's published as stable, beta testers already have it."
+              echo
+              cat "${RUNNER_TEMP}/notes.md"
+            } > "${RUNNER_TEMP}/beta-notes.md"
+            if gh release view "${TAG}" > /dev/null 2>&1; then
+              EXISTING_SHA="$(tag_sha "${TAG}")"
+              IS_PRE="$(gh release view "${TAG}" --json isPrerelease --jq .isPrerelease)"
+              if [ "${EXISTING_SHA}" != "${{ github.sha }}" ]; then
+                if [ "${IS_PRE}" != "true" ]; then
+                  echo "::error::${TAG} is already a stable release of another commit (${EXISTING_SHA})."
+                  exit 1
+                fi
+                # A beta of another commit with the same number: this one replaces it.
+                gh release delete "${TAG}" --yes --cleanup-tag
+              fi
+            fi
+            if gh release view "${TAG}" > /dev/null 2>&1; then
+              # The same commit built again: only the files are refreshed.
+              gh release upload "${TAG}" signed/*.apk --clobber
+            else
+              gh release create "${TAG}" signed/*.apk \
+                --prerelease --latest=false \
+                --target "${{ github.sha }}" \
+                --title "AniTenshi ${VERSION_NAME} beta (${TAG})" \
+                --notes-file "${RUNNER_TEMP}/beta-notes.md"
+            fi
+            remove_older_betas
+          else
+            if gh release view "${TAG}" > /dev/null 2>&1; then
+              IS_PRE="$(gh release view "${TAG}" --json isPrerelease --jq .isPrerelease)"
+              EXISTING_SHA="$(tag_sha "${TAG}")"
+              if [ "${IS_PRE}" = "true" ] && [ "${EXISTING_SHA}" = "${{ github.sha }}" ]; then
+                # The beta of this same commit becomes the stable release.
+                gh release upload "${TAG}" signed/*.apk --clobber
+                gh release edit "${TAG}" \
+                  --prerelease=false --latest \
+                  --title "AniTenshi ${VERSION_NAME} (${TAG})" \
+                  --notes-file "${RUNNER_TEMP}/notes.md"
+              elif [ "${IS_PRE}" = "true" ]; then
+                # A beta of another commit with the same number gives way to the stable release.
+                gh release delete "${TAG}" --yes --cleanup-tag
+                create_stable
+              else
+                gh release upload "${TAG}" signed/*.apk --clobber
+              fi
+            else
+              create_stable
+            fi
+            remove_older_betas
           fi

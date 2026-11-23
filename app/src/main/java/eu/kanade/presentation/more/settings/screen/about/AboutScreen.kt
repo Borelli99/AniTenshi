@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,6 +48,7 @@ import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.CardEntry
 import eu.kanade.presentation.components.CardGroup
+import eu.kanade.presentation.components.CardSwitchEntry
 import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.rememberIs24HourSystem
@@ -60,6 +62,7 @@ import eu.kanade.tachiyomi.util.system.copyToClipboard
 import eu.kanade.tachiyomi.util.system.isNightlyBuildType
 import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.system.updaterEnabled
+import java.util.Locale
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -76,10 +79,10 @@ import tachiyomi.i18n.tail.TLMR
 import tachiyomi.presentation.core.components.ScrollbarLazyColumn
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.util.collectAsState
 import tachiyomi.presentation.core.util.plus
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import java.util.Locale
 import kotlin.time.Instant
 
 object AboutScreen : Screen() {
@@ -102,6 +105,8 @@ object AboutScreen : Screen() {
         var isCheckingUpdates by remember { mutableStateOf(false) }
         val crashLogUtil = remember { context.appGraph.crashLogUtil }
         val uiPreferences = remember { context.appGraph.uiPreferences }
+        val basePreferences = remember { context.appGraph.basePreferences }
+        val isBetaTester by basePreferences.betaTester.collectAsState()
         val is24HourSystem = rememberIs24HourSystem()
 
         Scaffold(
@@ -163,6 +168,28 @@ object AboutScreen : Screen() {
                         },
                         modifier = block,
                     )
+                }
+
+                // AniTenshi: test versions as updates too, for beta testers
+                if (updaterEnabled) {
+                    item {
+                        CardGroup(
+                            title = stringResource(TLMR.strings.anitenshi_about_group_updates),
+                            modifier = block,
+                        ) {
+                            CardSwitchEntry(
+                                title = stringResource(TLMR.strings.anitenshi_about_beta_tester),
+                                subtitle = if (isBetaTester) {
+                                    stringResource(TLMR.strings.anitenshi_about_beta_tester_on)
+                                } else {
+                                    stringResource(TLMR.strings.anitenshi_about_beta_tester_off)
+                                },
+                                icon = Icons.Outlined.Science,
+                                checked = isBetaTester,
+                                onCheckedChange = { basePreferences.betaTester.set(it) },
+                            )
+                        }
+                    }
                 }
 
                 item {

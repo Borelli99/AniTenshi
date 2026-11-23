@@ -667,4 +667,9 @@
   <string name="anitenshi_source_saver_exclude_hint">Le immagini di questa fonte arrivano senza compressione</string>
   <string name="anitenshi_source_saver_include_hint">Le immagini di questa fonte tornano a passare dal risparmio dati</string>
   <string name="anitenshi_source_disable_hint">Non compare più in Sfoglia e nella ricerca globale. La riattivi dal filtro in alto</string>
+  <!-- Info: beta tester -->
+  <string name="anitenshi_about_group_updates">Aggiornamenti</string>
+  <string name="anitenshi_about_beta_tester">Beta tester</string>
+  <string name="anitenshi_about_beta_tester_off">Ricevi le versioni di prova appena sono pronte, prima di tutti. Possono avere qualche errore.</string>
+  <string name="anitenshi_about_beta_tester_on">Ricevi le versioni di prova appena sono pronte, prima di tutti. Possono avere qualche errore. Se la spegni, resti su questa versione finché non esce una stabile più nuova.</string>
 </resources>

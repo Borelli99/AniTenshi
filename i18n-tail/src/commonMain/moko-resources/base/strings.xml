@@ -750,4 +750,9 @@
     <string name="anitenshi_source_saver_exclude_hint">Its images arrive without compression</string>
     <string name="anitenshi_source_saver_include_hint">Its images go through the data saver again</string>
     <string name="anitenshi_source_disable_hint">It no longer shows in Browse and global search. Turn it back on from the filter at the top</string>
+    <!-- Info: beta tester -->
+    <string name="anitenshi_about_group_updates">Updates</string>
+    <string name="anitenshi_about_beta_tester">Beta tester</string>
+    <string name="anitenshi_about_beta_tester_off">Get the test versions as soon as they\'re ready, before everyone else. They may have a few bugs.</string>
+    <string name="anitenshi_about_beta_tester_on">Get the test versions as soon as they\'re ready, before everyone else. They may have a few bugs. If you turn it off, you stay on this version until a newer stable one comes out.</string>
 </resources>

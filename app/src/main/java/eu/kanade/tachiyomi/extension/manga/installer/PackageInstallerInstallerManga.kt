@@ -97,11 +97,8 @@ class PackageInstallerInstallerManga(private val service: Service) : InstallerMa
             if (!pkgName.isNullOrEmpty()) {
                 installParams.setAppPackageName(pkgName)
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !pkgName.isNullOrEmpty()) {
-                installParams.setRequireUserAction(
-                    PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED,
-                )
-            }
+            // AniTenshi: updates are not installed silently any more (no UPDATE_PACKAGES_WITHOUT_USER_ACTION):
+            // Android asks for confirmation, as for the first install.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 installParams.setPackageSource(PackageInstaller.PACKAGE_SOURCE_STORE)
             }

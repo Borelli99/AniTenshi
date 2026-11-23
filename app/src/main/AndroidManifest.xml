@@ -31,7 +31,7 @@
     <!-- For managing extensions -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+    <!-- AniTenshi: no UPDATE_PACKAGES_WITHOUT_USER_ACTION, extension updates go through the Android confirmation -->
     <!-- To view extension packages in API 30+ -->
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"

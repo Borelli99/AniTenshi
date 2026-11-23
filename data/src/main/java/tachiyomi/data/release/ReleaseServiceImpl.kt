@@ -50,6 +50,7 @@ class ReleaseServiceImpl(
      * AniTenshi: the pre-release with the fixed tag "beta". Its title ends with the build
      * number, like "AniTenshi 1.0.22 beta (r10055)": that number stands in for the tag.
      * Used only if it is newer than [stable] and its APKs are already there.
+     * If the "beta" release can't be read (none at the moment, network error), the stable one is used.
      */
     private suspend fun newerBeta(repository: String, stable: GithubRelease): GithubRelease? {
         val beta = try {

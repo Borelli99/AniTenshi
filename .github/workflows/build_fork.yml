@@ -2,9 +2,10 @@ name: Build AniTenshi APK
 
 # Builds a signed APK of AniTenshi (fork of Animetail) and publishes it as a GitHub release,
 # so it can be downloaded straight from the phone (Releases page).
-# Pushes to test/** branches build the same signed APK as a public pre-release ("beta") instead:
-# the app offers it only to whoever turned on Settings > Info > Beta tester. When the same commit
-# reaches master, that pre-release becomes the stable release (same tag, same files).
+# Pushes to test/** branches build the same signed APK as a public pre-release instead, always under
+# the tag "beta" (one at a time, title "AniTenshi <version> beta (r<number>)"): the app offers it only
+# to whoever turned on Settings > Info > Beta tester. Once master has a stable release with the same or
+# a higher number, the beta is removed.
 on:
   push:
     branches:
@@ -162,6 +163,7 @@ jobs:
 
           REPO="${{ github.repository }}"
           CURRENT="${TAG#r}"
+          BETA_TAG="beta"
           # Commit a release's tag points at (empty when the tag doesn't exist).
           tag_sha() { gh api "repos/${REPO}/git/ref/tags/$1" --jq .object.sha 2>/dev/null || true; }
           # Betas with a lower number than this build are superseded by it.
@@ -182,39 +184,39 @@ jobs:
               --latest
           }
 
+          # Build number in the title of the rolling "beta" pre-release (empty when there is none).
+          beta_number() {
+            gh release view "${BETA_TAG}" --json name --jq .name 2>/dev/null | grep -oP '\(r\K[0-9]+(?=\))' || true
+          }
+
           if [ "${IS_TEST}" = "true" ]; then
             # Private test drafts from before betas went public are no longer used.
             gh api "repos/${REPO}/releases?per_page=100" \
               --jq '.[] | select(.draft and (.tag_name | startswith("test-"))) | .id' |
               while read -r OLD_ID; do gh api -X DELETE "repos/${REPO}/releases/${OLD_ID}"; done
+            # Betas tagged r<number> (the first scheme) give way to the single "beta" release.
+            gh api "repos/${REPO}/releases?per_page=100" \
+              --jq '.[] | select(.prerelease and (.draft | not) and (.tag_name | test("^r[0-9]+$"))) | .tag_name' |
+              while read -r OLD_TAG; do gh release delete "${OLD_TAG}" --yes --cleanup-tag; done
             {
               echo "**Beta** (branch \`${GITHUB_REF_NAME}\`): a test version for beta testers (Settings › Info › Beta tester). When it's published as stable, beta testers already have it."
               echo
               cat "${RUNNER_TEMP}/notes.md"
             } > "${RUNNER_TEMP}/beta-notes.md"
-            if gh release view "${TAG}" > /dev/null 2>&1; then
-              EXISTING_SHA="$(tag_sha "${TAG}")"
-              IS_PRE="$(gh release view "${TAG}" --json isPrerelease --jq .isPrerelease)"
-              if [ "${EXISTING_SHA}" != "${{ github.sha }}" ]; then
-                if [ "${IS_PRE}" != "true" ]; then
-                  echo "::error::${TAG} is already a stable release of another commit (${EXISTING_SHA})."
-                  exit 1
-                fi
-                # A beta of another commit with the same number: this one replaces it.
-                gh release delete "${TAG}" --yes --cleanup-tag
+            # One beta at a time, always under the tag "beta": the app reads it like releases/latest.
+            if gh release view "${BETA_TAG}" > /dev/null 2>&1; then
+              if [ "$(tag_sha "${BETA_TAG}")" = "${{ github.sha }}" ]; then
+                # The same commit built again: only the files are refreshed.
+                gh release upload "${BETA_TAG}" signed/*.apk --clobber
+                exit 0
               fi
+              gh release delete "${BETA_TAG}" --yes --cleanup-tag
             fi
-            if gh release view "${TAG}" > /dev/null 2>&1; then
-              # The same commit built again: only the files are refreshed.
-              gh release upload "${TAG}" signed/*.apk --clobber
-            else
-              gh release create "${TAG}" signed/*.apk \
-                --prerelease --latest=false \
-                --target "${{ github.sha }}" \
-                --title "AniTenshi ${VERSION_NAME} beta (${TAG})" \
-                --notes-file "${RUNNER_TEMP}/beta-notes.md"
-            fi
-            remove_older_betas
+            gh release create "${BETA_TAG}" signed/*.apk \
+              --prerelease --latest=false \
+              --target "${{ github.sha }}" \
+              --title "AniTenshi ${VERSION_NAME} beta (${TAG})" \
+              --notes-file "${RUNNER_TEMP}/beta-notes.md"
           else
             if gh release view "${TAG}" > /dev/null 2>&1; then
               IS_PRE="$(gh release view "${TAG}" --json isPrerelease --jq .isPrerelease)"
@@ -237,4 +239,9 @@ jobs:
               create_stable
             fi
             remove_older_betas
+            # The beta is superseded once a stable release has the same or a higher number.
+            NUMBER="$(beta_number)"
+            if [ -n "${NUMBER}" ] && [ "${NUMBER}" -le "${CURRENT}" ]; then
+              gh release delete "${BETA_TAG}" --yes --cleanup-tag
+            fi
           fi

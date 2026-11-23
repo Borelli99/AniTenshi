@@ -10,6 +10,9 @@ import kotlinx.serialization.Serializable
 data class GithubRelease(
     @SerialName("tag_name")
     val version: String,
+    // AniTenshi: the title, which carries the build number of the rolling "beta" release
+    @SerialName("name")
+    val name: String? = null,
     @SerialName("body")
     val info: String,
     @SerialName("html_url")

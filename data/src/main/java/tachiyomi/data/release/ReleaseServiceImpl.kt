@@ -57,7 +57,8 @@ class ReleaseServiceImpl(
                 .parseAs<List<GithubRelease>>()
         }
         return releases
-            .filter { releaseTagRegex.matches(it.version) }
+            // A release still being uploaded has no APK yet: the one before it is offered meanwhile
+            .filter { releaseTagRegex.matches(it.version) && getDownloadLink(it) != null }
             .maxByOrNull { it.version.drop(1).toLong() }
     }
 

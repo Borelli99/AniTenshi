@@ -1,9 +1,8 @@
 package eu.kanade.presentation.browse.anime
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -25,8 +24,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import eu.kanade.presentation.browse.anime.components.AnimeSourceIcon
 import eu.kanade.presentation.browse.anime.components.BaseAnimeSourceItem
+import eu.kanade.presentation.browse.components.SourceOptionsSheet
 import eu.kanade.tachiyomi.ui.browse.anime.source.AnimeSourcesViewModel
 import eu.kanade.tachiyomi.ui.browse.anime.source.browse.BrowseAnimeSourceViewModel.Listing
 import eu.kanade.tachiyomi.util.system.LocaleHelper
@@ -179,40 +179,29 @@ private fun AnimeSourcePinButton(
     }
 }
 
+/** AniTenshi: what a long press on an anime source opens (see [SourceOptionsSheet]). */
 @Composable
-fun AnimeSourceOptionsDialog(
+fun AnimeSourceOptionsSheet(
     source: AnimeSource,
+    onClickBrowse: () -> Unit,
+    onClickLatest: () -> Unit,
     onClickPin: () -> Unit,
     onClickDisable: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
-        title = {
-            Text(text = source.visualName)
-        },
-        text = {
-            Column {
-                val textId = if (Pin.Pinned in source.pin) MR.strings.action_unpin else MR.strings.action_pin
-                Text(
-                    text = stringResource(textId),
-                    modifier = Modifier
-                        .clickable(onClick = onClickPin)
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                )
-                if (source.id != LocalAnimeSource.ID) {
-                    Text(
-                        text = stringResource(MR.strings.action_disable),
-                        modifier = Modifier
-                            .clickable(onClick = onClickDisable)
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                    )
-                }
-            }
-        },
-        onDismissRequest = onDismiss,
-        confirmButton = {},
+    SourceOptionsSheet(
+        icon = { AnimeSourceIcon(source = source, modifier = Modifier.fillMaxSize()) },
+        name = source.name,
+        lang = source.lang,
+        isAnime = true,
+        isPinned = Pin.Pinned in source.pin,
+        onClickBrowse = onClickBrowse,
+        onClickLatest = onClickLatest.takeIf { source.supportsLatest },
+        onClickPin = onClickPin,
+        onClickDisable = onClickDisable.takeIf { source.id != LocalAnimeSource.ID },
+        isExcludedFromDataSaver = null,
+        onClickToggleDataSaver = {},
+        onDismiss = onDismiss,
     )
 }
 

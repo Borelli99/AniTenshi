@@ -11,7 +11,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.zacsweers.metrox.viewmodel.metroViewModel
-import eu.kanade.presentation.browse.anime.AnimeSourceOptionsDialog
+import eu.kanade.presentation.browse.anime.AnimeSourceOptionsSheet
 import eu.kanade.presentation.browse.anime.AnimeSourcesScreen
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
@@ -22,6 +22,7 @@ import eu.kanade.tachiyomi.ui.browse.anime.source.globalsearch.GlobalAnimeSearch
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import tachiyomi.domain.source.anime.model.AnimeSource
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -49,20 +50,22 @@ fun Screen.animeSourcesTab(
             ),
         ),
         content = { contentPadding, snackbarHostState ->
+            // AniTenshi: the same from the list and from the panel of a long press
+            val openSource: (AnimeSource, BrowseAnimeSourceViewModel.Listing) -> Unit = { source, listing ->
+                // SY -->
+                val screen = when {
+                    listing == BrowseAnimeSourceViewModel.Listing.Popular &&
+                        viewModel.useNewSourceNavigation -> SourceFeedScreen(source.id)
+
+                    else -> BrowseAnimeSourceScreen(source.id, listing.query)
+                }
+                navigator.push(screen)
+                // SY <--
+            }
             AnimeSourcesScreen(
                 state = state,
                 contentPadding = contentPadding,
-                onClickItem = { source, listing ->
-                    // SY -->
-                    val screen = when {
-                        listing == BrowseAnimeSourceViewModel.Listing.Popular &&
-                            viewModel.useNewSourceNavigation -> SourceFeedScreen(source.id)
-
-                        else -> BrowseAnimeSourceScreen(source.id, listing.query)
-                    }
-                    navigator.push(screen)
-                    // SY <--
-                },
+                onClickItem = openSource,
                 onClickPin = viewModel::togglePin,
                 onLongClickItem = viewModel::showSourceDialog,
                 onGoToExtensions = onGoToExtensions,
@@ -70,8 +73,16 @@ fun Screen.animeSourcesTab(
 
             state.dialog?.let { dialog ->
                 val source = dialog.source
-                AnimeSourceOptionsDialog(
+                AnimeSourceOptionsSheet(
                     source = source,
+                    onClickBrowse = {
+                        viewModel.closeDialog()
+                        openSource(source, BrowseAnimeSourceViewModel.Listing.Popular)
+                    },
+                    onClickLatest = {
+                        viewModel.closeDialog()
+                        openSource(source, BrowseAnimeSourceViewModel.Listing.Latest)
+                    },
                     onClickPin = {
                         viewModel.togglePin(source)
                         viewModel.closeDialog()

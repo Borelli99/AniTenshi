@@ -8,7 +8,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,14 +40,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -60,7 +57,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +64,8 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import eu.kanade.presentation.components.AniTenshiSheet
+import eu.kanade.presentation.components.AniTenshiSheetRow
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.entries.components.ItemCover
@@ -714,28 +712,8 @@ private sealed interface HomeDialog {
 
 /*
  * AniTenshi: what a long press on a title to continue opens, and the list of hidden titles: panels that come up
- * from the bottom (narrow and centred on tablets), closed by tapping outside or dragging them down.
+ * from the bottom (`AniTenshiSheet`).
  */
-
-@Composable
-private fun HomeSheet(
-    onDismissRequest: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        sheetMaxWidth = 560.dp,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            content = content,
-        )
-    }
-}
 
 /**
  * The title and where you are, the gold button that goes on as a tap does, then "Open the page" and "Hide", with
@@ -771,7 +749,7 @@ private fun ContinueActionsSheet(
         entry.progress != null -> stringResource(TLMR.strings.anitenshi_continue_resume_anime, numberLabel)
         else -> stringResource(TLMR.strings.anitenshi_continue_watch_anime, numberLabel)
     }
-    HomeSheet(onDismissRequest = onDismissRequest) {
+    AniTenshiSheet(onDismissRequest = onDismissRequest) {
         Row(
             modifier = Modifier.padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -832,65 +810,21 @@ private fun ContinueActionsSheet(
                 fontWeight = FontWeight.Bold,
             )
         }
-        SheetActionRow(
+        AniTenshiSheetRow(
             icon = Icons.Outlined.Info,
             label = stringResource(TLMR.strings.anitenshi_continue_open_entry),
             hint = null,
-            showArrow = true,
             onClick = onOpen,
+            showArrow = true,
         )
-        SheetActionRow(
+        AniTenshiSheetRow(
             icon = Icons.Outlined.VisibilityOff,
             label = stringResource(
                 if (isAnime) TLMR.strings.anitenshi_continue_hide_anime else TLMR.strings.anitenshi_continue_hide_manga,
             ),
             hint = stringResource(TLMR.strings.anitenshi_continue_hide_hint),
-            showArrow = false,
             onClick = onHide,
         )
-    }
-}
-
-@Composable
-private fun SheetActionRow(
-    icon: ImageVector,
-    label: String,
-    hint: String?,
-    showArrow: Boolean,
-    onClick: () -> Unit,
-) {
-    val colors = MaterialTheme.colorScheme
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .heightIn(min = 60.dp)
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Icon(imageVector = icon, contentDescription = null, tint = colors.onSurface)
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = colors.onSurface,
-            )
-            if (hint != null) {
-                Text(
-                    text = hint,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.onSurfaceVariant,
-                )
-            }
-        }
-        if (showArrow) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                tint = colors.outline,
-            )
-        }
     }
 }
 
@@ -903,7 +837,7 @@ private fun HiddenEntriesSheet(
     onDismissRequest: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    HomeSheet(onDismissRequest = onDismissRequest) {
+    AniTenshiSheet(onDismissRequest = onDismissRequest) {
         Text(
             text = title,
             modifier = Modifier.padding(horizontal = 20.dp),

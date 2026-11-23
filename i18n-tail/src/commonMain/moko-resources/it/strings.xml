@@ -658,4 +658,13 @@
   <string name="anitenshi_continue_go_on_manga">Continua a leggere</string>
   <string name="anitenshi_continue_hide_hint">Lo ritrovi in «Nascosti», accanto al titolo della sezione</string>
   <string name="anitenshi_continue_hidden_hint">Tornano nella fila quando li mostri di nuovo.</string>
+  <!-- Sfoglia: il pannello di una fonte -->
+  <string name="anitenshi_source_pinned">fissata</string>
+  <string name="anitenshi_source_pin">Fissa in cima</string>
+  <string name="anitenshi_source_pin_hint">Le fonti fissate stanno in cima e i loro ultimi titoli compaiono nella Home</string>
+  <string name="anitenshi_source_unpin">Togli dalle fisse</string>
+  <string name="anitenshi_source_unpin_hint">Torna al suo posto nella lista e sparisce dalla Home</string>
+  <string name="anitenshi_source_saver_exclude_hint">Le immagini di questa fonte arrivano senza compressione</string>
+  <string name="anitenshi_source_saver_include_hint">Le immagini di questa fonte tornano a passare dal risparmio dati</string>
+  <string name="anitenshi_source_disable_hint">Non compare più in Sfoglia e nella ricerca globale. La riattivi dal filtro in alto</string>
 </resources>

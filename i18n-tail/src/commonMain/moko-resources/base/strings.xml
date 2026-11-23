@@ -741,4 +741,13 @@
     <string name="anitenshi_continue_go_on_manga">Continue reading</string>
     <string name="anitenshi_continue_hide_hint">You\'ll find it in \"Hidden\", next to the section\'s title</string>
     <string name="anitenshi_continue_hidden_hint">They come back to the row when you show them again.</string>
+    <!-- Browse: the panel of a source -->
+    <string name="anitenshi_source_pinned">pinned</string>
+    <string name="anitenshi_source_pin">Pin to the top</string>
+    <string name="anitenshi_source_pin_hint">Pinned sources stay at the top and their latest titles show in Home</string>
+    <string name="anitenshi_source_unpin">Unpin</string>
+    <string name="anitenshi_source_unpin_hint">It goes back to its place in the list and leaves Home</string>
+    <string name="anitenshi_source_saver_exclude_hint">Its images arrive without compression</string>
+    <string name="anitenshi_source_saver_include_hint">Its images go through the data saver again</string>
+    <string name="anitenshi_source_disable_hint">It no longer shows in Browse and global search. Turn it back on from the filter at the top</string>
 </resources>

@@ -1,15 +1,12 @@
 package eu.kanade.presentation.browse.manga
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
@@ -19,8 +16,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import eu.kanade.presentation.browse.components.SourceOptionsSheet
 import eu.kanade.presentation.browse.manga.components.BaseMangaSourceItem
+import eu.kanade.presentation.browse.manga.components.MangaSourceIcon
 import eu.kanade.tachiyomi.ui.browse.manga.source.MangaSourcesViewModel
 import eu.kanade.tachiyomi.ui.browse.manga.source.browse.BrowseMangaSourceViewModel.Listing
 import eu.kanade.tachiyomi.util.system.LocaleHelper
@@ -30,7 +28,6 @@ import mihon.icons.materialsymbols.roundedfilled.PushPin
 import tachiyomi.domain.source.manga.model.Pin
 import tachiyomi.domain.source.manga.model.Source
 import tachiyomi.i18n.MR
-import tachiyomi.i18n.aniyomi.AYMR
 import tachiyomi.presentation.core.components.ScrollbarLazyColumn
 import tachiyomi.presentation.core.components.material.SECONDARY_ALPHA
 import tachiyomi.presentation.core.components.material.padding
@@ -156,9 +153,12 @@ private fun SourcePinButton(
     }
 }
 
+/** AniTenshi: what a long press on a manga source opens (see [SourceOptionsSheet]). */
 @Composable
-fun MangaSourceOptionsDialog(
+fun MangaSourceOptionsSheet(
     source: Source,
+    onClickBrowse: () -> Unit,
+    onClickLatest: () -> Unit,
     onClickPin: () -> Unit,
     onClickDisable: () -> Unit,
     // SY -->
@@ -166,48 +166,19 @@ fun MangaSourceOptionsDialog(
     // SY <--
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
-        title = {
-            Text(text = source.visualName)
-        },
-        text = {
-            Column {
-                val textId = if (Pin.Pinned in source.pin) MR.strings.action_unpin else MR.strings.action_pin
-                Text(
-                    text = stringResource(textId),
-                    modifier = Modifier
-                        .clickable(onClick = onClickPin)
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                )
-                if (source.id != LocalMangaSource.ID) {
-                    Text(
-                        text = stringResource(MR.strings.action_disable),
-                        modifier = Modifier
-                            .clickable(onClick = onClickDisable)
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                    )
-                }
-                // SY -->
-                if (onClickToggleDataSaver != null) {
-                    Text(
-                        text = if (source.isExcludedFromDataSaver) {
-                            stringResource(AYMR.strings.data_saver_stop_exclude)
-                        } else {
-                            stringResource(AYMR.strings.data_saver_exclude)
-                        },
-                        modifier = Modifier
-                            .clickable(onClick = onClickToggleDataSaver)
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                    )
-                }
-                // SY <--
-            }
-        },
-        onDismissRequest = onDismiss,
-        confirmButton = {},
+    SourceOptionsSheet(
+        icon = { MangaSourceIcon(source = source, modifier = Modifier.fillMaxSize()) },
+        name = source.name,
+        lang = source.lang,
+        isAnime = false,
+        isPinned = Pin.Pinned in source.pin,
+        onClickBrowse = onClickBrowse,
+        onClickLatest = onClickLatest.takeIf { source.supportsLatest },
+        onClickPin = onClickPin,
+        onClickDisable = onClickDisable.takeIf { source.id != LocalMangaSource.ID },
+        isExcludedFromDataSaver = source.isExcludedFromDataSaver.takeIf { onClickToggleDataSaver != null },
+        onClickToggleDataSaver = { onClickToggleDataSaver?.invoke() },
+        onDismiss = onDismiss,
     )
 }
 

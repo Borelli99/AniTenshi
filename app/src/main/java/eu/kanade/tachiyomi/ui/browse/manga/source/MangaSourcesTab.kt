@@ -8,11 +8,12 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.zacsweers.metrox.viewmodel.metroViewModel
-import eu.kanade.presentation.browse.manga.MangaSourceOptionsDialog
+import eu.kanade.presentation.browse.manga.MangaSourceOptionsSheet
 import eu.kanade.presentation.browse.manga.MangaSourcesScreen
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.ui.browse.manga.source.browse.BrowseMangaSourceScreen
+import eu.kanade.tachiyomi.ui.browse.manga.source.browse.BrowseMangaSourceViewModel.Listing
 import eu.kanade.tachiyomi.ui.browse.manga.source.globalsearch.GlobalMangaSearchScreen
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -59,8 +60,16 @@ fun Screen.mangaSourcesTab(
 
             state.dialog?.let { dialog ->
                 val source = dialog.source
-                MangaSourceOptionsDialog(
+                MangaSourceOptionsSheet(
                     source = source,
+                    onClickBrowse = {
+                        viewModel.closeDialog()
+                        navigator.push(BrowseMangaSourceScreen(source.id, Listing.Popular.query))
+                    },
+                    onClickLatest = {
+                        viewModel.closeDialog()
+                        navigator.push(BrowseMangaSourceScreen(source.id, Listing.Latest.query))
+                    },
                     onClickPin = {
                         viewModel.togglePin(source)
                         viewModel.closeDialog()

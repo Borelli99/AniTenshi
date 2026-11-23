@@ -15,7 +15,6 @@ import eu.kanade.tachiyomi.extension.InstallStep
 import eu.kanade.tachiyomi.extension.anime.AnimeExtensionManager
 import eu.kanade.tachiyomi.extension.anime.installer.InstallerAnime
 import eu.kanade.tachiyomi.extension.anime.installer.PackageInstallerInstallerAnime
-import eu.kanade.tachiyomi.extension.anime.installer.ShizukuInstallerAnime
 import eu.kanade.tachiyomi.extension.anime.util.AnimeExtensionInstaller.Companion.EXTRA_DOWNLOAD_ID
 import eu.kanade.tachiyomi.util.system.getSerializableExtraCompat
 import eu.kanade.tachiyomi.util.system.notificationBuilder
@@ -76,7 +75,6 @@ class AnimeExtensionInstallService : Service() {
                     this,
                 )
 
-                BasePreferences.ExtensionInstaller.SHIZUKU -> ShizukuInstallerAnime(this)
 
                 else -> {
                     logcat(LogPriority.ERROR) { "Not implemented for installer $installerUsed" }

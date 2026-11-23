@@ -332,9 +332,6 @@ dependencies {
     // Logging
     implementation(libs.logcat)
 
-    // Shizuku
-    implementation(libs.bundles.shizuku)
-
     // Tests
     testImplementation(libs.bundles.test)
 

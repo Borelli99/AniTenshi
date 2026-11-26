@@ -672,4 +672,6 @@
   <string name="anitenshi_about_beta_tester">Beta tester</string>
   <string name="anitenshi_about_beta_tester_off">Ricevi le versioni di prova appena sono pronte, prima di tutti. Possono avere qualche errore.</string>
   <string name="anitenshi_about_beta_tester_on">Ricevi le versioni di prova appena sono pronte, prima di tutti. Possono avere qualche errore. Se la spegni, resti su questa versione finché non esce una stabile più nuova.</string>
+  <string name="anitenshi_update_stable">Stabile</string>
+  <string name="anitenshi_update_beta">Beta</string>
 </resources>

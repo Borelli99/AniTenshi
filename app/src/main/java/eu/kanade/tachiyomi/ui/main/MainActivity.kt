@@ -491,6 +491,7 @@ class MainActivity : BaseActivity() {
                             changelogInfo = result.release.info,
                             releaseLink = result.release.releaseLink,
                             downloadLink = result.release.downloadLink,
+                            isBeta = result.release.isBeta,
                         )
                         navigator.push(updateScreen)
                     }

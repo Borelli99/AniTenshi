@@ -8,4 +8,6 @@ data class Release(
     val info: String,
     val releaseLink: String,
     val downloadLink: String,
+    // AniTenshi: true when this is the rolling "beta" pre-release, offered to beta testers
+    val isBeta: Boolean = false,
 )

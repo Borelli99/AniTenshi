@@ -755,4 +755,7 @@
     <string name="anitenshi_about_beta_tester">Beta tester</string>
     <string name="anitenshi_about_beta_tester_off">Get the test versions as soon as they\'re ready, before everyone else. They may have a few bugs.</string>
     <string name="anitenshi_about_beta_tester_on">Get the test versions as soon as they\'re ready, before everyone else. They may have a few bugs. If you turn it off, you stay on this version until a newer stable one comes out.</string>
+    <!-- AniTenshi: label on the update screen -->
+    <string name="anitenshi_update_stable">Stable</string>
+    <string name="anitenshi_update_beta">Beta</string>
 </resources>

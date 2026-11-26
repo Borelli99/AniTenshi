@@ -1,9 +1,11 @@
 package tachiyomi.presentation.core.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,6 +20,7 @@ import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -42,6 +45,8 @@ fun InfoScreen(
     canAccept: Boolean = true,
     rejectText: String? = null,
     onRejectClick: (() -> Unit)? = null,
+    // AniTenshi: an optional label shown before the subtitle (e.g. "Stable" or "Beta" for an update)
+    subtitleBadge: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Scaffold(
@@ -113,13 +118,28 @@ fun InfoScreen(
                 text = headingText,
                 style = MaterialTheme.typography.headlineLarge,
             )
-            Text(
-                text = subtitleText,
-                modifier = Modifier
-                    .secondaryItemAlpha()
-                    .padding(vertical = MaterialTheme.padding.small),
-                style = MaterialTheme.typography.titleSmall,
-            )
+            if (subtitleBadge != null) {
+                Row(
+                    modifier = Modifier.padding(vertical = MaterialTheme.padding.small),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    subtitleBadge()
+                    Text(
+                        text = subtitleText,
+                        modifier = Modifier.secondaryItemAlpha(),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
+            } else {
+                Text(
+                    text = subtitleText,
+                    modifier = Modifier
+                        .secondaryItemAlpha()
+                        .padding(vertical = MaterialTheme.padding.small),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
 
             content()
         }

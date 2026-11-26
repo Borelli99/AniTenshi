@@ -26,7 +26,8 @@ class ReleaseServiceImpl(
     override suspend fun latest(arguments: GetApplicationRelease.Arguments): Release? {
         val stable = fetch("https://api.github.com/repos/${arguments.repository}/releases/latest")
         // AniTenshi: beta testers also see the rolling "beta" pre-release, when it is newer
-        val release = if (arguments.includeBeta) newerBeta(arguments.repository, stable) ?: stable else stable
+        val beta = if (arguments.includeBeta) newerBeta(arguments.repository, stable) else null
+        val release = beta ?: stable
         val downloadLink = getDownloadLink(release = release) ?: return null
 
         return Release(
@@ -36,6 +37,7 @@ class ReleaseServiceImpl(
             },
             releaseLink = release.releaseLink,
             downloadLink = downloadLink,
+            isBeta = beta != null,
         )
     }
 

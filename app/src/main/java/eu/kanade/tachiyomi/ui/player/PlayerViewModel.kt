@@ -25,8 +25,10 @@ import android.app.Application
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import android.util.DisplayMetrics
 import android.view.inputmethod.InputMethodManager
@@ -155,9 +157,16 @@ import java.io.InputStream
 import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.ceil
+import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
 private const val NETWORK_STREAM_ANIME_ID = Long.MIN_VALUE + 101
 private const val NETWORK_STREAM_EPISODE_ID = Long.MIN_VALUE + 102
+
+// AniTenshi: dB between two Android volume steps when Android can't say (before Android 9), and the most we cut
+private const val DEFAULT_VOLUME_STEP_GAP_DB = 3f
+private const val MAX_VOLUME_STEP_GAP_DB = 12f
 
 @AssistedInject
 class PlayerViewModel(
@@ -348,6 +357,11 @@ class PlayerViewModel(
     )
     val currentMPVVolume = MutableStateFlow(mpv.getPropertyInt("volume") ?: 100)
     var volumeBoostCap: Int = (mpv.getPropertyInt("volume-max") ?: 100) - 100
+
+    // AniTenshi: the volume in percent, one by one: 0..100, then the boost above 100. Android has only a few
+    // steps (15 on many phones, 6-7% each), so Android goes to the step at or above it and mpv's own volume
+    // lowers the sound to the exact percent (see changeVolumePercentTo).
+    val volumePercent = MutableStateFlow(stepPercent(currentVolume.value))
 
     // Pair(startingPosition, seekAmount)
     val gestureSeekAmount = MutableStateFlow<Pair<Int, Int>?>(null)
@@ -823,17 +837,65 @@ class PlayerViewModel(
     }
 
     val maxVolume: Int get() = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-    fun changeVolumeBy(change: Int) {
-        val mpvVolume = mpv.getPropertyInt("volume") ?: 100
-        if (volumeBoostCap > 0 && currentVolume.value == maxVolume) {
-            if (mpvVolume == 100 && change < 0) changeVolumeTo(currentVolume.value + change)
-            val finalMPVVolume = (mpvVolume + change).coerceAtLeast(100)
-            if (finalMPVVolume in 100..volumeBoostCap + 100) {
-                changeMPVVolumeTo(finalMPVVolume)
-                return
+
+    private fun stepPercent(step: Int): Int = (step * 100f / maxVolume.coerceAtLeast(1)).roundToInt()
+
+    /** AniTenshi: moves the volume by [change] percent (the volume buttons move it by 5). */
+    fun changeVolumePercentBy(change: Int) = changeVolumePercentTo(volumePercent.value + change)
+
+    /** AniTenshi: sets the volume to [percent]: 0..100, and above 100 up to the boost cap. */
+    fun changeVolumePercentTo(percent: Int) {
+        val max = maxVolume
+        if (max <= 0) return
+        val level = percent.coerceIn(0, 100 + volumeBoostCap.coerceAtLeast(0))
+        val step = if (level >= 100) max else ceil(level * max / 100f).toInt().coerceIn(0, max)
+        val mpvVolume = when {
+            level >= 100 -> level
+            step == 0 -> 100
+            else -> {
+                // How far the level is from the step below (0) to this step (1), turned into a cut in dB
+                // of part of the gap between the two steps. mpv's volume is cubic: 60 * log10(v / 100) dB.
+                val low = (step - 1) * 100f / max
+                val high = step * 100f / max
+                val fraction = ((level - low) / (high - low)).coerceIn(0f, 1f)
+                val cutDb = (1 - fraction) * volumeStepGapsDb[step]
+                (100 * 10f.pow(-cutDb / 60f)).roundToInt().coerceIn(0, 100)
             }
         }
-        changeVolumeTo(currentVolume.value + change)
+        changeVolumeTo(step)
+        changeMPVVolumeTo(mpvVolume)
+        volumePercent.update { level }
+    }
+
+    /** AniTenshi: when the player comes back, picks up a volume changed elsewhere (e.g. in Android's panel). */
+    fun syncVolumeFromSystem() {
+        val system = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        if (system == currentVolume.value) return
+        currentVolume.update { system }
+        changeMPVVolumeTo(100)
+        volumePercent.update { stepPercent(system) }
+    }
+
+    /** AniTenshi: how many dB each Android step adds over the one below; step 1 takes the gap of step 2. */
+    private val volumeStepGapsDb: FloatArray by lazy {
+        val max = maxVolume
+        val gaps = FloatArray(max + 1) { step ->
+            if (step >= 2) measuredStepGapDb(step) ?: DEFAULT_VOLUME_STEP_GAP_DB else 0f
+        }
+        if (max >= 1) gaps[1] = if (max >= 2) gaps[2] else DEFAULT_VOLUME_STEP_GAP_DB
+        gaps
+    }
+
+    private fun measuredStepGapDb(step: Int): Float? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return null
+        return runCatching {
+            val speaker = AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+            audioManager.getStreamVolumeDb(AudioManager.STREAM_MUSIC, step, speaker) -
+                audioManager.getStreamVolumeDb(AudioManager.STREAM_MUSIC, step - 1, speaker)
+        }
+            .getOrNull()
+            ?.takeIf { it.isFinite() && it > 0f }
+            ?.coerceAtMost(MAX_VOLUME_STEP_GAP_DB)
     }
 
     fun changeVolumeTo(volume: Int) {

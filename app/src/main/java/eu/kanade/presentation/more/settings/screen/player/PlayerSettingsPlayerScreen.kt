@@ -154,7 +154,6 @@ object PlayerSettingsPlayerScreen : Screen(), SearchableSettings {
     private fun getDisplayGroup(playerPreferences: PlayerPreferences): Preference.PreferenceGroup {
         val fullScreen = playerPreferences.playerFullscreen()
         val hideControls = playerPreferences.hideControls()
-        val displayVol = playerPreferences.displayVolPer()
         val showSystemBar = playerPreferences.showSystemStatusBar()
         val reduceMotion = playerPreferences.reduceMotion()
         val hideTime = playerPreferences.playerTimeToDisappear()
@@ -174,10 +173,6 @@ object PlayerSettingsPlayerScreen : Screen(), SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     preference = hideControls,
                     title = stringResource(AYMR.strings.pref_player_hide_controls),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = displayVol,
-                    title = stringResource(AYMR.strings.pref_controls_display_volume_percentage),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = showSystemBar,

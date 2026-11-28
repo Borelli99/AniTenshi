@@ -61,7 +61,6 @@ import eu.kanade.tachiyomi.ui.player.PlayerUpdates
 import eu.kanade.tachiyomi.ui.player.PlayerViewModel
 import eu.kanade.tachiyomi.ui.player.Sheets
 import eu.kanade.tachiyomi.ui.player.controls.components.DoubleTapSeekTriangles
-import eu.kanade.tachiyomi.ui.player.settings.AudioPreferences
 import eu.kanade.tachiyomi.ui.player.settings.GesturePreferences
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
 import `is`.xyz.mpv.MPV
@@ -81,7 +80,6 @@ fun GestureHandler(
 ) {
     val playerPreferences = remember { Injekt.get<PlayerPreferences>() }
     val gesturePreferences = remember { Injekt.get<GesturePreferences>() }
-    val audioPreferences = remember { Injekt.get<AudioPreferences>() }
 
     val panelShown by viewModel.panelShown.collectAsState()
     val allowGesturesInPanels by playerPreferences.allowGestures().collectAsState()
@@ -108,10 +106,8 @@ fun GestureHandler(
     val preciseSeeking by gesturePreferences.playerSmoothSeek().collectAsState()
     val showSeekbar by gesturePreferences.showSeekBar().collectAsState()
     var isLongPressing by remember { mutableStateOf(false) }
-    val currentVolume by viewModel.currentVolume.collectAsState()
-    val currentMPVVolume by viewModel.currentMPVVolume.collectAsState()
+    val volumePercent by viewModel.volumePercent.collectAsState()
     val currentBrightness by viewModel.currentBrightness.collectAsState()
-    val volumeBoostingCap = audioPreferences.volumeBoostCap().get()
     val haptics = LocalHapticFeedback.current
 
     Box(
@@ -218,66 +214,29 @@ fun GestureHandler(
             .pointerInput(areControlsLocked) {
                 if (!gestureVolumeBrightness || areControlsLocked) return@pointerInput
                 var startingY = 0f
-                var mpvVolumeStartingY = 0f
-                var originalVolume = currentVolume
-                var originalMPVVolume = currentMPVVolume
+                var originalVolumePercent = volumePercent
                 var originalBrightness = currentBrightness
                 val brightnessGestureSens = 0.001f
-                val volumeGestureSens = 0.001f * viewModel.maxVolume
-                val mpvVolumeGestureSens = 0.001f * volumeBoostingCap
-                val isIncreasingVolumeBoost: (Float) -> Boolean = {
-                    volumeBoostingCap > 0 &&
-                        currentVolume == viewModel.maxVolume &&
-                        currentMPVVolume - 100 < volumeBoostingCap &&
-                        it < 0
-                }
-                val isDecreasingVolumeBoost: (Float) -> Boolean = {
-                    volumeBoostingCap > 0 &&
-                        currentVolume == viewModel.maxVolume &&
-                        currentMPVVolume - 100 in 1..volumeBoostingCap &&
-                        it > 0
-                }
+                // AniTenshi: the volume moves 1% at a time, 1% every 10 px (the pace it had with Android's steps)
+                val volumeGestureSens = 0.1f
                 detectVerticalDragGestures(
                     onDragEnd = { startingY = 0f },
                     onDragStart = {
                         startingY = 0f
-                        mpvVolumeStartingY = 0f
-                        originalVolume = currentVolume
-                        originalMPVVolume = currentMPVVolume
+                        originalVolumePercent = volumePercent
                         originalBrightness = currentBrightness
                     },
-                ) { change, amount ->
+                ) { change, _ ->
                     val changeVolume: () -> Unit = {
-                        if (isIncreasingVolumeBoost(amount) || isDecreasingVolumeBoost(amount)) {
-                            if (mpvVolumeStartingY == 0f) {
-                                startingY = 0f
-                                originalVolume = currentVolume
-                                mpvVolumeStartingY = change.position.y
-                            }
-                            viewModel.changeMPVVolumeTo(
-                                calculateNewVerticalGestureValue(
-                                    originalMPVVolume,
-                                    mpvVolumeStartingY,
-                                    change.position.y,
-                                    mpvVolumeGestureSens,
-                                )
-                                    .coerceIn(100..volumeBoostingCap + 100),
-                            )
-                        } else {
-                            if (startingY == 0f) {
-                                mpvVolumeStartingY = 0f
-                                originalMPVVolume = currentMPVVolume
-                                startingY = change.position.y
-                            }
-                            viewModel.changeVolumeTo(
-                                calculateNewVerticalGestureValue(
-                                    originalVolume,
-                                    startingY,
-                                    change.position.y,
-                                    volumeGestureSens,
-                                ),
-                            )
-                        }
+                        if (startingY == 0f) startingY = change.position.y
+                        viewModel.changeVolumePercentTo(
+                            calculateNewVerticalGestureValue(
+                                originalVolumePercent,
+                                startingY,
+                                change.position.y,
+                                volumeGestureSens,
+                            ),
+                        )
                         viewModel.displayVolumeSlider()
                     }
                     val changeBrightness: () -> Unit = {

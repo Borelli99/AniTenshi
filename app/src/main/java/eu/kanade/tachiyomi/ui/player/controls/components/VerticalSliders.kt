@@ -53,7 +53,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import tachiyomi.presentation.core.components.material.padding
 import java.text.NumberFormat
-import kotlin.math.roundToInt
 
 private fun percentage(value: Float, range: ClosedFloatingPointRange<Float>): Float {
     return ((value - range.start) / (range.endInclusive - range.start)).coerceIn(0f, 1f)
@@ -174,25 +173,23 @@ fun BrightnessSlider(
 
 @Composable
 fun VolumeSlider(
-    volume: Int,
-    mpvVolume: Int,
-    range: ClosedRange<Int>,
+    // AniTenshi: the volume in percent, one by one (above 100 it's the boost); always shown as a percentage
+    volumePercent: Int,
     boostRange: ClosedRange<Int>?,
     modifier: Modifier = Modifier,
-    displayAsPercentage: Boolean = false,
 ) {
-    val percentage = (percentage(volume, range) * 100).roundToInt()
+    val percentage = volumePercent.coerceIn(0, 100)
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
     ) {
-        val boostVolume = mpvVolume - 100
+        val boostVolume = (volumePercent - 100).coerceAtLeast(0)
         val (deviceVolumeString, boostVolumeString) = getVolumeSliderText(
-            volume,
+            percentage,
             boostVolume,
             percentage,
-            displayAsPercentage,
+            true,
         )
         Text(
             text = deviceVolumeString,
@@ -201,8 +198,8 @@ fun VolumeSlider(
         )
         Box {
             VerticalSlider(
-                value = if (displayAsPercentage) percentage else volume,
-                range = if (displayAsPercentage) 0..100 else range,
+                value = percentage,
+                range = 0..100,
                 overflowValue = boostVolume,
                 overflowRange = boostRange,
             )

@@ -204,8 +204,7 @@ fun PlayerControls(
                 val isBrightnessSliderShown by viewModel.isBrightnessSliderShown.collectAsState()
                 val isVolumeSliderShown by viewModel.isVolumeSliderShown.collectAsState()
                 val brightness by viewModel.currentBrightness.collectAsState()
-                val volume by viewModel.currentVolume.collectAsState()
-                val mpvVolume by viewModel.currentMPVVolume.collectAsState()
+                val volumePercent by viewModel.volumePercent.collectAsState()
                 val swapVolumeAndBrightness by gesturePreferences.swapVolumeBrightness().collectAsState()
                 val reduceMotion by playerPreferences.reduceMotion().collectAsState()
 
@@ -216,7 +215,7 @@ fun PlayerControls(
                     LocalConfiguration.current.screenWidthDp < COMPACT_PLAYER_CONTROLS_MAX_WIDTH_DP
                 val compactBottomControls = createRef()
 
-                LaunchedEffect(volume, mpvVolume, isVolumeSliderShown) {
+                LaunchedEffect(volumePercent, isVolumeSliderShown) {
                     delay(2000)
                     if (isVolumeSliderShown) viewModel.isVolumeSliderShown.update { false }
                 }
@@ -300,13 +299,9 @@ fun PlayerControls(
                     },
                 ) {
                     val boostCap by audioPreferences.volumeBoostCap().collectAsState()
-                    val displayVolumeAsPercentage by playerPreferences.displayVolPer().collectAsState()
                     VolumeSlider(
-                        volume = volume,
-                        mpvVolume = mpvVolume,
-                        range = 0..viewModel.maxVolume,
-                        boostRange = if (boostCap > 0) 0..audioPreferences.volumeBoostCap().get() else null,
-                        displayAsPercentage = displayVolumeAsPercentage,
+                        volumePercent = volumePercent,
+                        boostRange = if (boostCap > 0) 0..boostCap else null,
                     )
                 }
 

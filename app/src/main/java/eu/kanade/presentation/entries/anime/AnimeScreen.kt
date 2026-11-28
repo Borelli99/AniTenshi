@@ -595,6 +595,9 @@ private fun AnimeScreenSmallImpl(
                     modifier = Modifier.fillMaxHeight(),
                     state = itemListState,
                     columns = if (gridSize == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(gridSize),
+                    // AniTenshi: the scroll thumb starts below the top bar, as on the manga screen
+                    topContentPadding = topPadding,
+                    endContentPadding = contentPadding.calculateEndPadding(layoutDirection),
                     contentPadding = PaddingValues(
                         start = GRID_PADDING + contentPadding.calculateStartPadding(layoutDirection),
                         end = GRID_PADDING + contentPadding.calculateEndPadding(layoutDirection),
@@ -1182,6 +1185,8 @@ fun AnimeScreenLargeImpl(
                             modifier = Modifier.fillMaxHeight(),
                             state = itemListState,
                             columns = if (gridSize == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(gridSize),
+                            // AniTenshi: the scroll thumb starts below the top bar, as on the manga screen
+                            topContentPadding = contentPadding.calculateTopPadding(),
                             contentPadding = PaddingValues(
                                 start = GRID_PADDING,
                                 end = GRID_PADDING,
